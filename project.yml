@@ -1,0 +1,57 @@
+# XcodeGen spec. Generate the Xcode project with:  xcodegen generate
+name: Discipline
+options:
+  bundleIdPrefix: com.ncom
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+packages:
+  DisciplineCore:
+    path: DisciplineCore
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+targets:
+  Discipline:
+    type: application
+    platform: iOS
+    sources:
+      - path: App/Sources
+      - path: App/Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ncom.discipline
+        PRODUCT_NAME: Discipline
+        INFOPLIST_FILE: App/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - package: DisciplineCore
+  DisciplineUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ncom.discipline.uitests
+        TEST_TARGET_NAME: Discipline
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: Discipline
+schemes:
+  Discipline:
+    build:
+      targets:
+        Discipline: all
+        DisciplineUITests: [test]
+    test:
+      config: Debug
+      targets:
+        - DisciplineUITests

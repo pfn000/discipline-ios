@@ -1,0 +1,27 @@
+{
+ "name": "NCOM Test Source",
+ "identifier": "com.ncom.source",
+ "apps": [
+  {
+   "name": "Sample App",
+   "bundleIdentifier": "com.ncom.sampleapp",
+   "developerName": "NCOM",
+   "versions": [
+    {
+     "version": "1.2.3",
+     "date": "2026-10-18",
+     "downloadURL": "https://example.com/SampleApp.ipa",
+     "size": 5000,
+     "minOSVersion": "17.0"
+    }
+   ]
+  },
+  {
+   "name": "Legacy",
+   "bundleIdentifier": "com.ncom.legacy",
+   "version": "0.9",
+   "downloadURL": "https://example.com/Legacy.ipa",
+   "minOSVersion": "28.0"
+  }
+ ]
+}

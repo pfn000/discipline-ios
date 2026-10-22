@@ -1,0 +1,260 @@
+import SwiftUI
+import UniformTypeIdentifiers
+import DisciplineCore
+
+struct MoreView: View {
+    @EnvironmentObject var model: AppModel
+    @State var versionTaps = 0
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    NavigationLink { SetupView() } label: { Label("Setup checklist", systemImage: "checklist") }
+                        .accessibilityIdentifier("more.setup")
+                    NavigationLink { SettingsView() } label: { Label("Settings", systemImage: "gearshape") }
+                        .accessibilityIdentifier("more.settings")
+                    NavigationLink { GuardView() } label: { Label("Ouija Guard", systemImage: "eye.trianglebadge.exclamationmark") }
+                        .accessibilityIdentifier("more.guard")
+                    if model.labUnlocked {
+                        NavigationLink { LabView() } label: { Label("NCOM Lab", systemImage: "flask") }
+                            .accessibilityIdentifier("more.lab")
+                    }
+                }
+                Section {
+                    NavigationLink { SupportView() } label: { Label("Support / Tip", systemImage: "heart") }
+                        .accessibilityIdentifier("more.support")
+                    NavigationLink { LimitsView() } label: { Label("Honest limits", systemImage: "exclamationmark.shield") }
+                        .accessibilityIdentifier("more.limits")
+                    NavigationLink { AboutView() } label: { Label("About & credits", systemImage: "info.circle") }
+                        .accessibilityIdentifier("more.about")
+                }
+                Section {
+                    Text("Discipline \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")")
+                        .font(.footnote).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                        .onLongPressGesture(minimumDuration: 0.4) {
+                            versionTaps += 1
+                            if versionTaps >= 7 && !model.labUnlocked {
+                                model.labUnlocked = true
+                                model.show("NCOM Lab unlocked")
+                            }
+                        }
+                        .accessibilityIdentifier("more.version")
+                        .accessibilityAddTraits(.isStaticText)
+                }
+                .listRowBackground(Color.clear)
+            }
+            .navigationTitle("More")
+        }
+    }
+}
+
+struct SetupView: View {
+    @EnvironmentObject var model: AppModel
+
+    var body: some View {
+        let plan = model.setupPlan
+        let report = model.compatibility
+        List {
+            Section {
+                Text("\(plan.completed) of \(plan.steps.count) done").font(.headline).accessibilityIdentifier("setup.progress")
+            }
+            Section("Steps") {
+                ForEach(plan.steps) { step in
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: step.state == .done ? "checkmark.circle.fill" : (step.state == .blocked ? "lock.circle" : "circle"))
+                            .foregroundStyle(step.state == .done ? .green : .secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(step.title).font(.subheadline.weight(.semibold))
+                            Text(step.detail).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if step.state == .todo, let action = action(for: step.id) {
+                            Button(action.title) { Task { await action.run() } }
+                                .buttonStyle(.glass)
+                                .accessibilityIdentifier("setup.do.\(step.id.rawValue)")
+                        }
+                    }
+                    .accessibilityIdentifier("setup.step.\(step.id.rawValue)")
+                }
+            }
+            Section("Your iPhone") {
+                LabeledContent("iOS", value: report.version.description)
+                LabeledContent("First install", value: bootstrapText(report.bootstrap)).accessibilityIdentifier("setup.bootstrap")
+                ForEach(report.notes, id: \.self) { Text($0).font(.caption) }
+            }
+        }
+        .navigationTitle("Setup")
+        .onAppear { model.refreshEnvironment() }
+    }
+
+    private struct StepAction { let title: String; let run: () async -> Void }
+
+    private func action(for id: SetupPlan.StepID) -> StepAction? {
+        switch id {
+        case .developerMode: return nil
+        case .localDevVPN: return StepAction(title: "Get") { await model.openWeb(Companion.localDevVPN.officialURL) }
+        case .vpnConnected: return StepAction(title: "Turn on") { await model.vpnOn() }
+        case .sideStore: return StepAction(title: "Get") { await model.openWeb(Companion.sideStore.officialURL) }
+        case .liveContainer: return StepAction(title: "Get") { await model.openWeb(Companion.liveContainer.officialURL) }
+        case .trackExpiry: return StepAction(title: "Track") { model.tab = .expiry }
+        }
+    }
+
+    private func bootstrapText(_ b: CompatibilityReport.Bootstrap) -> String {
+        switch b {
+        case .onDeviceSupported: return "On the phone (no computer)"
+        case .needsPairingFileFromComputer: return "Needs a computer once"
+        case .unsupported: return "Not supported"
+        }
+    }
+}
+
+struct SettingsView: View {
+    @EnvironmentObject var model: AppModel
+    @State var token = ""
+    @State var importing = false
+    @State var backupURL: URL?
+
+    var body: some View {
+        Form {
+            Section {
+                Picker("Apple account", selection: $model.settings.tier) {
+                    Text("Free Apple ID (7 days)").tag(AccountTier.free)
+                    Text("Paid developer (1 year)").tag(AccountTier.paid)
+                }
+                .accessibilityIdentifier("settings.tier")
+            } footer: {
+                Text("A paid Apple Developer Program membership ($99/year) signs apps for 365 days and removes the 3-app and 10-App-ID limits.")
+            }
+            Section("Look") {
+                Picker("Appearance", selection: $model.settings.appearance) {
+                    ForEach(AppearanceChoice.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("settings.appearance")
+                Picker("Glass tint", selection: $model.settings.tint) {
+                    ForEach(TintChoice.allCases) { Text($0.label).tag($0) }
+                }
+                .accessibilityIdentifier("settings.tint")
+            }
+            Section {
+                TextField("Tunnel address (optional, e.g. 10.7.1.1)", text: $model.settings.expectedTunnelIP)
+                    .keyboardType(.numbersAndPunctuation).autocorrectionDisabled().textInputAutocapitalization(.never)
+                    .accessibilityIdentifier("settings.tunnelIP")
+            } header: { Text("LocalDevVPN") } footer: {
+                Text("Set this if you changed LocalDevVPN's device IP, so Home detects the tunnel exactly.")
+            }
+            Section {
+                Toggle("Show pre-releases", isOn: $model.settings.includePrereleases)
+                    .accessibilityIdentifier("settings.prereleases")
+                SecureField(model.hasToken ? "Token saved (enter a new one to replace)" : "Personal access token (optional)", text: $token)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .accessibilityIdentifier("settings.token")
+                HStack {
+                    Button("Save token") { model.saveToken(token); token = "" }
+                        .disabled(token.isEmpty)
+                        .accessibilityIdentifier("settings.saveToken")
+                    Spacer()
+                    Button("Remove token", role: .destructive) { model.saveToken(""); token = "" }
+                        .accessibilityIdentifier("settings.removeToken")
+                }
+                .buttonStyle(.borderless)
+            } header: { Text("GitHub") } footer: {
+                Text("Stored only in this iPhone's Keychain. A read-only token with no scopes is enough for public repos.")
+            }
+            Section("Backup") {
+                if let backupURL {
+                    ShareLink(item: backupURL) { Label("Share backup file", systemImage: "square.and.arrow.up") }
+                        .accessibilityIdentifier("settings.shareBackup")
+                } else {
+                    Button { backupURL = model.exportBackup() } label: { Label("Make backup", systemImage: "externaldrive") }
+                        .accessibilityIdentifier("settings.makeBackup")
+                }
+                Button { importing = true } label: { Label("Restore backup", systemImage: "arrow.down.doc") }
+                    .accessibilityIdentifier("settings.restore")
+            }
+        }
+        .navigationTitle("Settings")
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
+            if case .success(let url) = result { model.importBackup(from: url) }
+        }
+    }
+}
+
+struct SupportView: View {
+    @EnvironmentObject var model: AppModel
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                GlassCard(tinted: true) {
+                    Text("Discipline is free").font(.title2.bold())
+                    Text("No ads, no tracking, no account. If it saves you a weekly headache, a tip keeps it going.")
+                        .foregroundStyle(.secondary)
+                    Button { Task { await model.openWeb(AppConfig.tipURL) } } label: {
+                        Label("Leave a tip", systemImage: "heart.fill").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.glassProminent)
+                    .accessibilityIdentifier("support.tip")
+                    Text("Opens in Safari. There's no in-app purchase in a sideloaded app.").font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .padding()
+        }
+        .navigationTitle("Support")
+    }
+}
+
+struct LimitsView: View {
+    var body: some View {
+        List {
+            Section("Signatures") {
+                Text("Nothing makes a signature permanent. A free Apple ID signs for 7 days, a paid developer account for 365. Discipline keeps apps alive by reminding you and making refresh one tap; it can't stop Apple's clock.")
+                Text("Apps inside LiveContainer don't expire on their own: only LiveContainer (and SideStore) need refreshing.")
+            }
+            Section("What a free Apple ID can't sign") {
+                Text("VPN / Network Extensions, push notifications, Screen Time (Family Controls), NFC tag reading, Siri, iCloud. That's why Discipline uses the App Store LocalDevVPN instead of its own VPN.")
+            }
+            Section("Refreshing") {
+                Text("SideStore has no link that starts a refresh, so Refresh All opens LocalDevVPN, which opens SideStore. You tap Refresh All there.")
+                Text("Discipline can't see whether SideStore's refresh worked. Mark apps refreshed after it does.")
+            }
+            Section("iOS betas") {
+                Text("Apple tightened the VPN check in iOS 26.4. Betas can change it again. Keep LocalDevVPN updated.")
+            }
+        }
+        .navigationTitle("Honest limits")
+    }
+}
+
+struct AboutView: View {
+    struct Credit: Identifiable { let id: String; let who: String; let repo: String }
+    let credits: [Credit] = [
+        Credit(id: "LocalDevVPN", who: "SideStore team / Jackson Coxson, StosVPN license", repo: "github.com/jkcoxson/LocalDevVPN"),
+        Credit(id: "SideStore", who: "SideStore team, AGPL-3.0", repo: "github.com/SideStore/SideStore"),
+        Credit(id: "LiveContainer", who: "LiveContainer contributors, AGPL-3.0", repo: "github.com/LiveContainer/LiveContainer"),
+        Credit(id: "SideInstaller", who: "FrizzleM, custom non-commercial license", repo: "github.com/FrizzleM/SideInstaller"),
+        Credit(id: "Plume Impactor", who: "claration, MIT", repo: "github.com/claration/impactor"),
+    ]
+    var body: some View {
+        List {
+            Section {
+                Text("Discipline is NCOM's own code. It contains no code from the apps below; it works with them through the links and file types they publish. The loopback-VPN idea it explains comes from em_proxy and LocalDevVPN.")
+                    .font(.subheadline)
+            }
+            Section("Works with") {
+                ForEach(credits) { c in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(c.id).font(.headline)
+                        Text(c.who).font(.caption)
+                        Text(c.repo).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
+                    }
+                }
+            }
+            Section { Text(AppConfig.sourceCodeNote).font(.caption).foregroundStyle(.secondary) }
+        }
+        .navigationTitle("About")
+    }
+}

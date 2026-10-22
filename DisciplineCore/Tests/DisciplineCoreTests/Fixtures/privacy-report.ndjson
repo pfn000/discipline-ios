@@ -1,0 +1,8 @@
+{"type": "access", "category": "camera", "identifier": "A1", "kind": "intervalBegin", "timeStamp": "2026-10-21T10:00:00.000-04:00", "accessor": {"identifier": "com.example.chat", "identifierType": "bundleID"}}
+{"type": "access", "category": "camera", "identifier": "A1", "kind": "intervalEnd", "timeStamp": "2026-10-21T10:01:00.000-04:00", "accessor": {"identifier": "com.example.chat", "identifierType": "bundleID"}}
+{"type": "access", "category": "location", "identifier": "A2", "kind": "intervalBegin", "timeStamp": "2026-10-21T11:00:00.000-04:00", "accessor": {"identifier": "com.example.chat", "identifierType": "bundleID"}}
+{"type": "networkActivity", "domain": "api.example.com", "firstTimeStamp": "2026-10-21T10:00:00.000-04:00", "timeStamp": "2026-10-21T10:05:00.000-04:00", "bundleID": "com.example.chat", "hits": 12, "domainType": 2, "initiatedType": "AppInitiated"}
+{"type": "networkActivity", "domain": "app-measurement.com", "firstTimeStamp": "2026-10-21T10:00:00.000-04:00", "timeStamp": "2026-10-21T10:05:00.000-04:00", "bundleID": "com.example.chat", "hits": 4, "domainType": 2, "initiatedType": "AppInitiated"}
+{"type": "networkActivity", "domain": "graph.facebook.com", "firstTimeStamp": "2026-10-21T10:00:00.000-04:00", "timeStamp": "2026-10-21T10:05:00.000-04:00", "bundleID": "com.example.game", "hits": 30, "domainType": 2, "initiatedType": "AppInitiated"}
+{"type": "networkActivity", "domain": "cdn.example.net", "firstTimeStamp": "2026-10-21T10:00:00.000-04:00", "timeStamp": "2026-10-21T10:05:00.000-04:00", "bundleID": "com.example.notes", "hits": 2, "domainType": 1, "initiatedType": "AppInitiated"}
+not json

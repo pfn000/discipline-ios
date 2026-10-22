@@ -1,0 +1,59 @@
+[
+ {
+  "id": 3,
+  "tag_name": "v2.0.0-beta",
+  "name": "Beta 2",
+  "draft": false,
+  "prerelease": true,
+  "published_at": "2026-10-20T10:00:00Z",
+  "assets": [
+   {
+    "id": 31,
+    "name": "SampleApp-2.0.0-beta.ipa",
+    "size": 4000,
+    "browser_download_url": "https://github.com/ncom/sample-app/releases/download/v2.0.0-beta/SampleApp-2.0.0-beta.ipa",
+    "download_count": 5
+   }
+  ]
+ },
+ {
+  "id": 2,
+  "tag_name": "v1.2.3",
+  "name": "Sample App 1.2.3",
+  "draft": false,
+  "prerelease": false,
+  "published_at": "2026-10-18T10:00:00Z",
+  "assets": [
+   {
+    "id": 21,
+    "name": "SampleApp-debug.ipa",
+    "size": 9000,
+    "browser_download_url": "https://github.com/ncom/sample-app/releases/download/v1.2.3/SampleApp-debug.ipa",
+    "download_count": 1
+   },
+   {
+    "id": 22,
+    "name": "SampleApp.ipa",
+    "size": 5000,
+    "browser_download_url": "https://github.com/ncom/sample-app/releases/download/v1.2.3/SampleApp.ipa",
+    "download_count": 40
+   },
+   {
+    "id": 23,
+    "name": "checksums.txt",
+    "size": 100,
+    "browser_download_url": "https://github.com/ncom/sample-app/releases/download/v1.2.3/checksums.txt",
+    "download_count": 2
+   }
+  ]
+ },
+ {
+  "id": 1,
+  "tag_name": "v1.0.0",
+  "name": "",
+  "draft": false,
+  "prerelease": false,
+  "published_at": "2026-09-01T10:00:00Z",
+  "assets": []
+ }
+]

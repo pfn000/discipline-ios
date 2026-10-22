@@ -1,0 +1,14 @@
+{
+  "bundleID": "com.ncom.ouijaboard",
+  "features": [
+    "uwb",
+    "ble",
+    "nfc",
+    "localnet",
+    "proximity",
+    "motion",
+    "multipeer",
+    "eaccessory"
+  ],
+  "name": "NCOM Ouija Board"
+}

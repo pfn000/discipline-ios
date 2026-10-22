@@ -1,0 +1,164 @@
+name: ios
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      req:
+        description: "request tag (shown in the run title)"
+        required: false
+        default: ""
+run-name: "ios ${{ github.ref_name }} ${{ inputs.req }}"
+permissions:
+  contents: write
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-test-package:
+    runs-on: xcode-27
+    timeout-minutes: 60
+    env:
+      OUT: ${{ github.workspace }}/out
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest Xcode
+        run: |
+          ls -d /Applications/Xcode*.app
+          XC=$(ls -d /Applications/Xcode_27*.app | sort -V | tail -1)
+          echo "Using $XC"
+          sudo xcode-select -s "$XC"
+          mkdir -p "$OUT"
+          { xcodebuild -version; xcodebuild -showsdks | grep -i ios; sw_vers; } | tee "$OUT/toolchain.txt"
+
+      - name: Install XcodeGen
+        run: |
+          curl -sSL -o /tmp/xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/latest/download/xcodegen.zip
+          unzip -q /tmp/xcodegen.zip -d /tmp/xg
+          /tmp/xg/xcodegen/bin/xcodegen --version
+          /tmp/xg/xcodegen/bin/xcodegen generate
+          ls
+
+      - name: Core logic tests (swift test)
+        working-directory: DisciplineCore
+        run: swift test 2>&1 | tee "$OUT/core-tests.log"
+
+      - name: Pick simulator
+        id: sim
+        run: |
+          xcrun simctl list runtimes
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json,sys,re
+          d=json.load(sys.stdin)["devices"]
+          best=None
+          for rt,devs in d.items():
+              m=re.search(r"iOS-(\d+)-(\d+)",rt)
+              if not m: continue
+              v=(int(m.group(1)),int(m.group(2)))
+              for dev in devs:
+                  if not dev["name"].startswith("iPhone"): continue
+                  score=(v, "Pro" in dev["name"] and "Max" not in dev["name"], dev["name"])
+                  if best is None or score>best[0]: best=(score,dev["udid"],dev["name"],rt)
+          print(best[1]); print(best[2]+" | "+best[3], file=sys.stderr)
+          ')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl list devices | grep "$UDID" | tee -a "$OUT/toolchain.txt"
+
+      - name: UI tests on the simulator (every page and control)
+        run: |
+          mkdir -p "$OUT/screenshots"
+          xcrun simctl io "${{ steps.sim.outputs.udid }}" recordVideo --codec=h264 --force "$OUT/walkthrough.mp4" &
+          REC=$!
+          set +e
+          xcodebuild test -project Discipline.xcodeproj -scheme Discipline \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath "$OUT/TestResults.xcresult" \
+            CODE_SIGN_IDENTITY="-" \
+            TEST_RUNNER_SCREENSHOT_DIR="$OUT/screenshots" 2>&1 | tee "$OUT/ui-tests.log" | grep -E "Test Case|error:|failed|passed|\*\* TEST" 
+          STATUS=${PIPESTATUS[0]}
+          set -e
+          kill -INT $REC || true
+          sleep 3
+          xcrun xcresulttool get test-results summary --path "$OUT/TestResults.xcresult" > "$OUT/test-summary.json" || true
+          xcrun xcresulttool get test-results tests --path "$OUT/TestResults.xcresult" > "$OUT/test-list.json" || true
+          xcrun xcresulttool export attachments --path "$OUT/TestResults.xcresult" --output-path "$OUT/attachments" || true
+          cat "$OUT/test-summary.json" || true
+          exit $STATUS
+
+      - name: Build unsigned IPA (Release, device)
+        if: success()
+        run: |
+          VERSION=$(grep MARKETING_VERSION project.yml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          NAME="Discipline-v${VERSION}-unsigned.ipa"
+          xcodebuild -project Discipline.xcodeproj -scheme Discipline -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tail -20
+          rm -rf Payload && mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/Discipline.app Payload/
+          zip -qry "$OUT/$NAME" Payload
+          cd "$OUT"
+          shasum -a 256 "$NAME" | tee "$NAME.sha256"
+          echo "IPA_NAME=$NAME" >> "$GITHUB_ENV"
+
+      - name: Verify IPA
+        if: success()
+        run: |
+          cd "$OUT"
+          rm -rf verify && mkdir verify && cd verify
+          unzip -q "../$IPA_NAME"
+          test -d Payload/Discipline.app
+          plutil -p Payload/Discipline.app/Info.plist | grep -E "CFBundleIdentifier|CFBundleShortVersionString|MinimumOSVersion|DTSDKName|DTXcode|com.apple.itunes.ipa|discipline" | tee ../ipa-verify.txt
+          file Payload/Discipline.app/Discipline | tee -a ../ipa-verify.txt
+          lipo -info Payload/Discipline.app/Discipline | tee -a ../ipa-verify.txt
+          lipo -info Payload/Discipline.app/Discipline | grep -q arm64
+          ls -la Payload/Discipline.app | head -40 >> ../ipa-verify.txt
+          codesign -dv Payload/Discipline.app 2>&1 | tee -a ../ipa-verify.txt || echo "unsigned (expected): Plume Impactor signs it" | tee -a ../ipa-verify.txt
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: discipline-${{ github.run_id }}
+          path: |
+            out/*.ipa
+            out/*.sha256
+            out/*.txt
+            out/*.json
+            out/*.log
+            out/screenshots
+            out/walkthrough.mp4
+          retention-days: 14
+
+      - name: Copy outputs to the private Hugging Face dataset (for Tab to read back)
+        if: always()
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then echo "no HF_TOKEN secret; skipping"; exit 0; fi
+          python3 -m pip install -q --break-system-packages huggingface_hub || python3 -m pip install -q huggingface_hub
+          python3 - <<'PY'
+          import os, glob
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          out = os.environ["OUT"]
+          run = os.environ["GITHUB_RUN_ID"]
+          keep = [p for p in glob.glob(out + "/*") if os.path.isfile(p) and not p.endswith(".xcresult")]
+          keep += glob.glob(out + "/screenshots/*.png")
+          for p in keep:
+              rel = os.path.relpath(p, out)
+              api.upload_file(path_or_fileobj=p, path_in_repo=f"runs/discipline-{run}/{rel}",
+                              repo_id="Saidie000/tab-render-out", repo_type="dataset")
+              print("uploaded", rel)
+          PY
+
+      - name: GitHub Release (tags only)
+        if: success() && startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" "$OUT/$IPA_NAME" "$OUT/$IPA_NAME.sha256" \
+            --title "Discipline ${GITHUB_REF_NAME}" --notes-file RELEASE_NOTES.md
