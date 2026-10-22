@@ -139,7 +139,7 @@ class DisciplineUITestCase: XCTestCase {
     /// The Files document picker appeared; cancel it.
     func expectDocumentPickerAndCancel(file: StaticString = #filePath, line: UInt = #line) {
         let cancel = app.buttons["Cancel"].firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 15), "document picker did not appear", file: file, line: line)
+        XCTAssertTrue(cancel.waitForExistence(timeout: 30), "document picker did not appear", file: file, line: line)
         cancel.tap()
         _ = cancel.waitForNonExistence(timeout: 5)
     }

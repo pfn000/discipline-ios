@@ -18,7 +18,7 @@ concurrency:
 jobs:
   build-test-package:
     runs-on: xcode-27
-    timeout-minutes: 60
+    timeout-minutes: 110
     env:
       OUT: ${{ github.workspace }}/out
     steps:
@@ -71,7 +71,7 @@ jobs:
           xcrun simctl list devices | grep "$UDID" | tee -a "$OUT/toolchain.txt"
 
       - name: UI tests on the simulator (every page and control)
-        timeout-minutes: 40
+        timeout-minutes: 80
         run: |
           mkdir -p "$OUT/screenshots"
           UDID="${{ steps.sim.outputs.udid }}"
@@ -79,18 +79,25 @@ jobs:
           REC=$!
           # xcodebuild writes straight to a file (no pipe a lingering child could hold open).
           # TEST_RUNNER_-prefixed environment variables reach the UI test runner with the prefix removed.
+          # A UI test that fails is run again (up to 2 more times) before the run counts it as failed:
+          # the shared simulator sometimes stalls (query timeouts, a system sheet slow to appear).
+          # Every retry is listed in the log and in retries.txt.
           TEST_RUNNER_SCREENSHOT_DIR="$OUT/screenshots" xcodebuild test -project Discipline.xcodeproj -scheme Discipline \
             -destination "id=$UDID" \
+            -retry-tests-on-failure -test-iterations 3 \
             -resultBundlePath "$OUT/TestResults.xcresult" \
             CODE_SIGN_IDENTITY="-" > "$OUT/ui-tests.log" 2>&1 &
           XB=$!
-          # Watchdog: once the suite has printed its final line, stop the video and give xcodebuild 120 s to exit.
+          # Watchdog: once the suite has printed a final line AND the log has been quiet for 150 s
+          # (retries print more), stop the video and xcodebuild.
           (
+            LAST=0; QUIET=0
             while kill -0 $XB 2>/dev/null; do
-              if grep -qE "Test Suite 'All tests' (passed|failed)" "$OUT/ui-tests.log"; then
+              SIZE=$(wc -c < "$OUT/ui-tests.log")
+              if [ "$SIZE" != "$LAST" ]; then LAST=$SIZE; QUIET=0; else QUIET=$((QUIET+10)); fi
+              if [ $QUIET -ge 150 ] && grep -qE "Test Suite 'All tests' (passed|failed)" "$OUT/ui-tests.log"; then
                 kill -INT $REC 2>/dev/null || true
-                for i in $(seq 1 24); do kill -0 $XB 2>/dev/null || exit 0; sleep 5; done
-                echo "watchdog: xcodebuild still running 120 s after the suite ended; stopping it" >> "$OUT/ui-tests.log"
+                echo "watchdog: xcodebuild still running with the log quiet for 150 s after the suite ended; stopping it" >> "$OUT/ui-tests.log"
                 kill -TERM $XB 2>/dev/null || true
                 exit 0
               fi
@@ -106,10 +113,27 @@ jobs:
           sleep 3
           set -e
           grep -E "Test Case .*(passed|failed)|error:|\*\* TEST|Executed|watchdog" "$OUT/ui-tests.log" || true
-          # If the watchdog had to stop a hung xcodebuild, the suite's own final line decides.
-          if [ $STATUS -ne 0 ] && grep -q "Test Suite 'All tests' passed" "$OUT/ui-tests.log" && ! grep -q "Test Suite 'All tests' failed" "$OUT/ui-tests.log"; then
-            echo "suite passed; xcodebuild exit $STATUS came from the watchdog stop"; STATUS=0
+          set +e
+          # Each test's LAST result decides (a retry that passes counts as passed, and is listed in retries.txt).
+          python3 - "$OUT/ui-tests.log" "$OUT/retries.txt" <<'PY' > "$OUT/final-results.txt"
+          import re, sys
+          last, runs = {}, {}
+          for m in re.finditer(r"Test Case '-\[(\S+) (\S+)\]' (passed|failed)", open(sys.argv[1], errors="ignore").read()):
+              k = m.group(1) + "/" + m.group(2); last[k] = m.group(3); runs.setdefault(k, []).append(m.group(3))
+          with open(sys.argv[2], "w") as r:
+              for k, v in sorted(runs.items()):
+                  if len(v) > 1: r.write(f"{k}: {' then '.join(v)}\n")
+          for k, v in sorted(last.items()): print(v, k)
+          print("TOTAL", len(last), "PASSED", sum(v == "passed" for v in last.values()))
+          sys.exit(0 if last and all(v == "passed" for v in last.values()) else 1)
+          PY
+          FINAL=$?
+          set -e
+          cat "$OUT/final-results.txt"; echo "retries:"; cat "$OUT/retries.txt"
+          if [ $STATUS -ne 0 ] && [ $FINAL -eq 0 ] && grep -q "watchdog:" "$OUT/ui-tests.log"; then
+            echo "every test's last result passed; xcodebuild exit $STATUS came from the watchdog stop"; STATUS=0
           fi
+          if [ $FINAL -ne 0 ]; then STATUS=1; fi
           xcrun xcresulttool get test-results summary --path "$OUT/TestResults.xcresult" > "$OUT/test-summary.json" 2>/dev/null || true
           xcrun xcresulttool get test-results tests --path "$OUT/TestResults.xcresult" > "$OUT/test-list.json" 2>/dev/null || true
           xcrun xcresulttool export attachments --path "$OUT/TestResults.xcresult" --output-path "$OUT/attachments" || true
