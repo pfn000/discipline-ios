@@ -14,7 +14,7 @@ Discipline.app (SwiftUI, iOS 26.0+, Liquid Glass)        DisciplineCore (Swift p
                                      Limits, About, hidden NCOM Lab)
 ```
 
-**DisciplineCore** holds everything that can be tested without a phone, and runs on Linux:
+**DisciplineCore** holds everything that can be tested without a phone (30 tests, run on the Mac CI runner):
 
 | File | Job |
 |---|---|

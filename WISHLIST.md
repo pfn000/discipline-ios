@@ -112,8 +112,8 @@ Mount Failed / Connection refused (os error 61) on iOS 27", 👍1 c19, closed);
 https://github.com/altstoreio/AltStore/issues/1751 (iOS27 machineID, see item 4, 👍82 c55).
 **Demand signal:** 64 comments on the LiveContainer thread is the highest comment count
 found on any issue in this pass.
-**Feasibility:** **PARTLY.** Discipline's own SwiftUI code targets iOS 26+; whether it runs on
-27.2 beta 4 is unverified (it hasn't been compiled or run yet). It cannot patch bugs inside LiveContainer/StikDebug/
+**Feasibility:** **PARTLY.** Discipline's own SwiftUI code targets iOS 26+; it is built with the iOS 27.2 SDK and
+tested on an iOS 27.0 simulator; it has not been run on iOS 27.2 beta 4 or on a physical device. It cannot patch bugs inside LiveContainer/StikDebug/
 AltStore themselves. A "compatibility status" badge per managed tool (pulled from that
 repo's latest issues/releases, same API used here) is buildable and genuinely useful,
 short of actually fixing anything upstream.
@@ -272,17 +272,19 @@ this whole failure class.
   given as a known reference.
 
 
-## Built in Discipline v0.1.0 (source written; not yet compiled or UI-tested; see README status)
+## Implemented in Discipline v0.1.0 (CI compiled; 12 UI tests on an iOS 27.0 simulator; no real-device installation)
+
+The UI tests run with fixtures: a sample .ipa, a mock GitHub API and simulated companion apps. They check what Discipline shows and which link it sends, not what LocalDevVPN, SideStore or LiveContainer do with it, and not real downloads.
 
 | Wishlist item | Where | UI test |
 |---|---|---|
-| 1. Expiry countdowns (from the signing date you enter) + Refresh All (one tap starts it: LocalDevVPN on, SideStore opened; you finish with SideStore's own Refresh All) | Home, Expiry | `HomeUITests`, `ExpiryUITests` |
-| 2. GitHub → release lookup, download, install hand-off, manual "Check for updates" with badges (no background fetching or notifications) | GitHub tab | `GitHubUITests` |
+| 1. Expiry countdowns (from the signing date you enter) + Refresh All (one tap sends LocalDevVPN a link asking it to turn on and open SideStore; you finish with SideStore's own Refresh All) | Home, Expiry | `HomeUITests`, `ExpiryUITests` (simulated companions: the link sent is checked, the hand-off is not) |
+| 2. GitHub → release lookup, download, install hand-off, manual "Check for updates" with badges (no background fetching or notifications) | GitHub tab | `GitHubUITests` (mock GitHub API; no real download) |
 | 7. App ID slots counter | Expiry → App IDs | `ExpiryUITests`, `LibraryUITests` |
-| 8. Backup / restore of settings, tracked apps, saved repos and the App ID log (not the .ipa files) | More → Settings → Backup | `MoreUITests.testSettingsEveryControl` |
-| 12. Shortcuts / App Intents (Refresh All, VPN On) | Shortcuts app | not UI-testable from XCUITest; logic shared with Home buttons |
+| 8. Backup / restore of settings, tracked apps, saved repos and the App ID log (not the .ipa files) | More → Settings → Backup | Backup/share UI and restore picker only (`MoreUITests.testSettingsEveryControl`); round-trip restore not tested |
+| 12. Shortcuts / App Intents (Refresh All, VPN On) | Shortcuts app | Shortcuts invocation not tested; the Home buttons' tests are not a substitute |
 | 10. Entitlement inspector (read-only; editing would need re-signing) | NCOM Lab | `LabUITests` |
-| 11. Show where an app came from | Library → app → From | `LibraryUITests`, `GitHubUITests` |
-| 14. Installed app size | Library → app → Size | `LibraryUITests` |
+| 11. Show where an app came from | Library → app → From | not asserted by the current UI suite |
+| 14. Installed app size | Library → app → Size | not asserted by the current UI suite |
 
 Not built: alternate icons (needs icon variants designed by NCOM), DNS for LocalDevVPN (that lives in LocalDevVPN), and items marked not applicable above.

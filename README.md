@@ -2,15 +2,15 @@
 
 # Discipline
 
-**One home for your sideloaded apps.** Discipline ties together LocalDevVPN, SideStore and LiveContainer: it opens .ipa files, pulls apps straight from GitHub releases, counts down each app's signature from the date you signed it, and starts a refresh with one tap (LocalDevVPN on, SideStore opened; SideStore does the refreshing). Built by NCOM Systems for iOS 26+ with Liquid Glass.
+**One home for your sideloaded apps.** Discipline ties together LocalDevVPN, SideStore and LiveContainer: it is built to open .ipa files, find .ipa files in GitHub releases, count down each app's signature from the date you signed it, and start a refresh with one tap (it sends LocalDevVPN a link asking it to turn on and then open SideStore; SideStore does the refreshing). Built by NCOM Systems for iOS 26+ with Liquid Glass. So far it has been tested only on a simulator with test data (see Status).
 
-> **Status (2026-10-22):** compiled and tested on GitHub's Mac runner ([CI run #8](https://github.com/pfn000/discipline-ios/actions/runs/39819722184)): Xcode 27.2 with the iOS 27.2 SDK, 30/30 core logic tests, and 12/12 UI tests on an iPhone 18 Pro **simulator running iOS 27.0**. In this run no UI test needed a retry. The run also built an **unsigned** `Discipline-v0.1.0-unsigned.ipa` (arm64, minimum iOS 26.0). It has **not** been installed or run on a real iPhone yet, and it is not signed: you sign it yourself (see Install).
+> **Status (2026-10-22):** compiled and tested on GitHub's Mac runner ([CI run #8](https://github.com/pfn000/discipline-ios/actions/runs/39819722184)): Xcode 27.2 with the iOS 27.2 SDK, 30/30 core logic tests, and 12/12 UI tests on an iPhone 18 Pro **simulator running iOS 27.0**. In this run no UI test needed a retry. The run also built an **unsigned** `Discipline-v0.1.0-unsigned.ipa` (arm64, minimum iOS 26.0). It has **not** been installed or run on a real iPhone, it has not been run on iOS 27.2 (27.2 is only the SDK it was built with), and it is not signed: you sign it yourself (see Install). There is no GitHub Release.
 
 ## Features
 
 | | Feature | What it does |
 |---|---|---|
-| 🔄 | **Refresh All** | One tap turns on LocalDevVPN, which opens SideStore; you finish with SideStore's own Refresh All. Also available as a Shortcut ("Refresh my apps with Discipline") |
+| 🔄 | **Refresh All** | One tap sends LocalDevVPN a link asking it to turn on and then open SideStore; you finish with SideStore's own Refresh All. A Shortcut ("Refresh my apps with Discipline") is included but has not been tested |
 | ⏳ | **Expiry** | Countdown for every app from the signing date you enter, reminders 48 h, 24 h and 2 h before it expires, and a counter for the 10 App IDs per week a free account gets |
 | 📦 | **Open in Discipline** | Tap any .ipa in Files or Safari. Discipline shows its name, icon, version, bundle ID and extensions, then hands it to LiveContainer or SideStore |
 | 🐙 | **GitHub to iOS** | Paste a repo or release link. Discipline lists the .ipa files, downloads them, hands them off to install, saves the repo, and badges updates when you tap Check for updates |
@@ -18,6 +18,8 @@
 | 🧪 | **NCOM Lab** *(hidden)* | Entitlements inspector, capability map for the Ouija Board app (UWB, BLE, NFC, Wi-Fi Aware…) and a signing preset builder. To unlock it, long-press the version number in More 7 times |
 | 🧭 | **Setup** | A checklist for Developer Mode, LocalDevVPN, SideStore and LiveContainer, with the right link for each step |
 | 💜 | **Support** | A tip button that opens NCOM's Stripe donate page |
+
+**These are implemented app flows, not device-verified integrations.** CI exercised them only on an iOS 27.0 simulator with fixtures: a sample .ipa opened by a test flag, a mock GitHub API, simulated companion apps (the tests check that Discipline sends the right link, not what LocalDevVPN, SideStore or LiveContainer then do) and a sample privacy report. Importing from Files or Safari, real GitHub downloads, the LocalDevVPN / SideStore / LiveContainer hand-offs, Shortcuts, reminders actually firing, backup restore and installing an app still need real-device testing.
 
 ## Screenshots
 
@@ -31,7 +33,7 @@ Captured by the UI tests in [CI run #8](https://github.com/pfn000/discipline-ios
 
 ## Install
 
-There is no public download and no GitHub Release. The unsigned IPA exists only as an artifact of the CI run (`discipline-39819722184`, kept until 2026-11-05). Note that artifacts on a public repo can be downloaded by anyone logged in to GitHub. Its SHA-256 is `c7062a1fd25af8becf39cda2d45daa11642507b030d263cd9b1373e007b46a36`.
+There is no GitHub Release. The unsigned IPA is in CI run #8's artifact `discipline-39819722184`, which anyone signed in to GitHub can download (this repo is public) until 2026-11-05 17:51 UTC. It is not signed and has not been installed on a device. Its SHA-256 is `c7062a1fd25af8becf39cda2d45daa11642507b030d263cd9b1373e007b46a36`. Later green runs on `main` upload the same kind of artifact for 14 days; run #8's is the one checked here.
 
 You sign it yourself with **Plume Impactor** and your Apple ID: see [PLUME-INSTALL.md](PLUME-INSTALL.md). A free Apple ID lasts 7 days and a paid one ($99/yr) lasts a year. Nothing makes it permanent; see [RESEARCH.md §4](RESEARCH.md). It has not yet been tried on a real device.
 
@@ -54,10 +56,10 @@ Anything that can't work in a sideloaded app is left out rather than shown as a 
 brew install xcodegen
 xcodegen generate
 open Discipline.xcodeproj           # Xcode 27 (iOS 26 SDK or newer)
-cd DisciplineCore && swift test     # logic tests (also run on Linux)
+cd DisciplineCore && swift test     # logic tests
 ```
 
-CI (`.github/workflows/ios.yml`) runs on GitHub's `xcode-27` Mac runner. It runs the core tests and every UI test (a failed UI test is re-run up to 2 more times, and every retry is listed in the run's `retries.txt`), records the simulator, builds `Discipline-vX-unsigned.ipa`, checks it (`Payload/Discipline.app`, Info.plist, arm64) and uploads it as a run artifact. Only a successful `v*` tag build attaches it and its SHA-256 to a GitHub Release, and only while the repo is private, so an unsigned IPA is never published on a public repo.
+CI (`.github/workflows/ios.yml`) runs on GitHub's `xcode-27` Mac runner. It runs the core tests and the 12 UI tests (a failed UI test is re-run up to 2 more times, and every retry is listed in the run's `retries.txt`), records the simulator, builds `Discipline-vX-unsigned.ipa`, checks it (`Payload/Discipline.app`, Info.plist, arm64) and uploads it as a run artifact. The workflow has no Release step and only read access to the repo's contents, so it never creates a GitHub Release. The run artifact itself is downloadable by anyone signed in to GitHub for 14 days, because this repo is public.
 
 ## Docs
 

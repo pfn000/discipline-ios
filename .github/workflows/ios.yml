@@ -2,7 +2,8 @@ name: ios
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+    # Docs-only commits don't rebuild (a commit that also touches code or this workflow still runs).
+    paths-ignore: ["**/*.md", "docs/**"]
   workflow_dispatch:
     inputs:
       req:
@@ -10,8 +11,10 @@ on:
         required: false
         default: ""
 run-name: "ios ${{ github.ref_name }} ${{ inputs.req }}"
+# Read-only: this workflow never creates a GitHub Release (the repo is public, and an unsigned IPA
+# must never be published as a Release). The IPA is uploaded only as a run artifact.
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: ios-${{ github.ref }}
   cancel-in-progress: true
@@ -70,7 +73,7 @@ jobs:
           xcrun simctl bootstatus "$UDID" -b
           xcrun simctl list devices | grep "$UDID" | tee -a "$OUT/toolchain.txt"
 
-      - name: UI tests on the simulator (every page and control)
+      - name: UI tests on the simulator (12 app flows with fixtures)
         timeout-minutes: 80
         run: |
           mkdir -p "$OUT/screenshots"
@@ -192,8 +195,9 @@ jobs:
         if: always()
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_OUT_REPO: ${{ vars.HF_OUT_REPO }}
         run: |
-          if [ -z "$HF_TOKEN" ]; then echo "no HF_TOKEN secret; skipping"; exit 0; fi
+          if [ -z "$HF_TOKEN" ] || [ -z "$HF_OUT_REPO" ]; then echo "no HF_TOKEN secret or HF_OUT_REPO variable; skipping"; exit 0; fi
           python3 -m pip install -q --break-system-packages huggingface_hub || python3 -m pip install -q huggingface_hub
           python3 - <<'PY'
           import os, glob
@@ -207,15 +211,6 @@ jobs:
           for p in keep:
               rel = os.path.relpath(p, out)
               api.upload_file(path_or_fileobj=p, path_in_repo=f"runs/discipline-{run}/{rel}",
-                              repo_id="Saidie000/tab-render-out", repo_type="dataset")
+                              repo_id=os.environ["HF_OUT_REPO"], repo_type="dataset")
               print("uploaded", rel)
           PY
-
-      # Only while the repo is private: an unsigned IPA must not be published on a public repo.
-      - name: GitHub Release (tags only, private repo only)
-        if: success() && startsWith(github.ref, 'refs/tags/v') && github.event.repository.private == true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "${GITHUB_REF_NAME}" "$OUT/$IPA_NAME" "$OUT/$IPA_NAME.sha256" \
-            --title "Discipline ${GITHUB_REF_NAME}" --notes-file RELEASE_NOTES.md
