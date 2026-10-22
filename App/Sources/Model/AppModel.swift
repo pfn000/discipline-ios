@@ -210,17 +210,12 @@ final class AppModel: ObservableObject {
     func installRemote(_ remote: URL, with companion: Companion, appIDCost: Int) async {
         guard let link = try? DeepLinks.install(ipa: remote, with: companion) else { return }
         await send(link, to: companion)
-        if companion == .sideStore, installed.contains(.sideStore) { budget.record(Date(), count: appIDCost) }
+        // App IDs are only counted when the user confirms the install ("I installed it with SideStore").
     }
 
     /// Called after the share sheet hands a local file to SideStore (direct signing spends App IDs).
     func noteSideStoreShare(_ item: LibraryItem) {
         budget.record(Date(), count: item.appIDCost)
-    }
-
-    func track(_ item: LibraryItem) {
-        let app = TrackedApp(name: item.displayName, bundleID: item.bundleID, signedAt: Date(), tier: settings.tier)
-        addTracked(app)
     }
 
     // MARK: Expiry
@@ -368,7 +363,10 @@ final class AppModel: ObservableObject {
 
     func exportBackup() -> URL? {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("Discipline-backup.json")
-        guard let data = try? Persistence.encoder.encode(snapshot), (try? data.write(to: url, options: .atomic)) != nil else {
+        // Settings, tracked apps, saved repos and the App ID log. Imported .ipa files are not included.
+        var backup = snapshot
+        backup.library = []
+        guard let data = try? Persistence.encoder.encode(backup), (try? data.write(to: url, options: .atomic)) != nil else {
             show("Couldn't write the backup.", error: true); return nil
         }
         return url

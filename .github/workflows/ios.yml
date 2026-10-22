@@ -43,7 +43,9 @@ jobs:
 
       - name: Core logic tests (swift test)
         working-directory: DisciplineCore
-        run: swift test 2>&1 | tee "$OUT/core-tests.log"
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tee "$OUT/core-tests.log"
 
       - name: Pick simulator
         id: sim
@@ -74,11 +76,11 @@ jobs:
           xcrun simctl io "${{ steps.sim.outputs.udid }}" recordVideo --codec=h264 --force "$OUT/walkthrough.mp4" &
           REC=$!
           set +e
-          xcodebuild test -project Discipline.xcodeproj -scheme Discipline \
+          # TEST_RUNNER_-prefixed environment variables reach the UI test runner with the prefix removed.
+          TEST_RUNNER_SCREENSHOT_DIR="$OUT/screenshots" xcodebuild test -project Discipline.xcodeproj -scheme Discipline \
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -resultBundlePath "$OUT/TestResults.xcresult" \
-            CODE_SIGN_IDENTITY="-" \
-            TEST_RUNNER_SCREENSHOT_DIR="$OUT/screenshots" 2>&1 | tee "$OUT/ui-tests.log" | grep -E "Test Case|error:|failed|passed|\*\* TEST" 
+            CODE_SIGN_IDENTITY="-" 2>&1 | tee "$OUT/ui-tests.log" | grep -E "Test Case|error:|failed|passed|\*\* TEST" 
           STATUS=${PIPESTATUS[0]}
           set -e
           kill -INT $REC || true
@@ -94,6 +96,7 @@ jobs:
         run: |
           VERSION=$(grep MARKETING_VERSION project.yml | head -1 | sed 's/.*"\(.*\)".*/\1/')
           NAME="Discipline-v${VERSION}-unsigned.ipa"
+          set -o pipefail
           xcodebuild -project Discipline.xcodeproj -scheme Discipline -configuration Release \
             -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tail -20
@@ -130,6 +133,7 @@ jobs:
             out/*.json
             out/*.log
             out/screenshots
+            out/attachments
             out/walkthrough.mp4
           retention-days: 14
 
@@ -148,6 +152,7 @@ jobs:
           run = os.environ["GITHUB_RUN_ID"]
           keep = [p for p in glob.glob(out + "/*") if os.path.isfile(p) and not p.endswith(".xcresult")]
           keep += glob.glob(out + "/screenshots/*.png")
+          keep += [p for p in glob.glob(out + "/attachments/*") if p.endswith((".png", ".json"))]
           for p in keep:
               rel = os.path.relpath(p, out)
               api.upload_file(path_or_fileobj=p, path_in_repo=f"runs/discipline-{run}/{rel}",
@@ -155,8 +160,9 @@ jobs:
               print("uploaded", rel)
           PY
 
-      - name: GitHub Release (tags only)
-        if: success() && startsWith(github.ref, 'refs/tags/v')
+      # Only while the repo is private: an unsigned IPA must not be published on a public repo.
+      - name: GitHub Release (tags only, private repo only)
+        if: success() && startsWith(github.ref, 'refs/tags/v') && github.event.repository.private == true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

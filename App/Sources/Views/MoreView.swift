@@ -165,7 +165,7 @@ struct SettingsView: View {
             } header: { Text("GitHub") } footer: {
                 Text("Stored only in this iPhone's Keychain. A read-only token with no scopes is enough for public repos.")
             }
-            Section("Backup") {
+            Section {
                 if let backupURL {
                     ShareLink(item: backupURL) { Label("Share backup file", systemImage: "square.and.arrow.up") }
                         .accessibilityIdentifier("settings.shareBackup")
@@ -175,6 +175,8 @@ struct SettingsView: View {
                 }
                 Button { importing = true } label: { Label("Restore backup", systemImage: "arrow.down.doc") }
                     .accessibilityIdentifier("settings.restore")
+            } header: { Text("Backup") } footer: {
+                Text("Saves tracked apps, saved GitHub repos, the App ID log and settings. Imported .ipa files aren't included; keep those in Files.")
             }
         }
         .navigationTitle("Settings")

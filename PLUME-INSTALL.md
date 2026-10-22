@@ -4,7 +4,7 @@ You need: a Windows PC (with iTunes from Apple installed, or the Apple Devices a
 
 > Status 2026-10-22: the IPA hasn't been built yet. The GitHub build is waiting on the account's Actions billing (see README). These steps apply once it exists.
 
-1. **Check the file.** Compare its SHA-256 with the `.sha256` file from the release (PowerShell: `Get-FileHash .\Discipline-v0.1.0-unsigned.ipa`).
+1. **Check the file.** Compare its SHA-256 with the `.sha256` file that came with it (private GitHub Release or CI artifact; never from a public page) (PowerShell: `Get-FileHash .\Discipline-v0.1.0-unsigned.ipa`).
 2. **Plug in the iPhone** and unlock it. Tap **Trust** and enter your passcode if asked.
 3. **Open Plume Impactor** and sign in with your Apple ID. Your password goes to Apple from Plume; Discipline never sees it.
 4. **Drag the .ipa** into Plume Impactor (or choose it), then install. Plume registers the app with Apple, signs it for 7 days on a free account (365 on a paid one) and installs it.

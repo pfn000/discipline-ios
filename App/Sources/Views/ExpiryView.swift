@@ -87,9 +87,15 @@ struct ExpiryView: View {
 struct AddTrackedAppSheet: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
-    @State var name = ""
-    @State var bundleID = ""
+    @State var name: String
+    @State var bundleID: String
     @State var signedAt = Date()
+
+    /// The signing date can't be read from an .ipa, so the user confirms when it was last signed or refreshed.
+    init(name: String = "", bundleID: String = "") {
+        _name = State(initialValue: name)
+        _bundleID = State(initialValue: bundleID)
+    }
 
     var body: some View {
         NavigationStack {
@@ -98,8 +104,12 @@ struct AddTrackedAppSheet: View {
                 TextField("Bundle ID (optional)", text: $bundleID)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                     .accessibilityIdentifier("add.bundleID")
-                DatePicker("Signed / refreshed", selection: $signedAt, in: ...Date())
-                    .accessibilityIdentifier("add.date")
+                Section {
+                    DatePicker("Signed / refreshed", selection: $signedAt, in: ...Date())
+                        .accessibilityIdentifier("add.date")
+                } footer: {
+                    Text("Pick when Plume Impactor or SideStore last signed or refreshed it. The countdown and reminders count from this date.")
+                }
             }
             .navigationTitle("Track an app")
             .toolbar {

@@ -60,7 +60,7 @@ Limits (SideStore FAQ, https://docs.sidestore.io/docs/faq): a free account signs
 - No legitimate way makes a signature permanent. Free = 7 days, paid = 365 days.
 - Enterprise certificates sold as "permanent" get revoked by Apple; using one breaks Apple's terms and puts your Apple ID and data at risk. Not recommended.
 - **TrollStore** (permanent signing through a CoreTrust bug) supports iOS 14.0 to 16.6.1, 16.7 RC and 17.0 only (https://theapplewiki.com/wiki/TrollStore). It does not work on iOS 27.
-- The closest real thing: **LiveContainer + SideStore**. Apps inside LiveContainer are not signed one by one; only LiveContainer (and SideStore) need refreshing, and SideStore refreshes in the background while LocalDevVPN is on. Discipline adds countdowns, reminders 48/24/2 hours ahead, one-tap Refresh All, and an App ID counter.
+- The closest real thing: **LiveContainer + SideStore**. Apps inside LiveContainer are not signed one by one; only LiveContainer (and SideStore) need refreshing, and SideStore refreshes in the background while LocalDevVPN is on. Discipline adds countdowns from the signing date you enter, reminders 48/24/2 hours ahead, a one-tap start to the refresh (LocalDevVPN on, SideStore opened; you finish with SideStore's Refresh All), and an App ID counter.
 
 ## 5. iOS 27.2 beta, Plume Impactor, Developer Mode
 

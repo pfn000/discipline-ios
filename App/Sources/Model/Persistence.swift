@@ -41,7 +41,7 @@ struct AppSettings: Codable, Equatable {
     var includePrereleases: Bool = false
 }
 
-/// Everything Discipline keeps, in one JSON file. Also the format of an exported backup.
+/// Everything Discipline keeps, in one JSON file. An exported backup uses the same format with `library` left empty.
 struct Snapshot: Codable, Equatable {
     var version: Int = 1
     var trackedApps: [TrackedApp] = []

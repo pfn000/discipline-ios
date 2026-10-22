@@ -112,8 +112,8 @@ Mount Failed / Connection refused (os error 61) on iOS 27", 👍1 c19, closed);
 https://github.com/altstoreio/AltStore/issues/1751 (iOS27 machineID, see item 4, 👍82 c55).
 **Demand signal:** 64 comments on the LiveContainer thread is the highest comment count
 found on any issue in this pass.
-**Feasibility:** **PARTLY.** Discipline's own SwiftUI code targets iOS 26+ and runs fine on
-27.2 beta 4 per the build worker's note; it cannot patch bugs inside LiveContainer/StikDebug/
+**Feasibility:** **PARTLY.** Discipline's own SwiftUI code targets iOS 26+; whether it runs on
+27.2 beta 4 is unverified (it hasn't been compiled or run yet). It cannot patch bugs inside LiveContainer/StikDebug/
 AltStore themselves. A "compatibility status" badge per managed tool (pulled from that
 repo's latest issues/releases, same API used here) is buildable and genuinely useful,
 short of actually fixing anything upstream.
@@ -272,14 +272,14 @@ this whole failure class.
   given as a known reference.
 
 
-## Built in Discipline v0.1.0
+## Built in Discipline v0.1.0 (source written; not yet compiled or UI-tested; see README status)
 
 | Wishlist item | Where | UI test |
 |---|---|---|
-| 1. Expiry tracking + Refresh All | Home, Expiry | `HomeUITests`, `ExpiryUITests` |
-| 2. GitHub → latest .ipa + update alerts | GitHub tab | `GitHubUITests` |
+| 1. Expiry countdowns (from the signing date you enter) + Refresh All (one tap starts it: LocalDevVPN on, SideStore opened; you finish with SideStore's own Refresh All) | Home, Expiry | `HomeUITests`, `ExpiryUITests` |
+| 2. GitHub → release lookup, download, install hand-off, manual "Check for updates" with badges (no background fetching or notifications) | GitHub tab | `GitHubUITests` |
 | 7. App ID slots counter | Expiry → App IDs | `ExpiryUITests`, `LibraryUITests` |
-| 8. Backup / restore | More → Settings → Backup | `MoreUITests.testSettingsEveryControl` |
+| 8. Backup / restore of settings, tracked apps, saved repos and the App ID log (not the .ipa files) | More → Settings → Backup | `MoreUITests.testSettingsEveryControl` |
 | 12. Shortcuts / App Intents (Refresh All, VPN On) | Shortcuts app | not UI-testable from XCUITest; logic shared with Home buttons |
 | 10. Entitlement inspector (read-only; editing would need re-signing) | NCOM Lab | `LabUITests` |
 | 11. Show where an app came from | Library → app → From | `LibraryUITests`, `GitHubUITests` |
