@@ -71,6 +71,14 @@ final class LabUITests: DisciplineUITestCase {
         snap("25-lab-preset")
         tap("lab.share")
         expectShareSheetAndClose()
+        // The list is about 5 screens long and closing the share sheet can leave it scrolled to the top,
+        // so walk all the way down to the reset button before tapping it.
+        let reset = el("lab.reset")
+        var swipes = 0
+        while !(reset.exists && reset.isHittable) && swipes < 20 {
+            app.swipeUp()
+            swipes += 1
+        }
         tap("lab.reset")
         XCTAssertFalse(el("lab.share").exists)
         type("lab.presetBundle", "x")
