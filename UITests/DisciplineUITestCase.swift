@@ -159,12 +159,35 @@ class DisciplineUITestCase: XCTestCase {
 
     func type(_ id: String, _ text: String, clear: Bool = false) {
         let f = tap(id)
-        if clear, let current = f.value as? String, !current.isEmpty {
+        let before = f.value as? String ?? ""
+        let wasEmpty = before.isEmpty || before == (f.placeholderValue ?? "")
+        if clear, !wasEmpty {
             // Put the cursor at the end of the text before deleting.
             f.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5)).tap()
-            f.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 4))
+            f.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: before.count + 4))
         }
-        f.typeText(text)
+        typeChunks(f, text)
+        // The simulator keyboard sometimes drops a repeated letter ("https" -> "hps"). Check and retype once.
+        if (wasEmpty || clear), !text.isEmpty, (f.value as? String) != text {
+            let now = f.value as? String ?? ""
+            f.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5)).tap()
+            f.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: now.count + 4))
+            for c in text { f.typeText(String(c)); usleep(120_000) }
+        }
+    }
+
+    /// Types in pieces split between doubled letters, so no key is pressed twice in a row within one call.
+    func typeChunks(_ f: XCUIElement, _ text: String) {
+        var chunk = ""
+        for c in text {
+            if let last = chunk.last, last == c {
+                f.typeText(chunk)
+                usleep(150_000)
+                chunk = ""
+            }
+            chunk.append(c)
+        }
+        if !chunk.isEmpty { f.typeText(chunk) }
     }
 
     /// Waits until a text field shows the typed text, then gives SwiftUI a moment to commit it to the model.
