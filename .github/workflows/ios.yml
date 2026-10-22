@@ -97,7 +97,8 @@ jobs:
               if [ "$SIZE" != "$LAST" ]; then LAST=$SIZE; QUIET=0; else QUIET=$((QUIET+10)); fi
               if [ $QUIET -ge 150 ] && grep -qE "Test Suite 'All tests' (passed|failed)" "$OUT/ui-tests.log"; then
                 kill -INT $REC 2>/dev/null || true
-                echo "watchdog: xcodebuild still running with the log quiet for 150 s after the suite ended; stopping it" >> "$OUT/ui-tests.log"
+                # A marker file, not the log: xcodebuild's own final writes can overwrite a line appended to its log.
+                echo "watchdog: xcodebuild still running with the log quiet for 150 s after the suite ended; stopped it" > "$OUT/watchdog.txt"
                 kill -TERM $XB 2>/dev/null || true
                 exit 0
               fi
@@ -130,7 +131,7 @@ jobs:
           FINAL=$?
           set -e
           cat "$OUT/final-results.txt"; echo "retries:"; cat "$OUT/retries.txt"
-          if [ $STATUS -ne 0 ] && [ $FINAL -eq 0 ] && grep -q "watchdog:" "$OUT/ui-tests.log"; then
+          if [ $STATUS -ne 0 ] && [ $FINAL -eq 0 ] && [ -f "$OUT/watchdog.txt" ]; then
             echo "every test's last result passed; xcodebuild exit $STATUS came from the watchdog stop"; STATUS=0
           fi
           if [ $FINAL -ne 0 ]; then STATUS=1; fi
