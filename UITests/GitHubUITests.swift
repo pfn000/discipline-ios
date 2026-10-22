@@ -55,9 +55,10 @@ final class GitHubUITests: DisciplineUITestCase {
         type("github.field", "", clear: true)
         type("github.field", "ratelimited/repo")
         tap("github.find")
-        let limited = NSPredicate(format: "label CONTAINS 'hourly limit'")
-        expectation(for: limited, evaluatedWith: el("github.error"))
-        waitForExpectations(timeout: 10)
+        let error = el("github.error")
+        let deadline = Date().addingTimeInterval(10)
+        while Date() < deadline, !(error.exists && error.label.contains("hourly limit")) { usleep(250_000) }
+        XCTAssertTrue(error.label.contains("hourly limit"), "rate-limit error shown, got '\(error.exists ? error.label : "none")'")
         snap("10-github-error")
     }
 }

@@ -71,24 +71,50 @@ jobs:
           xcrun simctl list devices | grep "$UDID" | tee -a "$OUT/toolchain.txt"
 
       - name: UI tests on the simulator (every page and control)
+        timeout-minutes: 40
         run: |
           mkdir -p "$OUT/screenshots"
-          xcrun simctl io "${{ steps.sim.outputs.udid }}" recordVideo --codec=h264 --force "$OUT/walkthrough.mp4" &
+          UDID="${{ steps.sim.outputs.udid }}"
+          xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$OUT/walkthrough.mp4" > "$OUT/recorder.log" 2>&1 &
           REC=$!
-          set +e
+          # xcodebuild writes straight to a file (no pipe a lingering child could hold open).
           # TEST_RUNNER_-prefixed environment variables reach the UI test runner with the prefix removed.
           TEST_RUNNER_SCREENSHOT_DIR="$OUT/screenshots" xcodebuild test -project Discipline.xcodeproj -scheme Discipline \
-            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -destination "id=$UDID" \
             -resultBundlePath "$OUT/TestResults.xcresult" \
-            CODE_SIGN_IDENTITY="-" 2>&1 | tee "$OUT/ui-tests.log" | grep -E "Test Case|error:|failed|passed|\*\* TEST" 
-          STATUS=${PIPESTATUS[0]}
-          set -e
-          kill -INT $REC || true
+            CODE_SIGN_IDENTITY="-" > "$OUT/ui-tests.log" 2>&1 &
+          XB=$!
+          # Watchdog: once the suite has printed its final line, stop the video and give xcodebuild 120 s to exit.
+          (
+            while kill -0 $XB 2>/dev/null; do
+              if grep -qE "Test Suite 'All tests' (passed|failed)" "$OUT/ui-tests.log"; then
+                kill -INT $REC 2>/dev/null || true
+                for i in $(seq 1 24); do kill -0 $XB 2>/dev/null || exit 0; sleep 5; done
+                echo "watchdog: xcodebuild still running 120 s after the suite ended; stopping it" >> "$OUT/ui-tests.log"
+                kill -TERM $XB 2>/dev/null || true
+                exit 0
+              fi
+              sleep 10
+            done
+          ) &
+          WD=$!
+          set +e
+          wait $XB
+          STATUS=$?
+          kill $WD 2>/dev/null
+          kill -INT $REC 2>/dev/null
           sleep 3
-          xcrun xcresulttool get test-results summary --path "$OUT/TestResults.xcresult" > "$OUT/test-summary.json" || true
-          xcrun xcresulttool get test-results tests --path "$OUT/TestResults.xcresult" > "$OUT/test-list.json" || true
+          set -e
+          grep -E "Test Case .*(passed|failed)|error:|\*\* TEST|Executed|watchdog" "$OUT/ui-tests.log" || true
+          # If the watchdog had to stop a hung xcodebuild, the suite's own final line decides.
+          if [ $STATUS -ne 0 ] && grep -q "Test Suite 'All tests' passed" "$OUT/ui-tests.log" && ! grep -q "Test Suite 'All tests' failed" "$OUT/ui-tests.log"; then
+            echo "suite passed; xcodebuild exit $STATUS came from the watchdog stop"; STATUS=0
+          fi
+          xcrun xcresulttool get test-results summary --path "$OUT/TestResults.xcresult" > "$OUT/test-summary.json" 2>/dev/null || true
+          xcrun xcresulttool get test-results tests --path "$OUT/TestResults.xcresult" > "$OUT/test-list.json" 2>/dev/null || true
           xcrun xcresulttool export attachments --path "$OUT/TestResults.xcresult" --output-path "$OUT/attachments" || true
           cat "$OUT/test-summary.json" || true
+          echo "ui tests exit status: $STATUS"
           exit $STATUS
 
       - name: Build unsigned IPA (Release, device)

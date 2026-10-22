@@ -4,8 +4,24 @@ import XCTest
 class DisciplineUITestCase: XCTestCase {
     var app: XCUIApplication!
 
+    private var dumpedFailure = false
+
     override func setUp() {
         continueAfterFailure = false
+    }
+
+    /// On the first failure of a test, save the screen and the full element tree next to the screenshots,
+    /// so a CI failure can be read without the result bundle.
+    override func record(_ issue: XCTIssue) {
+        if !dumpedFailure, let app, let dir = ProcessInfo.processInfo.environment["SCREENSHOT_DIR"], !dir.isEmpty {
+            dumpedFailure = true
+            let base = URL(fileURLWithPath: dir).appendingPathComponent("FAIL-\(name.filter { $0.isLetter || $0.isNumber })")
+            try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+            let text = "\(issue.compactDescription)\n\n\(app.debugDescription)"
+            try? text.write(to: base.appendingPathExtension("txt"), atomically: true, encoding: .utf8)
+            try? XCUIScreen.main.screenshot().pngRepresentation.write(to: base.appendingPathExtension("png"))
+        }
+        super.record(issue)
     }
 
     func launch(_ extra: [String] = []) {
@@ -42,9 +58,29 @@ class DisciplineUITestCase: XCTestCase {
         }
     }
 
-    func tab(_ name: String) {
+    /// Closes the keyboard if one is up (it covers the tab bar).
+    func hideKeyboard() {
+        guard app.keyboards.firstMatch.exists else { return }
+        for key in ["return", "Return", "done", "Done", "Go", "go", "Search", "search"] {
+            let k = app.keyboards.buttons[key].firstMatch
+            if k.exists && k.isHittable { k.tap(); break }
+        }
+        if app.keyboards.firstMatch.exists {
+            app.navigationBars.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+        _ = app.keyboards.firstMatch.waitForNonExistence(timeout: 3)
+    }
+
+    func tab(_ name: String, file: StaticString = #filePath, line: UInt = #line) {
+        hideKeyboard()
         let b = app.tabBars.buttons[name]
-        if b.waitForExistence(timeout: 5) { b.tap() } else { app.buttons[name].firstMatch.tap() }
+        if b.waitForExistence(timeout: 5) { b.tap(); return }
+        // A minimized tab bar (scrolled down) shows only the current tab: scroll back up to expand it.
+        for _ in 0..<3 where !b.exists { app.swipeDown(velocity: .slow) }
+        if b.waitForExistence(timeout: 3) { b.tap(); return }
+        let any = app.buttons.matching(NSPredicate(format: "label == %@ AND elementType != %ld", name, Int(XCUIElement.ElementType.key.rawValue))).firstMatch
+        XCTAssertTrue(any.waitForExistence(timeout: 3), "tab \(name) not found", file: file, line: line)
+        any.tap()
     }
 
     /// Waits for the toast and checks its text (label) and optional exact detail (value).
@@ -111,7 +147,9 @@ class DisciplineUITestCase: XCTestCase {
     /// Flips a SwiftUI Toggle by tapping its switch (right edge of the row).
     func flip(_ id: String) {
         let s = app.switches[id].firstMatch
-        XCTAssertTrue(s.waitForExistence(timeout: 10), "missing switch \(id)")
+        // Lists unload rows that are far off screen, so scroll to it first.
+        if !s.waitForExistence(timeout: 3) { scrollTo(s, maxSwipes: 10) }
+        XCTAssertTrue(s.waitForExistence(timeout: 5), "missing switch \(id)")
         if !s.isHittable { scrollTo(s) }
         let inner = s.switches.firstMatch
         if inner.exists && inner.isHittable { inner.tap() }
@@ -121,7 +159,9 @@ class DisciplineUITestCase: XCTestCase {
     func type(_ id: String, _ text: String, clear: Bool = false) {
         let f = tap(id)
         if clear, let current = f.value as? String, !current.isEmpty {
-            f.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count))
+            // Put the cursor at the end of the text before deleting.
+            f.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5)).tap()
+            f.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 4))
         }
         f.typeText(text)
     }

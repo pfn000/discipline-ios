@@ -77,6 +77,7 @@ struct SetupView: View {
                                 .accessibilityIdentifier("setup.do.\(step.id.rawValue)")
                         }
                     }
+                    .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("setup.step.\(step.id.rawValue)")
                 }
             }

@@ -38,6 +38,7 @@ struct ExpiryView: View {
                                 .buttonStyle(.glass)
                                 .accessibilityIdentifier("expiry.refreshed.\(app.bundleID)")
                         }
+                        .accessibilityElement(children: .contain)
                         .swipeActions {
                             Button(role: .destructive) { model.removeTracked(app) } label: { Label("Stop tracking", systemImage: "trash") }
                         }
