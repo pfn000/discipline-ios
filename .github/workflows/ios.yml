@@ -177,7 +177,7 @@ jobs:
           out = os.environ["OUT"]
           run = os.environ["GITHUB_RUN_ID"]
           keep = [p for p in glob.glob(out + "/*") if os.path.isfile(p) and not p.endswith(".xcresult")]
-          keep += glob.glob(out + "/screenshots/*.png")
+          keep += glob.glob(out + "/screenshots/*.png") + glob.glob(out + "/screenshots/*.txt")
           keep += [p for p in glob.glob(out + "/attachments/*") if p.endswith((".png", ".json"))]
           for p in keep:
               rel = os.path.relpath(p, out)

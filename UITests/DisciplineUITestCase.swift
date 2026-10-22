@@ -146,6 +146,7 @@ class DisciplineUITestCase: XCTestCase {
 
     /// Flips a SwiftUI Toggle by tapping its switch (right edge of the row).
     func flip(_ id: String) {
+        hideKeyboard() // the keyboard covers rows at the bottom of the screen
         let s = app.switches[id].firstMatch
         // Lists unload rows that are far off screen, so scroll to it first.
         if !s.waitForExistence(timeout: 3) { scrollTo(s, maxSwipes: 10) }
@@ -164,6 +165,14 @@ class DisciplineUITestCase: XCTestCase {
             f.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 4))
         }
         f.typeText(text)
+    }
+
+    /// Waits until a text field shows the typed text, then gives SwiftUI a moment to commit it to the model.
+    func settle(_ id: String, _ text: String) {
+        let f = el(id)
+        let deadline = Date().addingTimeInterval(5)
+        while Date() < deadline, (f.value as? String) != text { usleep(200_000) }
+        usleep(700_000)
     }
 
     func back() {

@@ -19,7 +19,7 @@ final class ExpiryUITests: DisciplineUITestCase {
         dismissToast()
         let left = el("expiry.left.com.kdt.livecontainer")
         XCTAssertTrue(left.waitForExistence(timeout: 5))
-        XCTAssertTrue(left.label.hasPrefix("6d"), "fresh 7-day signature shows 6d…, got \(left.label)")
+        XCTAssertTrue(left.label.hasPrefix("7d") || left.label.hasPrefix("6d"), "fresh 7-day signature shows 7d 0h or 6d…, got \(left.label)")
         tap("expiry.refreshed.com.kdt.livecontainer")
         expectToast(contains: "LiveContainer marked refreshed")
         dismissToast()
