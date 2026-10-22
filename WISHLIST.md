@@ -270,3 +270,19 @@ this whole failure class.
 - I did not independently verify Apple's supported-capabilities table beyond citing the URL
   the brief gave; I did not re-fetch it to save search-window time, since it was already
   given as a known reference.
+
+
+## Built in Discipline v0.1.0
+
+| Wishlist item | Where | UI test |
+|---|---|---|
+| 1. Expiry tracking + Refresh All | Home, Expiry | `HomeUITests`, `ExpiryUITests` |
+| 2. GitHub → latest .ipa + update alerts | GitHub tab | `GitHubUITests` |
+| 7. App ID slots counter | Expiry → App IDs | `ExpiryUITests`, `LibraryUITests` |
+| 8. Backup / restore | More → Settings → Backup | `MoreUITests.testSettingsEveryControl` |
+| 12. Shortcuts / App Intents (Refresh All, VPN On) | Shortcuts app | not UI-testable from XCUITest; logic shared with Home buttons |
+| 10. Entitlement inspector (read-only; editing would need re-signing) | NCOM Lab | `LabUITests` |
+| 11. Show where an app came from | Library → app → From | `LibraryUITests`, `GitHubUITests` |
+| 14. Installed app size | Library → app → Size | `LibraryUITests` |
+
+Not built: alternate icons (needs icon variants designed by NCOM), DNS for LocalDevVPN (that lives in LocalDevVPN), and items marked not applicable above.
