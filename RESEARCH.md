@@ -111,7 +111,7 @@ Apps like Opal, one sec and Jomo are built on Apple's Screen Time API (FamilyCon
 
 **Verified tonight (Linux box):** the shared logic in `DisciplineCore`: IPA reading (ZIP + DEFLATE + binary Info.plist + icon), entitlement extraction from Mach-O, tracker scan, App Privacy Report parsing, GitHub link/release logic, expiry and App ID maths, deep links matching upstream handlers, VPN detection, capability map and signing preset. `swift test`: **30 tests, 0 failures** (Swift 6.2, Linux).
 
-**Needs a Mac (Xcode 27):** compiling the SwiftUI app and running the UI tests. The workflow in `.github/workflows/ios.yml` does it on GitHub's `xcode-27` runner. **Status on 2026-10-22: blocked.** GitHub refused to start the job because of the account's billing ("recent account payments have failed or your spending limit needs to be increased"). Until a run passes, the SwiftUI code is **uncompiled and untested**, and **no IPA exists**.
+**Needs a Mac (Xcode 27):** compiling the SwiftUI app and running the UI tests. The workflow in `.github/workflows/ios.yml` does it on GitHub's `xcode-27` runner. **Status on 2026-10-22:** the repo was made public (free Mac runners) and [CI run #8](https://github.com/pfn000/discipline-ios/actions/runs/39819722184) compiled the app, passed 30/30 core tests and 12/12 UI tests on an iOS 27.0 simulator, and built an unsigned IPA. Nothing has been run on a real device yet.
 
 **Needs her Apple ID (on her PC):** signing and installing the IPA with Plume Impactor (see PLUME-INSTALL.md). Discipline can't be signed without her Apple account, and nothing here was signed.
 

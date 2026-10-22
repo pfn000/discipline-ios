@@ -1,4 +1,4 @@
-Discipline v0.1.0 (private pre-release, unsigned)
+Discipline v0.1.0 (unsigned build; not published as a Release)
 
 What's in it
 - Home: signature countdown (from the signing date you enter), one-tap start to a refresh (LocalDevVPN on, SideStore opened; finish in SideStore), VPN on/off, status of LocalDevVPN, SideStore and LiveContainer.

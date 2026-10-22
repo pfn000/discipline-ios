@@ -1,10 +1,10 @@
 # Install Discipline with Plume Impactor (PC → iPhone)
 
-You need: a Windows PC (with iTunes from Apple installed, or the Apple Devices app) or a Mac/Linux PC, Plume Impactor (https://github.com/claration/impactor/releases), a USB cable, your Apple ID, and the unsigned `Discipline-v0.1.0-unsigned.ipa`.
+You need: a Windows PC (with iTunes from Apple installed, or the Apple Devices app) or a Mac/Linux PC, Plume Impactor (https://github.com/claration/impactor/releases), a USB cable, your Apple ID, and the unsigned `Discipline-v0.1.0-unsigned.ipa` (from the CI run's artifact zip).
 
-> Status 2026-10-22: the IPA hasn't been built yet. The GitHub build is waiting on the account's Actions billing (see README). These steps apply once it exists.
+> Status 2026-10-22: the unsigned IPA was built by [CI run #8](https://github.com/pfn000/discipline-ios/actions/runs/39819722184) and is attached to that run as the artifact `discipline-39819722184` (until 2026-11-05). SHA-256: `c7062a1fd25af8becf39cda2d45daa11642507b030d263cd9b1373e007b46a36`. It hasn't been installed on a real iPhone yet, so these steps are untested with this build.
 
-1. **Check the file.** Compare its SHA-256 with the `.sha256` file that came with it (private GitHub Release or CI artifact; never from a public page) (PowerShell: `Get-FileHash .\Discipline-v0.1.0-unsigned.ipa`).
+1. **Check the file.** Compare its SHA-256 with the `.sha256` file that came with it (it's in the same artifact zip) (PowerShell: `Get-FileHash .\Discipline-v0.1.0-unsigned.ipa`).
 2. **Plug in the iPhone** and unlock it. Tap **Trust** and enter your passcode if asked.
 3. **Open Plume Impactor** and sign in with your Apple ID. Your password goes to Apple from Plume; Discipline never sees it.
 4. **Drag the .ipa** into Plume Impactor (or choose it), then install. Plume registers the app with Apple, signs it for 7 days on a free account (365 on a paid one) and installs it.

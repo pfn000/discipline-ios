@@ -1,6 +1,6 @@
 # Licenses and credits
 
-Discipline's code is NCOM's own (© NCOM, all rights reserved; private until Saidie decides otherwise). It includes **no source code** from the projects below. It works with them through their published URL schemes, document types and file formats.
+Discipline's code is NCOM's own (© NCOM, all rights reserved; the source is public to read since 2026-10-22, with no open-source license granted). It includes **no source code** from the projects below. It works with them through their published URL schemes, document types and file formats.
 
 | Project | License | How Discipline relates |
 |---|---|---|

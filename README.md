@@ -4,7 +4,7 @@
 
 **One home for your sideloaded apps.** Discipline ties together LocalDevVPN, SideStore and LiveContainer: it opens .ipa files, pulls apps straight from GitHub releases, counts down each app's signature from the date you signed it, and starts a refresh with one tap (LocalDevVPN on, SideStore opened; SideStore does the refreshing). Built by NCOM Systems for iOS 26+ with Liquid Glass.
 
-> **Status (2026-10-22):** source complete and the shared logic is tested (30/30 on Linux). The iOS app has **never been compiled**: GitHub won't start Actions jobs on this account until billing is fixed (or the repo is made public). So no compiled app, UI-test screenshots or IPA exist yet.
+> **Status (2026-10-22):** compiled and tested on GitHub's Mac runner ([CI run #8](https://github.com/pfn000/discipline-ios/actions/runs/39819722184)): Xcode 27.2 with the iOS 27.2 SDK, 30/30 core logic tests, and 12/12 UI tests on an iPhone 18 Pro **simulator running iOS 27.0**. In this run no UI test needed a retry. The run also built an **unsigned** `Discipline-v0.1.0-unsigned.ipa` (arm64, minimum iOS 26.0). It has **not** been installed or run on a real iPhone yet, and it is not signed: you sign it yourself (see Install).
 
 ## Features
 
@@ -21,11 +21,21 @@
 
 ## Screenshots
 
-The UI tests screenshot every page on an iOS 26+ simulator (`01-home` … `25-lab-preset`) and attach them to each CI run as an artifact. Once a run passes, they'll be committed to `docs/screenshots/` and shown here. None exist yet, and there are no mock-ups standing in for them.
+Captured by the UI tests in [CI run #8](https://github.com/pfn000/discipline-ios/actions/runs/39819722184) on an iPhone 18 Pro simulator (iOS 27.0). They are real screens of the app, but the tests launch it with test data (a seeded library, a mocked GitHub API and a sample privacy report), so the apps, repos and trackers you see are test fixtures. All 25 are in [docs/screenshots](docs/screenshots/).
+
+| <img src="docs/screenshots/01-home.png" width="200" alt="Home"> | <img src="docs/screenshots/04-library.png" width="200" alt="Library"> | <img src="docs/screenshots/07-github-releases.png" width="200" alt="GitHub to iOS"> | <img src="docs/screenshots/13-expiry-tracked.png" width="200" alt="Expiry"> |
+|---|---|---|---|
+| Home | Library | GitHub to iOS | Expiry |
+| <img src="docs/screenshots/17-setup.png" width="200" alt="Setup"> | <img src="docs/screenshots/21-guard-scan.png" width="200" alt="Ouija Guard"> | <img src="docs/screenshots/16-settings-dark.png" width="200" alt="Settings (dark)"> | <img src="docs/screenshots/23-lab-capabilities.png" width="200" alt="NCOM Lab"> |
+| Setup | Ouija Guard | Settings (dark) | NCOM Lab |
 
 ## Install
 
-The IPA ships unsigned. You sign it yourself with **Plume Impactor** and your Apple ID: see [PLUME-INSTALL.md](PLUME-INSTALL.md). A free Apple ID lasts 7 days and a paid one ($99/yr) lasts a year. Nothing makes it permanent; see [RESEARCH.md §4](RESEARCH.md).
+There is no public download and no GitHub Release. The unsigned IPA exists only as an artifact of the CI run (`discipline-39819722184`, kept until 2026-11-05). Note that artifacts on a public repo can be downloaded by anyone logged in to GitHub. Its SHA-256 is `c7062a1fd25af8becf39cda2d45daa11642507b030d263cd9b1373e007b46a36`.
+
+You sign it yourself with **Plume Impactor** and your Apple ID: see [PLUME-INSTALL.md](PLUME-INSTALL.md). A free Apple ID lasts 7 days and a paid one ($99/yr) lasts a year. Nothing makes it permanent; see [RESEARCH.md §4](RESEARCH.md). It has not yet been tried on a real device.
+
+The build also carries the small fixtures the UI tests use (`Sample.ipa`, `Tracked.ipa`, mock release JSON and a sample privacy report, about 9 KB). The app only reads them when it is launched with the test flags.
 
 ## What's not in it (and why)
 
@@ -47,7 +57,7 @@ open Discipline.xcodeproj           # Xcode 27 (iOS 26 SDK or newer)
 cd DisciplineCore && swift test     # logic tests (also run on Linux)
 ```
 
-CI (`.github/workflows/ios.yml`) runs on GitHub's `xcode-27` Mac runner. It runs the core tests and every UI test, records the simulator, builds `Discipline-vX-unsigned.ipa`, checks it (`Payload/Discipline.app`, Info.plist, arm64) and uploads it as a run artifact. Only a successful `v*` tag build attaches it and its SHA-256 to a GitHub Release, and only while the repo is private, so an unsigned IPA is never published on a public repo.
+CI (`.github/workflows/ios.yml`) runs on GitHub's `xcode-27` Mac runner. It runs the core tests and every UI test (a failed UI test is re-run up to 2 more times, and every retry is listed in the run's `retries.txt`), records the simulator, builds `Discipline-vX-unsigned.ipa`, checks it (`Payload/Discipline.app`, Info.plist, arm64) and uploads it as a run artifact. Only a successful `v*` tag build attaches it and its SHA-256 to a GitHub Release, and only while the repo is private, so an unsigned IPA is never published on a public repo.
 
 ## Docs
 
@@ -57,4 +67,4 @@ CI (`.github/workflows/ios.yml`) runs on GitHub's `xcode-27` Mac runner. It runs
 - [WISHLIST.md](WISHLIST.md): what sideloaders ask for, and what Discipline built
 - [LICENSES-AND-CREDITS.md](LICENSES-AND-CREDITS.md)
 
-© NCOM Systems. Private.
+© NCOM Systems. All rights reserved.
