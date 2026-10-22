@@ -13,8 +13,8 @@ You need: a Windows PC (with iTunes from Apple installed, or the Apple Devices a
 7. **Open Discipline.** Then do More → Setup: get LocalDevVPN from the App Store and install SideStore + LiveContainer (Plume Impactor offers to install both and generate their pairing file; that companion setup has not been verified with this build).
 
 ## Keeping it alive
-- Free Apple ID: every app you sign (Discipline included) runs for 7 days. Re-sign with Plume, or let SideStore refresh: add Discipline to SideStore and use Refresh All with LocalDevVPN on.
-- Put other apps inside **LiveContainer**: then only LiveContainer and SideStore need refreshing, and the 3-app limit stops mattering.
+- Free Apple ID: every app you sign (Discipline included) runs for 7 days. If installing works on your phone, you can re-sign with Plume, or try adding Discipline to SideStore and refreshing it there with LocalDevVPN on. Neither route has been tested with this IPA.
+- Putting other apps inside **LiveContainer** means only LiveContainer and SideStore need refreshing, which is how LiveContainer works around the free account's 3-app limit (per LiveContainer's docs; not tested here).
 
 ## iOS 27.2 beta notes (reported, not tested on your phone)
 - If SideStore shows a UDID or pairing error after an update: update SideStore, generate a new pairing file in Plume Impactor, and import it again (https://github.com/SideStore/SideStore/issues/1217).

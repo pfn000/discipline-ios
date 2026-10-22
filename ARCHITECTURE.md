@@ -33,8 +33,8 @@ Discipline.app (SwiftUI, iOS 26.0+, Liquid Glass)        DisciplineCore (Swift p
 ## Design decisions
 
 1. **Orchestrate, don't fork.** Discipline contains no code from SideStore, LiveContainer, LocalDevVPN or SideInstaller. It talks to them through the URL schemes and document types they publish. That keeps Discipline NCOM's own code (no AGPL obligations, no conflict with SideInstaller's non-commercial license or LocalDevVPN's no-rebranding clause) and lets each upstream app keep updating itself.
-2. **Free Apple ID first.** No extension, no restricted entitlement: one App ID, signable by Plume Impactor with a free account. Features that need a paid account are explained in the app, not faked.
-3. **Every control does something observable.** Each action ends in a toast whose accessibility value is the exact URL handed to another app, which the UI tests assert.
+2. **Free Apple ID first.** Designed to use one App ID and no extension or restricted entitlement, so that signing it with Plume Impactor on a free account should be possible. Signing and installing this build have not been tested. Features that need a paid account are explained in the app, not faked.
+3. **Hand-offs are observable.** Controls that hand off to a companion app show a toast whose accessibility value is the URL Discipline asked iOS to open. The simulator UI tests (with fake companion apps) assert the exact URL for those hand-offs; what the companion app then does is not tested. Other settings and controls give their own on-screen feedback and are not all covered by URL assertions.
 4. **Test hooks only behind launch arguments** (`-uiTesting…`): fake companions (the simulator has none of the apps), mock GitHub, seeded fixtures. Normal launches never touch them.
 
 ## Data
