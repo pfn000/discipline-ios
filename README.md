@@ -2,7 +2,7 @@
 
 # Discipline
 
-> **v0.2.0 work-in-progress:** [Discipline v2 specification](https://github.com/pfn000/discipline-ios/blob/main/docs/DISCIPLINE-SPEC-v2.md). This build adds an honest TrollStore OS gate, an Install modes explanation, and a 25-tap Ouija Board developer UI prototype. **It does not yet load imported apps inside Discipline or bypass the free-account cap; its guest runtime needs a license decision, on-device signing and loader proof.** The v0.1.0 CI artifact and status below refer to the earlier build.
+> **v0.2.0 work-in-progress:** the private NCOM v2 specification. This build adds an honest TrollStore OS gate, an Install modes explanation, and a 25-tap Ouija Board developer UI prototype. **It does not yet load imported apps inside Discipline or bypass the free-account cap; its guest runtime needs a license decision, on-device signing and loader proof.** The v0.1.0 CI artifact and status below refer to the earlier build.
 
 **One home for your sideloaded apps.** Discipline ties together LocalDevVPN, SideStore and LiveContainer: it is built to open .ipa files, find .ipa files in GitHub releases, count down each app's signature from the date you signed it, and start a refresh with one tap (it sends LocalDevVPN a link asking it to turn on and then open SideStore; SideStore does the refreshing). Built by NCOM Systems for iOS 26+ with Liquid Glass. So far it has been tested only on a simulator with test data (see Status).
 
