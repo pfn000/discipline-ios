@@ -164,6 +164,13 @@ class DisciplineUITestCase: XCTestCase {
             let to = view.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.37))
             from.press(forDuration: 0.05, thenDragTo: to)
         }
+        if s.exists && s.frame.midY < 150 {
+            let list = app.collectionViews.firstMatch
+            let view: XCUIElement = list.exists ? list : app!
+            let from = view.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.35))
+            let to = view.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.63))
+            from.press(forDuration: 0.05, thenDragTo: to)
+        }
         if !s.isHittable { scrollTo(s) }
         let inner = s.switches.firstMatch
         if inner.exists && inner.isHittable { inner.tap() }
