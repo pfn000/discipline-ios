@@ -155,6 +155,16 @@ class DisciplineUITestCase: XCTestCase {
         if !s.waitForExistence(timeout: 3) { scrollTo(s, maxSwipes: 10) }
         XCTAssertTrue(s.waitForExistence(timeout: 5), "missing switch \(id)")
         if !s.isHittable { scrollTo(s) }
+        // A switch with only a few pixels below the fold can report isHittable
+        // while its midpoint (where coordinate.tap lands) is outside the screen.
+        if s.exists && s.frame.midY > app.frame.maxY - 100 {
+            let list = app.collectionViews.firstMatch
+            let view: XCUIElement = list.exists ? list : app!
+            let from = view.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.65))
+            let to = view.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.37))
+            from.press(forDuration: 0.05, thenDragTo: to)
+        }
+        if !s.isHittable { scrollTo(s) }
         let inner = s.switches.firstMatch
         if inner.exists && inner.isHittable { inner.tap() }
         else { s.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap() }
