@@ -2,6 +2,8 @@
 
 # Discipline
 
+> **v0.2.0 work-in-progress:** [Discipline v2 specification](https://github.com/pfn000/discipline-ios/blob/main/docs/DISCIPLINE-SPEC-v2.md). This build adds an honest TrollStore OS gate, an Install modes explanation, and a 25-tap Ouija Board developer UI prototype. **It does not yet load imported apps inside Discipline or bypass the free-account cap; its guest runtime needs a license decision, on-device signing and loader proof.** The v0.1.0 CI artifact and status below refer to the earlier build.
+
 **One home for your sideloaded apps.** Discipline ties together LocalDevVPN, SideStore and LiveContainer: it is built to open .ipa files, find .ipa files in GitHub releases, count down each app's signature from the date you signed it, and start a refresh with one tap (it sends LocalDevVPN a link asking it to turn on and then open SideStore; SideStore does the refreshing). Built by NCOM Systems for iOS 26+ with Liquid Glass. So far it has been tested only on a simulator with test data (see Status).
 
 > **Status (2026-10-22):** compiled and tested on GitHub's Mac runner ([CI run #8](https://github.com/pfn000/discipline-ios/actions/runs/39819722184)): Xcode 27.2 with the iOS 27.2 SDK, 30/30 core logic tests, and 12/12 UI tests on an iPhone 18 Pro **simulator running iOS 27.0**. In this run no UI test needed a retry. The run also built an **unsigned** `Discipline-v0.1.0-unsigned.ipa` (arm64, minimum iOS 26.0). It has **not** been installed or run on a real iPhone, it has not been run on iOS 27.2 (27.2 is only the SDK it was built with), and it is not signed: you sign it yourself (see Install). There is no GitHub Release.

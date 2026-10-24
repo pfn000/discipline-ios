@@ -1,3 +1,5 @@
+import Darwin
+import UIKit
 import SwiftUI
 import UniformTypeIdentifiers
 import DisciplineCore
@@ -10,6 +12,8 @@ struct MoreView: View {
         NavigationStack {
             List {
                 Section {
+                    NavigationLink { InstallModesView() } label: { Label("Install modes", systemImage: "square.stack.3d.up") }
+                        .accessibilityIdentifier("more.installModes")
                     NavigationLink { SetupView() } label: { Label("Setup checklist", systemImage: "checklist") }
                         .accessibilityIdentifier("more.setup")
                     NavigationLink { SettingsView() } label: { Label("Settings", systemImage: "gearshape") }
@@ -34,6 +38,13 @@ struct MoreView: View {
                         .font(.footnote).foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
                         .contentShape(Rectangle())
+                        .onTapGesture {
+                            versionTaps += 1
+                            if versionTaps >= 25 && !model.labUnlocked {
+                                model.labUnlocked = true
+                                model.show("Ouija Board developer preview unlocked")
+                            }
+                        }
                         .onLongPressGesture(minimumDuration: 0.4) {
                             versionTaps += 1
                             if versionTaps >= 7 && !model.labUnlocked {
@@ -259,5 +270,47 @@ struct AboutView: View {
             Section { Text(AppConfig.sourceCodeNote).font(.caption).foregroundStyle(.secondary) }
         }
         .navigationTitle("About")
+    }
+}
+
+/// Never present an eligibility table as detection of TrollStore installation or a working loader.
+struct InstallModesView: View {
+    @EnvironmentObject var model: AppModel
+    private var support: TrollStoreSupport.Verdict {
+        let build: String? = {
+            var size: size_t = 0
+            guard sysctlbyname("kern.osversion", nil, &size, nil, 0) == 0, size > 0 else { return nil }
+            var buffer = [CChar](repeating: 0, count: size)
+            guard buffer.withUnsafeMutableBytes({ ptr in sysctlbyname("kern.osversion", ptr.baseAddress, &size, nil, 0) }) == 0 else { return nil }
+            return String(cString: buffer)
+        }()
+        return TrollStoreSupport.evaluate(version: OSVersion(UIDevice.current.systemVersion), build: build)
+    }
+
+    var body: some View {
+        List {
+            Section("This iPhone") {
+                Text("iOS \(UIDevice.current.systemVersion)")
+                Text("Only Discipline itself counts as an installed app when a real guest runtime is working. That runtime is not in this build.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            Section("Built-in container") {
+                Label("Not available yet", systemImage: "hammer")
+                Text("Library imports an IPA, but cannot sign or run it inside Discipline. A native loader still needs signing, keychain, entitlement and real-device testing.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+            Section("TrollStore") {
+                Text(support.rawValue).accessibilityIdentifier("modes.trollStore")
+                if support == .eligibleOS {
+                    Text("Compatible iOS does not mean TrollStore is installed. Share the IPA to TrollStore explicitly if you already have it; do not use a URL-scheme test as detection.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                }
+            }
+            Section("Available today") {
+                Text("Import from Files, inspect the IPA, and hand it to an installed signing or container companion. No silent signing, automatic certificate refresh or free-account cap bypass in Discipline yet.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle("Install modes")
     }
 }

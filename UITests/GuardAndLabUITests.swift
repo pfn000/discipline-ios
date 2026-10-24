@@ -24,6 +24,24 @@ final class GuardUITests: DisciplineUITestCase {
 }
 
 final class LabUITests: DisciplineUITestCase {
+    func testTwentyFiveTapsAndHonestInstallModes() {
+        launch([])
+        tab("More")
+        tap("more.installModes")
+        XCTAssertTrue(el("modes.trollStore").waitForExistence(timeout: 5))
+        XCTAssertTrue(el("modes.trollStore").label.contains("unavailable"), "iOS 27 simulator must not claim TrollStore")
+        app.navigationBars.buttons.firstMatch.tap()
+        let version = el("more.version")
+        scrollTo(version)
+        for _ in 0..<25 { version.tap() }
+        XCTAssertTrue(el("more.lab").waitForExistence(timeout: 5))
+        tap("more.lab")
+        XCTAssertTrue(el("lab.prototypeWarning").waitForExistence(timeout: 5))
+        XCTAssertFalse(el("lab.tile.Focals Pro").exists)
+        flip("lab.prototypeConsent")
+        XCTAssertTrue(el("lab.tile.+ Add Test App").exists)
+    }
+
     func testHiddenLabUnlockAndEveryControl() {
         launch(["-uiTestingSeedLibrary"])
         tab("More")
