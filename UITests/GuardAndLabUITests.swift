@@ -63,6 +63,7 @@ final class LabUITests: DisciplineUITestCase {
         let count = el("lab.entitlementCount")
         scrollTo(count)
         XCTAssertEqual(count.label, "4 entitlements")
+        scrollTo(el("lab.unsignable"), maxSwipes: 12)
         XCTAssertTrue(el("lab.unsignable").exists, "NFC entitlement is flagged on a free account")
         snap("24-lab-inspector")
         type("lab.presetName", " Test")
