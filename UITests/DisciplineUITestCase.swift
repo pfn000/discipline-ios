@@ -49,7 +49,7 @@ class DisciplineUITestCase: XCTestCase {
         // iOS 27's floating tab rail can intercept a root-app swipe. Swipe the
         // visible List/collection view itself so lazy rows below the fold load.
         let list = app.collectionViews.allElementsBoundByIndex.first(where: { $0.isHittable })
-        let target = list ?? app
+        let target: XCUIElement = list ?? app!
         func move(up: Bool) {
             let from = target.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: up ? 0.82 : 0.22))
             let to = target.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: up ? 0.22 : 0.82))
