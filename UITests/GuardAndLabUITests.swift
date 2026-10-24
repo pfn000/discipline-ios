@@ -67,6 +67,7 @@ final class LabUITests: DisciplineUITestCase {
         XCTAssertTrue(el("lab.unsignable").exists, "NFC entitlement is flagged on a free account")
         snap("24-lab-inspector")
         type("lab.presetName", " Test")
+        hideKeyboard() // iOS 27 keeps the keyboard over the offscreen signing-preset toggles.
         // Every capability toggle works both ways.
         for id in ["uwb", "ble", "wifiaware", "localnet", "multicast", "wifiinfo", "proximity", "motion", "eaccessory", "multipeer"] {
             let sw = app.switches["lab.toggle.\(id)"].firstMatch
