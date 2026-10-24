@@ -155,23 +155,25 @@ class DisciplineUITestCase: XCTestCase {
         if !s.waitForExistence(timeout: 3) { scrollTo(s, maxSwipes: 10) }
         XCTAssertTrue(s.waitForExistence(timeout: 5), "missing switch \(id)")
         if !s.isHittable { scrollTo(s) }
-        // A switch with only a few pixels below the fold can report isHittable
-        // while its midpoint (where coordinate.tap lands) is outside the screen.
-        if s.exists && s.frame.midY > app.frame.maxY - 100 {
-            let list = app.collectionViews.firstMatch
-            let view: XCUIElement = list.exists ? list : app!
-            let from = view.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.65))
-            let to = view.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.37))
-            from.press(forDuration: 0.05, thenDragTo: to)
+        // Both edges matter on iOS 27: a sliver of a switch can report hittable
+        // while the tappable midpoint is under the navigation glass or offscreen.
+        let nav = app.navigationBars.firstMatch
+        let top = max(app.frame.minY + 80, nav.exists ? nav.frame.maxY + 12 : app.frame.minY + 80)
+        let bottom = app.frame.maxY - 80
+        let list = app.collectionViews.firstMatch
+        let view: XCUIElement = list.exists ? list : app!
+        for _ in 0..<16 {
+            if !s.exists { scrollTo(s, maxSwipes: 30) }
+            guard s.exists else { continue }
+            let f = s.frame
+            if s.isHittable && f.minY >= top && f.maxY <= bottom { break }
+            let moveDown = f.minY < top
+            let from = view.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: moveDown ? 0.42 : 0.58))
+            let to = view.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: moveDown ? 0.54 : 0.46))
+            from.press(forDuration: 0.06, thenDragTo: to)
         }
-        if s.exists && s.frame.midY < 150 {
-            let list = app.collectionViews.firstMatch
-            let view: XCUIElement = list.exists ? list : app!
-            let from = view.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.35))
-            let to = view.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.63))
-            from.press(forDuration: 0.05, thenDragTo: to)
-        }
-        if !s.isHittable { scrollTo(s) }
+        XCTAssertTrue(s.exists && s.isHittable && s.frame.minY >= top && s.frame.maxY <= bottom,
+                      "switch \(id) never fully entered the safe viewport")
         let inner = s.switches.firstMatch
         if inner.exists && inner.isHittable { inner.tap() }
         else { s.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap() }
