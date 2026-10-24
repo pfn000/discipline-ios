@@ -188,13 +188,17 @@ struct SettingsView: View {
                     Button { backupURL = model.exportBackup() } label: { Label("Make backup", systemImage: "externaldrive") }
                         .accessibilityIdentifier("settings.makeBackup")
                 }
-                Button { importing = true } label: { Label("Restore backup", systemImage: "arrow.down.doc") }
-                    .accessibilityIdentifier("settings.restore")
             } header: { Text("Backup") } footer: {
                 Text("Saves tracked apps, saved GitHub repos, the App ID log and settings. Imported .ipa files aren't included; keep those in Files.")
             }
         }
         .navigationTitle("Settings")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { importing = true } label: { Label("Restore backup", systemImage: "arrow.down.doc") }
+                    .accessibilityIdentifier("settings.restore")
+            }
+        }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
             if case .success(let url) = result { model.importBackup(from: url) }
         }

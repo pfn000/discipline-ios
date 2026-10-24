@@ -70,7 +70,7 @@ final class LabUITests: DisciplineUITestCase {
         // Every capability toggle works both ways.
         for id in ["uwb", "ble", "wifiaware", "localnet", "multicast", "wifiinfo", "proximity", "motion", "eaccessory", "multipeer"] {
             let sw = app.switches["lab.toggle.\(id)"].firstMatch
-            scrollTo(sw)
+            scrollTo(sw, maxSwipes: 30)
             let before = sw.value as? String
             flip("lab.toggle.\(id)")
             XCTAssertNotEqual(sw.value as? String, before, "toggle \(id) changed")

@@ -45,14 +45,14 @@ class DisciplineUITestCase: XCTestCase {
         return e
     }
 
-    func scrollTo(_ e: XCUIElement, maxSwipes: Int = 8) {
+    func scrollTo(_ e: XCUIElement, maxSwipes: Int = 30) {
         // iOS 27's floating tab rail can intercept a root-app swipe. Swipe the
         // visible List/collection view itself so lazy rows below the fold load.
         let list = app.collectionViews.firstMatch
         let target: XCUIElement = list.exists ? list : app!
         func move(up: Bool) {
-            let from = target.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: up ? 0.82 : 0.22))
-            let to = target.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: up ? 0.22 : 0.82))
+            let from = target.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: up ? 0.67 : 0.42))
+            let to = target.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: up ? 0.42 : 0.67))
             from.press(forDuration: 0.05, thenDragTo: to)
         }
         var n = 0
