@@ -23,48 +23,6 @@ struct LabView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
 
-            Section("Ouija Board · developer preview") {
-                Text("Ouija Board is only meant for NCOM developers. Prototype hardware control is not connected; these tiles are a layout preview, not a device session.")
-                    .font(.caption).foregroundStyle(.orange)
-                    .accessibilityIdentifier("lab.prototypeWarning")
-                Toggle("I understand the prototype features are unavailable", isOn: $prototypeConsent)
-                    .accessibilityIdentifier("lab.prototypeConsent")
-                if prototypeConsent {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Focals Pro").font(.title3.weight(.semibold))
-                        Text("Device model: concept · connection status: not connected")
-                            .font(.caption).foregroundStyle(.secondary)
-                        Text("User Profile / Playground ID session: none")
-                            .font(.caption).foregroundStyle(.secondary)
-                        let tiles = ["Alert", "2.1htz", "Cloud", "Node dial", "Warning", "Visor",
-                                     "Terminal", "Starburst", "Hand/tool", "Speed gauge", "DE E", "+ Add Test App"]
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
-                            ForEach(tiles, id: \.self) { tile in
-                                VStack(spacing: 5) {
-                                    Image(systemName: tile == "+ Add Test App" ? "plus.app" : "circle.dotted")
-                                    Text(tile).font(.system(size: 10, weight: .medium))
-                                        .multilineTextAlignment(.center)
-                                }
-                                .frame(maxWidth: .infinity, minHeight: 65)
-                                .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
-                                .accessibilityIdentifier("lab.tile.\(tile)")
-                            }
-                        }
-                        Text("///Shell terminal for App only")
-                            .font(.caption.monospaced()).foregroundStyle(.secondary)
-                        HStack {
-                            TextField("Local command", text: $shellInput)
-                                .textInputAutocapitalization(.never).autocorrectionDisabled()
-                                .accessibilityIdentifier("lab.shellInput")
-                            Button("Send") { runLocalCommand() }
-                                .accessibilityIdentifier("lab.shellSend")
-                        }
-                        Text(shellOutput).font(.caption.monospaced())
-                            .accessibilityIdentifier("lab.shellOutput")
-                    }
-                }
-            }
-
             Section("Capability map") {
                 ForEach(DeviceFeature.catalog) { f in
                     VStack(alignment: .leading, spacing: 3) {
@@ -155,6 +113,48 @@ struct LabView: View {
             } header: { Text("Signing preset") } footer: {
                 Text("Put the .entitlements file in your app's Xcode project (Code Signing Entitlements) and the Info.plist keys in its Info.plist. Plume Impactor and SideStore then ask Apple for those entitlements when they sign; restricted ones fail on a free account.")
             }
+            Section("Ouija Board · developer preview") {
+                Text("Ouija Board is only meant for NCOM developers. Prototype hardware control is not connected; these tiles are a layout preview, not a device session.")
+                    .font(.caption).foregroundStyle(.orange)
+                    .accessibilityIdentifier("lab.prototypeWarning")
+                Toggle("I understand the prototype features are unavailable", isOn: $prototypeConsent)
+                    .accessibilityIdentifier("lab.prototypeConsent")
+                if prototypeConsent {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Focals Pro").font(.title3.weight(.semibold))
+                        Text("Device model: concept · connection status: not connected")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Text("User Profile / Playground ID session: none")
+                            .font(.caption).foregroundStyle(.secondary)
+                        let tiles = ["Alert", "2.1htz", "Cloud", "Node dial", "Warning", "Visor",
+                                     "Terminal", "Starburst", "Hand/tool", "Speed gauge", "DE E", "+ Add Test App"]
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
+                            ForEach(tiles, id: \.self) { tile in
+                                VStack(spacing: 5) {
+                                    Image(systemName: tile == "+ Add Test App" ? "plus.app" : "circle.dotted")
+                                    Text(tile).font(.system(size: 10, weight: .medium))
+                                        .multilineTextAlignment(.center)
+                                }
+                                .frame(maxWidth: .infinity, minHeight: 65)
+                                .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+                                .accessibilityIdentifier("lab.tile.\(tile)")
+                            }
+                        }
+                        Text("///Shell terminal for App only")
+                            .font(.caption.monospaced()).foregroundStyle(.secondary)
+                        HStack {
+                            TextField("Local command", text: $shellInput)
+                                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                                .accessibilityIdentifier("lab.shellInput")
+                            Button("Send") { runLocalCommand() }
+                                .accessibilityIdentifier("lab.shellSend")
+                        }
+                        Text(shellOutput).font(.caption.monospaced())
+                            .accessibilityIdentifier("lab.shellOutput")
+                    }
+                }
+            }
+
         }
         .navigationTitle("NCOM Lab")
     }

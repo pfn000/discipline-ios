@@ -30,15 +30,17 @@ final class LabUITests: DisciplineUITestCase {
         tap("more.installModes")
         XCTAssertTrue(el("modes.trollStore").waitForExistence(timeout: 5))
         XCTAssertTrue(el("modes.trollStore").label.contains("unavailable"), "iOS 27 simulator must not claim TrollStore")
-        app.navigationBars.buttons.firstMatch.tap()
+        back()
         let version = el("more.version")
         scrollTo(version)
         for _ in 0..<25 { version.tap() }
         XCTAssertTrue(el("more.lab").waitForExistence(timeout: 5))
         tap("more.lab")
-        XCTAssertTrue(el("lab.prototypeWarning").waitForExistence(timeout: 5))
-        XCTAssertFalse(el("lab.tile.Focals Pro").exists)
+        scrollTo(el("lab.prototypeWarning"), maxSwipes: 14)
+        XCTAssertTrue(el("lab.prototypeWarning").exists)
+        XCTAssertFalse(el("lab.tile.+ Add Test App").exists)
         flip("lab.prototypeConsent")
+        scrollTo(el("lab.tile.+ Add Test App"), maxSwipes: 8)
         XCTAssertTrue(el("lab.tile.+ Add Test App").exists)
     }
 

@@ -46,16 +46,19 @@ class DisciplineUITestCase: XCTestCase {
     }
 
     func scrollTo(_ e: XCUIElement, maxSwipes: Int = 8) {
+        // iOS 27's floating tab rail can intercept a root-app swipe. Swipe the
+        // visible List/collection view itself so lazy rows below the fold load.
+        let list = app.collectionViews.allElementsBoundByIndex.first(where: { $0.isHittable })
+        let target = list ?? app
+        func move(up: Bool) {
+            let from = target.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: up ? 0.82 : 0.22))
+            let to = target.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: up ? 0.22 : 0.82))
+            from.press(forDuration: 0.05, thenDragTo: to)
+        }
         var n = 0
-        while (!e.exists || !e.isHittable) && n < maxSwipes {
-            app.swipeUp(velocity: .slow)
-            n += 1
-        }
+        while (!e.exists || !e.isHittable) && n < maxSwipes { move(up: true); n += 1 }
         n = 0
-        while (!e.exists || !e.isHittable) && n < maxSwipes {
-            app.swipeDown(velocity: .slow)
-            n += 1
-        }
+        while (!e.exists || !e.isHittable) && n < maxSwipes { move(up: false); n += 1 }
     }
 
     /// Closes the keyboard if one is up (it covers the tab bar).
@@ -199,8 +202,14 @@ class DisciplineUITestCase: XCTestCase {
     }
 
     func back() {
+        let explicit = el("more.back")
+        if explicit.waitForExistence(timeout: 3) { explicit.tap(); return }
         let b = app.navigationBars.buttons.element(boundBy: 0)
-        if b.waitForExistence(timeout: 5) { b.tap() }
+        if b.waitForExistence(timeout: 2) { b.tap(); return }
+        // UIKit's accessibility classification of its back item can be Other.
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.03, dy: 0.45))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.45))
+        start.press(forDuration: 0.05, thenDragTo: end)
     }
 
     func openMore(_ id: String) {

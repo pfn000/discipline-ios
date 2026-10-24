@@ -7,30 +7,29 @@ import DisciplineCore
 struct MoreView: View {
     @EnvironmentObject var model: AppModel
     @State var versionTaps = 0
+    @State var versionHolds = 0
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    NavigationLink { InstallModesView() } label: { Label("Install modes", systemImage: "square.stack.3d.up") }
-                        .accessibilityIdentifier("more.installModes")
-                    NavigationLink { SetupView() } label: { Label("Setup checklist", systemImage: "checklist") }
+                    NavigationLink { SetupView().modifier(MoreNavigationBack()) } label: { Label("Setup checklist", systemImage: "checklist") }
                         .accessibilityIdentifier("more.setup")
-                    NavigationLink { SettingsView() } label: { Label("Settings", systemImage: "gearshape") }
+                    NavigationLink { SettingsView().modifier(MoreNavigationBack()) } label: { Label("Settings", systemImage: "gearshape") }
                         .accessibilityIdentifier("more.settings")
-                    NavigationLink { GuardView() } label: { Label("Ouija Guard", systemImage: "eye.trianglebadge.exclamationmark") }
+                    NavigationLink { GuardView().modifier(MoreNavigationBack()) } label: { Label("Ouija Guard", systemImage: "eye.trianglebadge.exclamationmark") }
                         .accessibilityIdentifier("more.guard")
                     if model.labUnlocked {
-                        NavigationLink { LabView() } label: { Label("NCOM Lab", systemImage: "flask") }
+                        NavigationLink { LabView().modifier(MoreNavigationBack()) } label: { Label("NCOM Lab", systemImage: "flask") }
                             .accessibilityIdentifier("more.lab")
                     }
                 }
                 Section {
-                    NavigationLink { SupportView() } label: { Label("Support / Tip", systemImage: "heart") }
+                    NavigationLink { SupportView().modifier(MoreNavigationBack()) } label: { Label("Support / Tip", systemImage: "heart") }
                         .accessibilityIdentifier("more.support")
-                    NavigationLink { LimitsView() } label: { Label("Honest limits", systemImage: "exclamationmark.shield") }
+                    NavigationLink { LimitsView().modifier(MoreNavigationBack()) } label: { Label("Honest limits", systemImage: "exclamationmark.shield") }
                         .accessibilityIdentifier("more.limits")
-                    NavigationLink { AboutView() } label: { Label("About & credits", systemImage: "info.circle") }
+                    NavigationLink { AboutView().modifier(MoreNavigationBack()) } label: { Label("About & credits", systemImage: "info.circle") }
                         .accessibilityIdentifier("more.about")
                 }
                 Section {
@@ -45,17 +44,21 @@ struct MoreView: View {
                                 model.show("Ouija Board developer preview unlocked")
                             }
                         }
-                        .onLongPressGesture(minimumDuration: 0.4) {
-                            versionTaps += 1
-                            if versionTaps >= 7 && !model.labUnlocked {
+                        .simultaneousGesture(LongPressGesture(minimumDuration: 0.4).onEnded { _ in
+                            versionHolds += 1
+                            if versionHolds >= 7 && !model.labUnlocked {
                                 model.labUnlocked = true
                                 model.show("NCOM Lab unlocked")
                             }
-                        }
+                        })
                         .accessibilityIdentifier("more.version")
                         .accessibilityAddTraits(.isStaticText)
                 }
                 .listRowBackground(Color.clear)
+                Section {
+                    NavigationLink { InstallModesView().modifier(MoreNavigationBack()) } label: { Label("Install modes", systemImage: "square.stack.3d.up") }
+                        .accessibilityIdentifier("more.installModes")
+                }
             }
             .navigationTitle("More")
         }
@@ -312,5 +315,19 @@ struct InstallModesView: View {
             }
         }
         .navigationTitle("Install modes")
+    }
+}
+
+private struct MoreNavigationBack: ViewModifier {
+    @Environment(\.dismiss) private var dismiss
+    func body(content: Content) -> some View {
+        content
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: { Label("More", systemImage: "chevron.left") }
+                        .accessibilityIdentifier("more.back")
+                }
+            }
     }
 }
