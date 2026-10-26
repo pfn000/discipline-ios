@@ -73,11 +73,23 @@ final class UpdatesUITests: DisciplineUITestCase {
         tab("Library")
         XCTAssertTrue(el("library.item.com.ncom.sampleapp").waitForExistence(timeout: 10))
         openMore("more.updates")
-        XCTAssertEqual(app.switches["updates.autoDownload"].firstMatch.value as? String, "1")
+        // The Automatic section sits below the release notes; Lists unload rows off screen, so scroll to it.
+        let autoDownload = app.switches["updates.autoDownload"].firstMatch
+        if !autoDownload.waitForExistence(timeout: 3) { scrollTo(autoDownload) }
+        XCTAssertTrue(autoDownload.waitForExistence(timeout: 5), "missing switch updates.autoDownload")
+        XCTAssertEqual(autoDownload.value as? String, "1")
     }
 }
 
 final class OuijaUITests: DisciplineUITestCase {
+    /// The pairing result row sits under the Start button; a List can leave it unloaded below the fold.
+    func shown(_ id: String) -> XCUIElement {
+        let e = el(id)
+        if !e.waitForExistence(timeout: 3) { scrollTo(e, maxSwipes: 8) }
+        _ = e.waitForExistence(timeout: 3)
+        return e
+    }
+
     // Signed by the UI-test key, which the app accepts only while it runs under -uiTesting.
     static let testCode = "NCOM1.eyJ2IjoxLCJpc3MiOiJOQ09NIFN5c3RlbXMiLCJzdWIiOiJPdWlqYSBCb2FyZCIsImlhdCI6MTc5MjkwMDAwMCwibiI6IjAwMTEyMjMzNDQ1NTY2NzcifQ.OH9zMowlq5wy6fAT2xPHhrzPHN6CrefXrkBHy4_xAxeBit-GHPXi2IL5zbN9AtiyhRUOognhKX4U-QDiH8uZDw"
     // Same message, signed by a different key: must be refused.
@@ -169,19 +181,19 @@ final class OuijaUITests: DisciplineUITestCase {
         XCTAssertTrue(el("pair.instructions").waitForExistence(timeout: 5))
         for i in 1...6 { XCTAssertTrue(el("pair.option.opt\(i)").exists, "pairing option \(i)") }
         tap("pair.start")
-        XCTAssertEqual(el("pair.result").label, "Choose an option first.")
+        XCTAssertEqual(shown("pair.result").label, "Choose an option first.")
         tap("pair.option.opt4")   // the local-network option: a real Bonjour search (instant and empty under tests)
         tap("pair.start")
-        let result = el("pair.result")
-        XCTAssertTrue(result.waitForExistence(timeout: 5))
+        let result = shown("pair.result")
+        XCTAssertTrue(result.exists)
         XCTAssertEqual(result.label, "No NCOM devices found on this network.")
         snap("40-start-searching")
         tap("pair.option.opt5")   // a hardware-only option
         tap("pair.start")
-        XCTAssertTrue(el("pair.result").label.hasSuffix("needs NCOM prototype hardware. Nothing is paired."))
+        XCTAssertTrue(shown("pair.result").label.hasSuffix("needs NCOM prototype hardware. Nothing is paired."))
         tap("pair.option.opt1")   // the UWB option
         tap("pair.start")
-        XCTAssertTrue(el("pair.result").label.contains("Nearby Interaction"))
+        XCTAssertTrue(shown("pair.result").label.contains("Nearby Interaction"))
         back()
         XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 5))
         let field = el("ouija.shellInput")

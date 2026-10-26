@@ -295,18 +295,23 @@ struct PairingView: View {
                 }
             }
             Section {
-                Button { Task { await start() } } label: {
-                    HStack {
-                        if searching { ProgressView() }
-                        Text(searching ? "Searching…" : OuijaContent.shared.pairTitle).font(.headline)
+                // The result shares the button's row so it shows right under the button, never below the fold.
+                VStack(alignment: .leading, spacing: 10) {
+                    Button { Task { await start() } } label: {
+                        HStack {
+                            if searching { ProgressView() }
+                            Text(searching ? "Searching…" : OuijaContent.shared.pairTitle).font(.headline)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.glassProminent)
-                .disabled(searching)
-                .accessibilityIdentifier("pair.start")
-                if !result.isEmpty {
-                    Text(result).font(.callout).accessibilityIdentifier("pair.result")
+                    .buttonStyle(.glassProminent)
+                    .disabled(searching)
+                    .accessibilityIdentifier("pair.start")
+                    if !result.isEmpty {
+                        Text(result).font(.callout)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("pair.result")
+                    }
                 }
             }
         }
