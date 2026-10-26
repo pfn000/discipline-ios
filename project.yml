@@ -23,6 +23,27 @@ targets:
     sources:
       - path: App/Sources
       - path: App/Resources
+    # Test fixtures (Sample/Tracked/Signed .ipa) are copied into Debug builds only, for the UI tests.
+    # They are never in the shipped (Release) app; CI fails the build if any .ipa is found inside it.
+    postCompileScripts:
+      - name: "UI test fixtures (Debug only)"
+        script: |
+          if [ "${CONFIGURATION}" = "Debug" ]; then
+            for f in Sample Tracked Signed; do
+              cp "${SRCROOT}/DisciplineCore/Tests/DisciplineCoreTests/Fixtures/$f.ipa" "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/$f.ipa"
+            done
+            echo "copied UI test fixtures into the Debug app"
+          else
+            echo "${CONFIGURATION}: no test fixtures in this app"
+          fi
+        inputFiles:
+          - $(SRCROOT)/DisciplineCore/Tests/DisciplineCoreTests/Fixtures/Sample.ipa
+          - $(SRCROOT)/DisciplineCore/Tests/DisciplineCoreTests/Fixtures/Tracked.ipa
+          - $(SRCROOT)/DisciplineCore/Tests/DisciplineCoreTests/Fixtures/Signed.ipa
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Sample.ipa
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Tracked.ipa
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Signed.ipa
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ncom.discipline

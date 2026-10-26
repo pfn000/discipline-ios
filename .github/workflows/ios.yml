@@ -219,7 +219,10 @@ jobs:
           file Payload/Discipline.app/Discipline | tee -a ../ipa-verify.txt
           lipo -info Payload/Discipline.app/Discipline | tee -a ../ipa-verify.txt
           lipo -info Payload/Discipline.app/Discipline | grep -q arm64
-          # Layered Liquid Glass app icon (App/Resources/AppIcon.icon, made with Icon Composer) compiled into the app.
+          # No test fixture (or any other .ipa) may ship inside the app.
+          IPAS=$(find Payload/Discipline.app -iname '*.ipa')
+          if [ -n "$IPAS" ]; then echo "FAIL: .ipa files inside the app: $IPAS" | tee -a ../ipa-verify.txt; exit 1; fi
+          echo "no .ipa inside the app: OK" | tee -a ../ipa-verify.txt
           plutil -p Payload/Discipline.app/Info.plist | grep -q '"CFBundleIconName" => "AppIcon"'
           echo "AppIcon renditions in Assets.car: $(xcrun assetutil --info Payload/Discipline.app/Assets.car 2>/dev/null | grep -c '"AppIcon')" | tee -a ../ipa-verify.txt
           ls -la Payload/Discipline.app | head -40 >> ../ipa-verify.txt

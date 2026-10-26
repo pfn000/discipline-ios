@@ -41,11 +41,8 @@ def main() -> int:
     root = (SRC / "DisciplineApp.swift").read_text(encoding="utf-8")
     if not re.search(r"\bTabView\b", root) or not re.search(r"\bTab\(", root):
         problems.append("App/Sources/DisciplineApp.swift: the root must be the system TabView with Tab(...) items (native Liquid Glass tab bar)")
-    icon = ROOT / "App" / "Resources" / "AppIcon.icon" / "icon.json"
-    if not icon.is_file():
-        problems.append("App/Resources/AppIcon.icon is missing: the app icon must be the layered Icon Composer file")
-    if (ROOT / "App" / "Resources" / "Assets.xcassets" / "AppIcon.appiconset").exists():
-        problems.append("a flat AppIcon.appiconset is back; the app icon is App/Resources/AppIcon.icon (Liquid Glass layers)")
+    for ipa in (ROOT / "App" / "Resources").rglob("*.ipa"):
+        problems.append(f"{ipa.relative_to(ROOT)}: test .ipa files must not be app resources (Debug-only copy step in project.yml)")
     total = sum(counts.values())
     print("native Liquid Glass API uses per file:")
     for k, v in counts.items():
