@@ -91,9 +91,9 @@ jobs:
           from huggingface_hub import HfApi
           api = HfApi(token=os.environ["HF_TOKEN"])
           out, run = os.environ["OUT"], os.environ["GITHUB_RUN_ID"]
-          for p in [p for p in glob.glob(out + "/**", recursive=True) if os.path.isfile(p)]:
-              rel = os.path.relpath(p, out)
-              api.upload_file(path_or_fileobj=p, path_in_repo=f"runs/icons-{run}/{rel}",
-                              repo_id=os.environ["HF_OUT_REPO"], repo_type="dataset")
-              print("uploaded", rel)
+          # One commit for the whole folder (one upload_file per render hit the hub's commit rate limit).
+          api.upload_folder(folder_path=out, path_in_repo=f"runs/icons-{run}",
+                            repo_id=os.environ["HF_OUT_REPO"], repo_type="dataset",
+                            commit_message=f"icons run {run}")
+          print("uploaded", sum(len(f) for _, _, f in os.walk(out)), "files")
           PY
