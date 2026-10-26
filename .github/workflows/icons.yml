@@ -38,10 +38,10 @@ jobs:
           python3 - <<'PY'
           import os, shutil
           from huggingface_hub import hf_hub_download
-          for rel in ["icon.json", "Assets/Jena.png"]:
-              p = hf_hub_download(repo_id=os.environ["HF_OUT_REPO"], filename=f"discipline-private/icons/Jena.icon/{rel}",
+          for rel in ["icon.json", "Assets/Jena.png", "Assets/Halo.svg"]:
+              p = hf_hub_download(repo_id=os.environ["HF_OUT_REPO"], filename=f"discipline-private/icons/Jena-v2.icon/{rel}",
                                   repo_type="dataset", token=os.environ["HF_TOKEN"])
-              dst = os.path.join("/tmp/private-icons/Jena.icon", rel)
+              dst = os.path.join("/tmp/private-icons/Jena-v2.icon", rel)
               os.makedirs(os.path.dirname(dst), exist_ok=True)
               shutil.copy(p, dst)
           print("Jena.icon fetched")
@@ -50,7 +50,7 @@ jobs:
         run: |
           set +e
           FAIL=0
-          for ICON in icons/Discipline.icon /tmp/private-icons/Jena.icon; do
+          for ICON in icons/Discipline-v2.icon /tmp/private-icons/Jena-v2.icon; do
             N=$(basename "$ICON" .icon)
             for R in Default Dark ClearLight ClearDark TintedLight TintedDark; do
               perl -e 'alarm shift; exec @ARGV' 120 "$IC" "$ICON" --export-image --output-file "$OUT/icons/$N-iOS-$R-1024.png" \
@@ -60,16 +60,18 @@ jobs:
             perl -e 'alarm shift; exec @ARGV' 120 "$IC" "$ICON" --export-image --output-file "$OUT/icons/$N-iOS-Default-gen26-1024.png" \
               --platform iOS --rendition Default --width 1024 --height 1024 --scale 1 --design-generation 26
             echo "$N Default gen26 exit=$?" | tee -a "$OUT/icons/render-log.txt"
-            for PX in 180 120 87 58; do
-              perl -e 'alarm shift; exec @ARGV' 60 "$IC" "$ICON" --export-image --output-file "$OUT/icons/$N-iOS-Default-$PX.png" \
-                --platform iOS --rendition Default --width $PX --height $PX --scale 1
+            for R in Default Dark ClearLight ClearDark TintedLight TintedDark; do
+              for PX in 180 120 87 58; do
+                perl -e 'alarm shift; exec @ARGV' 60 "$IC" "$ICON" --export-image --output-file "$OUT/icons/$N-iOS-$R-$PX.png" \
+                  --platform iOS --rendition $R --width $PX --height $PX --scale 1
+              done
             done
           done
           ls -la "$OUT/icons"
           exit $FAIL
       - name: Compile both icons with Apple's asset compiler (actool)
         run: |
-          for ICON in icons/Discipline.icon /tmp/private-icons/Jena.icon; do
+          for ICON in icons/Discipline-v2.icon /tmp/private-icons/Jena-v2.icon; do
             N=$(basename "$ICON" .icon)
             mkdir -p "/tmp/actool-$N"
             xcrun actool "$ICON" --compile "/tmp/actool-$N" --platform iphoneos --minimum-deployment-target 26.0 \
@@ -78,24 +80,6 @@ jobs:
             ls -la "/tmp/actool-$N" | tee -a "$OUT/icons/actool-$N.txt"
             test -f "/tmp/actool-$N/Assets.car"
           done
-      - name: Wire the Discipline icon into the app and build it (simulator, unsigned)
-        run: |
-          rm -rf App/Resources/Assets.xcassets/AppIcon.appiconset
-          cp -R icons/Discipline.icon App/Resources/AppIcon.icon
-          curl -sSL -o /tmp/xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/latest/download/xcodegen.zip
-          unzip -q /tmp/xcodegen.zip -d /tmp/xg
-          /tmp/xg/xcodegen/bin/xcodegen generate
-          grep -n "AppIcon.icon" Discipline.xcodeproj/project.pbxproj | tee "$OUT/icons/wiring-pbxproj.txt"
-          set -o pipefail
-          xcodebuild build -project Discipline.xcodeproj -scheme Discipline -configuration Release \
-            -destination "generic/platform=iOS Simulator" -derivedDataPath /tmp/dd CODE_SIGNING_ALLOWED=NO \
-            > "$OUT/icons/app-build.log" 2>&1 || { tail -60 "$OUT/icons/app-build.log"; exit 1; }
-          APP=$(ls -d /tmp/dd/Build/Products/Release-iphonesimulator/Discipline.app)
-          plutil -p "$APP/Info.plist" | sed -n '/CFBundleIcons/,/}/p' | tee "$OUT/icons/wiring-infoplist.txt"
-          ls -la "$APP" | grep -iE "AppIcon|Assets.car" | tee -a "$OUT/icons/wiring-infoplist.txt"
-          xcrun assetutil --info "$APP/Assets.car" > "$OUT/icons/wiring-assetutil.json" 2>&1 || true
-          grep -c '"AppIcon' "$OUT/icons/wiring-assetutil.json" | sed 's/^/AppIcon renditions in Assets.car: /' | tee -a "$OUT/icons/wiring-infoplist.txt"
-          grep -q CFBundleIcons "$OUT/icons/wiring-infoplist.txt"
       - name: Copy outputs to the private Hugging Face dataset
         if: always()
         env:
