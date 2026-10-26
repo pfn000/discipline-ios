@@ -74,7 +74,7 @@
           "name": "Top face",
           "glass": true,
           "hidden": false,
-          "opacity": 0.7,
+          "opacity": 0.55,
           "fill-specializations": [
             {
               "value": {
@@ -100,7 +100,7 @@
           "name": "Left face",
           "glass": true,
           "hidden": false,
-          "opacity": 0.7,
+          "opacity": 0.55,
           "fill-specializations": [
             {
               "value": {
@@ -126,7 +126,7 @@
           "name": "Right face",
           "glass": true,
           "hidden": false,
-          "opacity": 0.7,
+          "opacity": 0.55,
           "fill-specializations": [
             {
               "value": {
@@ -154,12 +154,12 @@
       },
       "translucency": {
         "enabled": true,
-        "value": 0.78
+        "value": 0.82
       },
       "name": "Front faces",
       "specular": true,
       "lighting": "individual",
-      "blur-material": 0.25
+      "blur-material": 0.15
     },
     {
       "layers": [
@@ -168,23 +168,23 @@
           "name": "Back, left-back and bottom panes",
           "glass": true,
           "hidden": false,
-          "opacity": 0.55,
+          "opacity": 0.85,
           "fill-specializations": [
             {
               "value": {
-                "solid": "srgb:0.72000,0.73000,0.78000,1.00000"
+                "solid": "srgb:0.55000,0.57000,0.63000,1.00000"
               }
             },
             {
               "appearance": "dark",
               "value": {
-                "solid": "srgb:0.45000,0.46000,0.50000,1.00000"
+                "solid": "srgb:0.62000,0.64000,0.70000,1.00000"
               }
             },
             {
               "appearance": "tinted",
               "value": {
-                "solid": "extended-gray:0.70000,0.50000"
+                "solid": "extended-gray:0.75000,0.80000"
               }
             }
           ]
@@ -196,7 +196,7 @@
       },
       "translucency": {
         "enabled": true,
-        "value": 0.7
+        "value": 0.5
       },
       "name": "Back faces",
       "specular": true,

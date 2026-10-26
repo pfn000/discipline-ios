@@ -7,17 +7,17 @@
           "name": "Bar right (front)",
           "glass": true,
           "hidden": false,
-          "opacity": 1,
+          "opacity": 0.9,
           "fill-specializations": [
             {
               "value": {
-                "solid": "srgb:0.16000,0.17000,0.20000,1.00000"
+                "solid": "srgb:0.30000,0.32000,0.38000,1.00000"
               }
             },
             {
               "appearance": "dark",
               "value": {
-                "solid": "extended-gray:1.00000,1.00000"
+                "solid": "extended-gray:1.00000,0.95000"
               }
             },
             {
@@ -30,17 +30,17 @@
         }
       ],
       "shadow": {
-        "kind": "neutral",
-        "opacity": 0.5
+        "kind": "layer-color",
+        "opacity": 0.6
       },
       "translucency": {
         "enabled": true,
-        "value": 0.4
+        "value": 0.6
       },
       "name": "Bar right (front)",
       "specular": true,
       "lighting": "individual",
-      "blur-material": 0.22
+      "blur-material": 0.35
     },
     {
       "layers": [
@@ -49,23 +49,23 @@
           "name": "Bar left (back)",
           "glass": true,
           "hidden": false,
-          "opacity": 1,
+          "opacity": 0.85,
           "fill-specializations": [
             {
               "value": {
-                "solid": "srgb:0.50000,0.52000,0.58000,1.00000"
+                "solid": "srgb:0.58000,0.60000,0.67000,1.00000"
               }
             },
             {
               "appearance": "dark",
               "value": {
-                "solid": "srgb:0.70000,0.72000,0.78000,1.00000"
+                "solid": "srgb:0.72000,0.74000,0.80000,0.90000"
               }
             },
             {
               "appearance": "tinted",
               "value": {
-                "solid": "extended-gray:1.00000,0.80000"
+                "solid": "extended-gray:1.00000,0.75000"
               }
             }
           ]
@@ -73,16 +73,16 @@
       ],
       "shadow": {
         "kind": "neutral",
-        "opacity": 0.5
+        "opacity": 0.4
       },
       "translucency": {
         "enabled": true,
-        "value": 0.55
+        "value": 0.7
       },
       "name": "Bar left (back)",
       "specular": true,
       "lighting": "individual",
-      "blur-material": 0.22
+      "blur-material": 0.35
     }
   ],
   "supported-platforms": {
