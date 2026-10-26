@@ -2,6 +2,12 @@ import SwiftUI
 import UIKit
 import DisciplineCore
 
+/// Saidie's corner rule (WhatsApp, Oct 26 2026, 2:41 PM): every rounded card or container uses 37.6.
+/// SwiftUI corner radii are in points, so this is 37.6 pt. Change it here and every card follows.
+enum DisciplineShape {
+    static let cornerRadius: CGFloat = 37.6
+}
+
 extension TintChoice {
     var color: Color {
         switch self {
@@ -25,7 +31,7 @@ struct GlassCard<Content: View>: View {
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .glassEffect(tinted ? .regular.tint(model.settings.tint.color.opacity(0.35)) : .regular,
-                         in: .rect(cornerRadius: 24))
+                         in: .rect(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
     }
 }
 

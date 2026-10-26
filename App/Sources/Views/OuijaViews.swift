@@ -60,7 +60,7 @@ struct OuijaAttentionPage: View {
                     .onChange(of: slide) { _, v in if v >= 0.97 { onUnderstood() } }
             }
             .padding()
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
         }
         .padding(24)
     }
@@ -89,7 +89,7 @@ struct OuijaAgreementPage: View {
                 Spacer()
             }
             .padding()
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("ouija.signedIn")
             Spacer()
@@ -135,7 +135,7 @@ struct OuijaBoardMain: View {
                     .font(.footnote.monospaced())
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(10)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+                    .background(.quaternary, in: RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
                     .accessibilityIdentifier("ouija.status")
                 Text(OuijaContent.shared.source == "private" ? "NCOM content" : "Neutral content (NCOM's file isn't in this build)")
                     .font(.caption2).foregroundStyle(.secondary)
@@ -159,7 +159,7 @@ struct OuijaBoardMain: View {
                         .accessibilityIdentifier("ouija.shellOutput")
                 }
                 .padding()
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
             }
             .padding()
         }
@@ -192,7 +192,7 @@ struct OuijaBoardMain: View {
                 .accessibilityIdentifier("ouija.settings")
         }
         .padding()
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
     }
 
     @ViewBuilder private func tileFace(_ tile: OuijaContent.Tile) -> some View {
@@ -206,7 +206,7 @@ struct OuijaBoardMain: View {
             }
         }
         .frame(maxWidth: .infinity, minHeight: 70)
-        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 16))
+        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
     }
 
     private func tap(_ tile: OuijaContent.Tile) {
@@ -467,7 +467,7 @@ struct OuijaScannerSheet: View {
                         model.receiveOuijaCode(text)
                     }
                     .frame(maxWidth: .infinity, minHeight: 320)
-                    .clipShape(RoundedRectangle(cornerRadius: 22))
+                    .clipShape(RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
                 } else {
                     Label("The camera scanner isn't available here. Scan the NCOM QR with the iPhone Camera app (it opens Discipline), or pick a photo of the code.",
                           systemImage: "camera")
