@@ -219,6 +219,9 @@ jobs:
           file Payload/Discipline.app/Discipline | tee -a ../ipa-verify.txt
           lipo -info Payload/Discipline.app/Discipline | tee -a ../ipa-verify.txt
           lipo -info Payload/Discipline.app/Discipline | grep -q arm64
+          # Layered Liquid Glass app icon (App/Resources/AppIcon.icon, made with Icon Composer) compiled into the app.
+          plutil -p Payload/Discipline.app/Info.plist | grep -q '"CFBundleIconName" => "AppIcon"'
+          echo "AppIcon renditions in Assets.car: $(xcrun assetutil --info Payload/Discipline.app/Assets.car 2>/dev/null | grep -c '"AppIcon')" | tee -a ../ipa-verify.txt
           ls -la Payload/Discipline.app | head -40 >> ../ipa-verify.txt
           codesign -dv Payload/Discipline.app 2>&1 | tee -a ../ipa-verify.txt || echo "unsigned (expected): Plume Impactor signs it" | tee -a ../ipa-verify.txt
 

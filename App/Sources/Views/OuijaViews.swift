@@ -30,6 +30,10 @@ struct OuijaBoardView: View {
         }
         .navigationTitle("NCOM Ouija Board")
         .navigationBarTitleDisplayMode(.inline)
+        // "Show the Attention page again" (settings sheet) must land on the Attention page, not the Agreement page.
+        .onChange(of: model.settings.ouijaAgreed) { _, agreed in
+            if !agreed { understood = false }
+        }
     }
 }
 
@@ -409,7 +413,8 @@ struct MagicRingView: View {
         .task {
             try? await Task.sleep(for: .seconds(2.6))
             withAnimation(.spring) { showResult = true }
-            try? await Task.sleep(for: .seconds(1.6))
+            // Long enough to read the result (and for UI tests on a slow simulator to see it).
+            try? await Task.sleep(for: .seconds(2.6))
             onFinish()
         }
     }
