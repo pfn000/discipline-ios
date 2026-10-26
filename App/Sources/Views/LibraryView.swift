@@ -128,7 +128,7 @@ struct IPADetailView: View {
 
                 GlassEffectContainer(spacing: 12) {
                     HStack(spacing: 12) {
-                        Button { trackSheet = true } label: { Label("Track expiry", systemImage: "timer").frame(maxWidth: .infinity) }
+                        Button { if !model.trackFromProfile(item) { trackSheet = true } } label: { Label("Track expiry", systemImage: "timer").frame(maxWidth: .infinity) }
                             .buttonStyle(.glass)
                             .accessibilityIdentifier("ipa.track")
                         Button(role: .destructive) { confirmDelete = true } label: { Label("Delete", systemImage: "trash").frame(maxWidth: .infinity) }

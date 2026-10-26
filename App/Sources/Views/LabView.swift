@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 import DisciplineCore
 
-/// NCOM Lab: tap the Discipline label in More 25 times (legacy 7 long presses still supported).
+/// NCOM Lab: unlocked with Ouija Board (25 taps on the Discipline label in More, 7 long presses, or a signed NCOM QR).
 struct LabView: View {
     @EnvironmentObject var model: AppModel
     @State var inspectedID: UUID?
@@ -10,9 +10,6 @@ struct LabView: View {
     @State var inspectError: String?
     @State var preset = SigningPreset.ouijaBoard
     @State var exportURLs: [URL] = []
-    @State private var prototypeConsent = false
-    @State private var shellInput = ""
-    @State private var shellOutput = "Type help for local commands. No system shell or hardware link."
 
     var body: some View {
         List {
@@ -113,62 +110,14 @@ struct LabView: View {
             } header: { Text("Signing preset") } footer: {
                 Text("Put the .entitlements file in your app's Xcode project (Code Signing Entitlements) and the Info.plist keys in its Info.plist. Plume Impactor and SideStore then ask Apple for those entitlements when they sign; restricted ones fail on a free account.")
             }
-            Section("Ouija Board · developer preview") {
-                Text("Ouija Board is only meant for NCOM developers. Prototype hardware control is not connected; these tiles are a layout preview, not a device session.")
+            Section("Ouija Board") {
+                Text("Ouija Board is only meant for NCOM developers. It has its own screen now, laid out from the concept sketches: More → Ouija Board.")
                     .font(.caption).foregroundStyle(.orange)
                     .accessibilityIdentifier("lab.prototypeWarning")
-                Toggle("I understand the prototype features are unavailable", isOn: $prototypeConsent)
-                    .accessibilityIdentifier("lab.prototypeConsent")
-                if prototypeConsent {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Focals Pro").font(.title3.weight(.semibold))
-                        Text("Device model: concept · connection status: not connected")
-                            .font(.caption).foregroundStyle(.secondary)
-                        Text("User Profile / Playground ID session: none")
-                            .font(.caption).foregroundStyle(.secondary)
-                        let tiles = ["Alert", "2.1htz", "Cloud", "Node dial", "Warning", "Visor",
-                                     "Terminal", "Starburst", "Hand/tool", "Speed gauge", "DE E", "+ Add Test App"]
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
-                            ForEach(tiles, id: \.self) { tile in
-                                VStack(spacing: 5) {
-                                    Image(systemName: tile == "+ Add Test App" ? "plus.app" : "circle.dotted")
-                                    Text(tile).font(.system(size: 10, weight: .medium))
-                                        .multilineTextAlignment(.center)
-                                }
-                                .frame(maxWidth: .infinity, minHeight: 65)
-                                .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
-                                .accessibilityIdentifier("lab.tile.\(tile)")
-                            }
-                        }
-                        Text("///Shell terminal for App only")
-                            .font(.caption.monospaced()).foregroundStyle(.secondary)
-                        HStack {
-                            TextField("Local command", text: $shellInput)
-                                .textInputAutocapitalization(.never).autocorrectionDisabled()
-                                .accessibilityIdentifier("lab.shellInput")
-                            Button("Send") { runLocalCommand() }
-                                .accessibilityIdentifier("lab.shellSend")
-                        }
-                        Text(shellOutput).font(.caption.monospaced())
-                            .accessibilityIdentifier("lab.shellOutput")
-                    }
-                }
             }
 
         }
         .navigationTitle("NCOM Lab")
-    }
-
-    private func runLocalCommand() {
-        let name = shellInput.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        switch name {
-        case "help": shellOutput = "Local commands: help, apps, device, status. No iOS shell commands."
-        case "apps": shellOutput = "\(model.library.count) IPA files in Discipline's Library; none run inside Discipline."
-        case "device": shellOutput = "iOS \(UIDevice.current.systemVersion); Focals Pro: concept only, no device linked."
-        case "status": shellOutput = "Prototype connection: not connected. Native guest loader: not available."
-        default: shellOutput = "Unknown local command. Type help."
-        }
-        shellInput = ""
     }
 
     private func badgeIcon(_ f: DeviceFeature) -> String {

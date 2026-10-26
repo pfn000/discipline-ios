@@ -32,6 +32,13 @@ enum TintChoice: String, Codable, CaseIterable, Identifiable {
     var label: String { rawValue.capitalized }
 }
 
+/// Ouija Board header: which kind of session is signed in (labels come from OuijaContent).
+enum OuijaSessionKind: String, Codable, CaseIterable, Identifiable {
+    case userProfile, playgroundID
+    var id: String { rawValue }
+    var label: String { self == .userProfile ? OuijaContent.shared.sessionUser : OuijaContent.shared.sessionAlt }
+}
+
 struct AppSettings: Codable, Equatable {
     var tier: AccountTier = .free
     var remindersEnabled: Bool = false
@@ -39,6 +46,37 @@ struct AppSettings: Codable, Equatable {
     var appearance: AppearanceChoice = .system
     var tint: TintChoice = .ocean
     var includePrereleases: Bool = false
+    // v0.3
+    var autoRefresh: Bool = true
+    var lastAutoRefresh: Date?
+    var autoCheckUpdates: Bool = true
+    var autoDownloadUpdates: Bool = false
+    var lastUpdateCheck: Date?
+    var ouijaUnlocked: Bool = false
+    var ouijaAgreed: Bool = false
+    var ouijaSession: OuijaSessionKind = .userProfile
+
+    init() {}
+
+    /// Every key is optional so state saved by older versions still loads (a missing key keeps its default).
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = AppSettings()
+        tier = (try? c.decodeIfPresent(AccountTier.self, forKey: .tier)) ?? d.tier
+        remindersEnabled = (try? c.decodeIfPresent(Bool.self, forKey: .remindersEnabled)) ?? d.remindersEnabled
+        expectedTunnelIP = (try? c.decodeIfPresent(String.self, forKey: .expectedTunnelIP)) ?? d.expectedTunnelIP
+        appearance = (try? c.decodeIfPresent(AppearanceChoice.self, forKey: .appearance)) ?? d.appearance
+        tint = (try? c.decodeIfPresent(TintChoice.self, forKey: .tint)) ?? d.tint
+        includePrereleases = (try? c.decodeIfPresent(Bool.self, forKey: .includePrereleases)) ?? d.includePrereleases
+        autoRefresh = (try? c.decodeIfPresent(Bool.self, forKey: .autoRefresh)) ?? d.autoRefresh
+        lastAutoRefresh = try? c.decodeIfPresent(Date.self, forKey: .lastAutoRefresh)
+        autoCheckUpdates = (try? c.decodeIfPresent(Bool.self, forKey: .autoCheckUpdates)) ?? d.autoCheckUpdates
+        autoDownloadUpdates = (try? c.decodeIfPresent(Bool.self, forKey: .autoDownloadUpdates)) ?? d.autoDownloadUpdates
+        lastUpdateCheck = try? c.decodeIfPresent(Date.self, forKey: .lastUpdateCheck)
+        ouijaUnlocked = (try? c.decodeIfPresent(Bool.self, forKey: .ouijaUnlocked)) ?? d.ouijaUnlocked
+        ouijaAgreed = (try? c.decodeIfPresent(Bool.self, forKey: .ouijaAgreed)) ?? d.ouijaAgreed
+        ouijaSession = (try? c.decodeIfPresent(OuijaSessionKind.self, forKey: .ouijaSession)) ?? d.ouijaSession
+    }
 }
 
 /// Everything Discipline keeps, in one JSON file. An exported backup uses the same format with `library` left empty.
@@ -57,7 +95,10 @@ struct Persistence {
     static func standard() -> Persistence {
         let fm = FileManager.default
         if TestHooks.isUITesting {
-            let dir = fm.temporaryDirectory.appendingPathComponent("discipline-uitest-\(UUID().uuidString)")
+            // -uiTestingStateDir <name> keeps state between launches of one test (to prove it persists).
+            let name = TestHooks.stateDir.map { "discipline-uitest-\($0)" } ?? "discipline-uitest-\(UUID().uuidString)"
+            let dir = fm.temporaryDirectory.appendingPathComponent(name)
+            if TestHooks.resetState { try? fm.removeItem(at: dir) }
             try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
             return Persistence(directory: dir)
         }

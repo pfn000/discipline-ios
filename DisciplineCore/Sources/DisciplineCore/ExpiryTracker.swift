@@ -7,12 +7,51 @@ public struct TrackedApp: Codable, Hashable, Identifiable, Sendable {
     public var bundleID: String
     public var signedAt: Date
     public var tier: AccountTier
+    /// The exact expiry read from the app's provisioning profile, when Discipline could read one.
+    /// Nil for apps tracked by hand (their expiry is counted from `signedAt`).
+    public var profileExpiresAt: Date?
 
-    public init(name: String, bundleID: String, signedAt: Date, tier: AccountTier) {
+    public init(name: String, bundleID: String, signedAt: Date, tier: AccountTier, profileExpiresAt: Date? = nil) {
         self.name = name; self.bundleID = bundleID; self.signedAt = signedAt; self.tier = tier
+        self.profileExpiresAt = profileExpiresAt
     }
 
-    public var expiresAt: Date { signedAt.addingTimeInterval(TimeInterval(tier.signatureLifetimeDays) * 86_400) }
+    public var expiresAt: Date {
+        profileExpiresAt ?? signedAt.addingTimeInterval(TimeInterval(tier.signatureLifetimeDays) * 86_400)
+    }
+
+    /// True when the expiry came from a provisioning profile rather than a typed date.
+    public var expiryIsRead: Bool { profileExpiresAt != nil }
+}
+
+/// Auto refresh: decides, without asking the user, whether Discipline should start a refresh now.
+/// A refresh is due when any tracked app is inside `window` of its expiry (or expired), and
+/// Discipline has not started one in the last `minInterval` (so returning from SideStore doesn't loop).
+public struct AutoRefreshPlanner: Equatable, Sendable {
+    public var window: TimeInterval
+    public var minInterval: TimeInterval
+
+    public init(window: TimeInterval = 48 * 3600, minInterval: TimeInterval = 6 * 3600) {
+        self.window = window; self.minInterval = minInterval
+    }
+
+    public enum Decision: Equatable, Sendable {
+        case nothingTracked
+        case nothingDue(nextDue: Date)
+        case ranRecently(nextAllowed: Date)
+        case refresh(due: [String])   // bundle IDs, soonest first
+    }
+
+    public func decide(apps: [TrackedApp], lastRun: Date?, now: Date) -> Decision {
+        guard !apps.isEmpty else { return .nothingTracked }
+        let sorted = apps.sorted { $0.expiresAt < $1.expiresAt }
+        let due = sorted.filter { $0.expiresAt.timeIntervalSince(now) <= window }
+        guard !due.isEmpty else { return .nothingDue(nextDue: sorted[0].expiresAt.addingTimeInterval(-window)) }
+        if let lastRun, now.timeIntervalSince(lastRun) < minInterval, lastRun <= now {
+            return .ranRecently(nextAllowed: lastRun.addingTimeInterval(minInterval))
+        }
+        return .refresh(due: due.map(\.bundleID))
+    }
 }
 
 public enum ExpiryStatus: Equatable, Sendable {

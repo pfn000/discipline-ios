@@ -9,13 +9,18 @@ struct ExpiryView: View {
         NavigationStack {
             List {
                 Section {
-                    Toggle(isOn: Binding(get: { model.settings.remindersEnabled },
-                                         set: { on in Task { await model.setReminders(on) } })) {
-                        Label("Remind me before expiry", systemImage: "bell.badge")
+                    Toggle(isOn: Binding(get: { model.settings.autoRefresh },
+                                         set: { on in Task { await model.setAutoRefresh(on) } })) {
+                        Label("Auto refresh", systemImage: "arrow.triangle.2.circlepath")
                     }
-                    .accessibilityIdentifier("expiry.reminders")
+                    .accessibilityIdentifier("expiry.autoRefresh")
+                    if !model.autoRefreshStatus.isEmpty {
+                        Text(model.autoRefreshStatus).font(.caption).foregroundStyle(.secondary)
+                            .accessibilityIdentifier("expiry.autoStatus")
+                    }
+                    ownSignatureRow
                 } footer: {
-                    Text("Local notifications 48 h, 24 h and 2 h before each app's signature runs out.")
+                    Text("No reminders. When an app has 2 days or less left, Discipline starts SideStore's refresh by itself as soon as you open it (LocalDevVPN on, then SideStore). For a fully hands-off refresh, add Discipline's \"Auto Refresh Due Apps\" action to a Shortcuts automation (for example, when your iPhone starts charging). iOS doesn't let any app open SideStore from the background.")
                 }
 
                 Section("Apps") {
@@ -27,7 +32,12 @@ struct ExpiryView: View {
                         HStack {
                             VStack(alignment: .leading) {
                                 Text(app.name).font(.headline)
-                                Text("\(app.tier == .free ? "7-day" : "1-year") signature").font(.caption).foregroundStyle(.secondary)
+                                if app.expiryIsRead {
+                                    Text("Expiry read from its signature").font(.caption).foregroundStyle(.secondary)
+                                        .accessibilityIdentifier("expiry.read.\(app.bundleID)")
+                                } else {
+                                    Text("\(app.tier == .free ? "7-day" : "1-year") signature").font(.caption).foregroundStyle(.secondary)
+                                }
                             }
                             Spacer()
                             Text(ExpiryTracker.shortText(status))
@@ -76,6 +86,21 @@ struct ExpiryView: View {
         }
     }
 
+    @ViewBuilder private var ownSignatureRow: some View {
+        switch model.ownSignature {
+        case .notRead:
+            EmptyView()
+        case .unreadable(let why):
+            Label(why, systemImage: "signature").font(.caption).foregroundStyle(.secondary)
+                .accessibilityIdentifier("expiry.ownSignature")
+        case .read(let expires, let tier):
+            Label("Discipline's own signature (\(tier == .free ? "free Apple ID" : "paid account")) runs out \(expires.formatted(date: .abbreviated, time: .shortened))",
+                  systemImage: "signature")
+                .font(.caption)
+                .accessibilityIdentifier("expiry.ownSignature")
+        }
+    }
+
     private func color(_ s: ExpiryStatus) -> Color {
         switch s {
         case .healthy: return .green
@@ -109,7 +134,7 @@ struct AddTrackedAppSheet: View {
                     DatePicker("Signed / refreshed", selection: $signedAt, in: ...Date())
                         .accessibilityIdentifier("add.date")
                 } footer: {
-                    Text("Pick when Plume Impactor or SideStore last signed or refreshed it. The countdown and reminders count from this date.")
+                    Text("Only needed for apps Discipline can't read. Pick when Plume Impactor or SideStore last signed or refreshed it; the countdown counts from this date. Signed .ipa files in the Library are tracked with their real expiry.")
                 }
             }
             .navigationTitle("Track an app")

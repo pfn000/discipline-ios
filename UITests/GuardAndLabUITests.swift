@@ -35,13 +35,11 @@ final class LabUITests: DisciplineUITestCase {
         scrollTo(version)
         for _ in 0..<25 { version.tap() }
         XCTAssertTrue(el("more.lab").waitForExistence(timeout: 5))
+        XCTAssertTrue(el("more.ouija").exists, "Ouija Board has its own screen")
         tap("more.lab")
         scrollTo(el("lab.prototypeWarning"), maxSwipes: 14)
         XCTAssertTrue(el("lab.prototypeWarning").exists)
-        XCTAssertFalse(el("lab.tile.+ Add Test App").exists)
-        flip("lab.prototypeConsent")
-        scrollTo(el("lab.tile.+ Add Test App"), maxSwipes: 8)
-        XCTAssertTrue(el("lab.tile.+ Add Test App").exists)
+        XCTAssertTrue(el("lab.prototypeWarning").label.contains("More → Ouija Board"))
     }
 
     func testHiddenLabUnlockAndEveryControl() throws {

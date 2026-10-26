@@ -1,4 +1,5 @@
 import Foundation
+import DisciplineCore
 
 /// Single place for values that change per build.
 enum AppConfig {
@@ -8,7 +9,23 @@ enum AppConfig {
 
     static let appName = "Discipline"
     static let urlScheme = "discipline"
-    static let sourceCodeNote = "Private build for Saidie / NCOM."
+    static let sourceCodeNote = "Built for Saidie / NCOM. Source: github.com/pfn000/discipline-ios."
+
+    /// Discipline checks this repo's GitHub Releases for its own updates.
+    static let updateRepo = GitHubRepoRef(owner: "pfn000", repo: "discipline-ios")
+
+    /// Public half of NCOM's Ouija Board signing key (Ed25519, raw 32 bytes, base64url).
+    /// The private half never ships in the app or the repo; only codes it signed unlock.
+    static let ouijaPublicKeys = ["JFb_lSzDdsvfjjiOfDxJgZgAADqPj7u03UUWn0w1Ir0"]
+    /// Accepted only while UI tests run (-uiTesting): signs the fixture code in the tests.
+    static let ouijaTestPublicKey = "qNMlfqG-kdjedq5CxZDm10U9n0g9swF1bM1oYsbfQQU"
+
+    static var ouijaKeys: [Data] {
+        (ouijaPublicKeys + (TestHooks.isUITesting ? [ouijaTestPublicKey] : [])).compactMap(OuijaCode.base64URLDecode)
+    }
+
+    /// Background check identifier (Info.plist BGTaskSchedulerPermittedIdentifiers).
+    static let backgroundRefreshID = "com.ncom.discipline.refresh"
 }
 
 /// Switches that exist only for the UI test run (passed as launch arguments by the tests).
@@ -28,4 +45,30 @@ enum TestHooks {
     static var seedLibrary: Bool { args.contains("-uiTestingSeedLibrary") }
 
     static var sampleIPAURL: URL? { Bundle.main.url(forResource: "Sample", withExtension: "ipa") }
+
+    /// The value after a launch argument ("-flag value").
+    static func value(after flag: String) -> String? {
+        guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
+        return args[i + 1]
+    }
+    /// Keep app state in a named folder so a relaunch sees it.
+    static var stateDir: String? { value(after: "-uiTestingStateDir") }
+    /// Empty that named folder first.
+    static var resetState: Bool { args.contains("-uiTestingResetState") }
+    /// Open discipline://ouija?code=<value> at launch, as if the Camera app scanned the QR.
+    static var ouijaCode: String? { value(after: "-uiTestingOuijaCode") }
+    /// Start with the Ouija Board already unlocked.
+    static var ouijaUnlocked: Bool { args.contains("-uiTestingOuijaUnlocked") }
+    /// Track one app signed 6 days ago (due for refresh).
+    static var dueApp: Bool { args.contains("-uiTestingDueApp") }
+    /// Import the bundled Signed.ipa (it carries a provisioning profile) at launch.
+    static var seedSigned: Bool { args.contains("-uiTestingSeedSigned") }
+    /// Run the launch-time update check even under UI tests (normally off so tests never touch the network).
+    static var autoCheck: Bool { args.contains("-uiTestingAutoCheck") }
+    /// Save two GitHub repos at launch: missing/repo (answers 404) first, then ncom/sample-app.
+    static var seedRepos: Bool { args.contains("-uiTestingSeedRepos") }
+    /// Turn auto-download of updates on at launch.
+    static var autoDownload: Bool { args.contains("-uiTestingAutoDownload") }
+    /// Turn auto refresh off at launch (it is on by default).
+    static var autoRefreshOff: Bool { args.contains("-uiTestingAutoRefreshOff") }
 }

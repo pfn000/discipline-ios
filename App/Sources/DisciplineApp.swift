@@ -1,4 +1,5 @@
 import SwiftUI
+import BackgroundTasks
 import DisciplineCore
 
 @main
@@ -12,9 +13,25 @@ struct DisciplineApp: App {
                 .environmentObject(model)
                 .onOpenURL { model.handleIncoming($0) }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { model.refreshEnvironment() }
+                    switch phase {
+                    case .active: Task { await model.becameActive() }
+                    case .background: DisciplineApp.scheduleBackgroundCheck()
+                    default: break
+                    }
                 }
         }
+        // iOS wakes Discipline now and then (its own schedule) to check for updates and re-read expiry.
+        // iOS doesn't allow opening SideStore from the background, so the refresh itself runs on the next open.
+        .backgroundTask(.appRefresh(AppConfig.backgroundRefreshID)) {
+            DisciplineApp.scheduleBackgroundCheck()
+            await AppModel.current?.backgroundCheck()
+        }
+    }
+
+    nonisolated static func scheduleBackgroundCheck() {
+        let request = BGAppRefreshTaskRequest(identifier: AppConfig.backgroundRefreshID)
+        request.earliestBeginDate = Date().addingTimeInterval(6 * 3600)
+        try? BGTaskScheduler.shared.submit(request)
     }
 }
 
@@ -32,6 +49,12 @@ struct RootView: View {
         .tabBarMinimizeBehavior(.onScrollDown)
         .tint(model.settings.tint.color)
         .preferredColorScheme(model.settings.appearance == .system ? nil : (model.settings.appearance == .dark ? .dark : .light))
+        .overlay {
+            if let ring = model.magicRing {
+                MagicRingView(state: ring) { model.finishMagicRing() }
+                    .transition(.opacity)
+            }
+        }
         .overlay(alignment: .top) {
             if let t = model.toast {
                 ToastBanner(toast: t)
@@ -45,5 +68,6 @@ struct RootView: View {
             }
         }
         .animation(.snappy, value: model.toast)
+        .task { await model.becameActive() }
     }
 }

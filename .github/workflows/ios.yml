@@ -10,9 +10,13 @@ on:
         description: "request tag (shown in the run title)"
         required: false
         default: ""
+      only:
+        description: "optional: run only these UI tests (comma-separated, e.g. DisciplineUITests/OuijaUITests)"
+        required: false
+        default: ""
 run-name: "ios ${{ github.ref_name }} ${{ inputs.req }}"
-# Read-only: this workflow never creates a GitHub Release (the repo is public, and an unsigned IPA
-# must never be published as a Release). The IPA is uploaded only as a run artifact.
+# Read-only: this workflow never creates a GitHub Release (the repo is public; publishing a Release is
+# Saidie's call). The IPA goes only to her private Hugging Face dataset.
 permissions:
   contents: read
 concurrency:
@@ -35,6 +39,22 @@ jobs:
           sudo xcode-select -s "$XC"
           mkdir -p "$OUT"
           { xcodebuild -version; xcodebuild -showsdks | grep -i ios; sw_vers; } | tee "$OUT/toolchain.txt"
+
+      - name: Fetch NCOM's private Ouija Board content (never committed to this public repo)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_OUT_REPO: ${{ vars.HF_OUT_REPO }}
+        run: |
+          if [ -z "$HF_TOKEN" ] || [ -z "$HF_OUT_REPO" ]; then echo "no private content source; building with neutral content"; exit 0; fi
+          python3 -m pip install -q --break-system-packages huggingface_hub || python3 -m pip install -q huggingface_hub
+          python3 - <<'PY' || echo "private content not fetched; building with neutral content"
+          import os, shutil
+          from huggingface_hub import hf_hub_download
+          p = hf_hub_download(repo_id=os.environ["HF_OUT_REPO"], filename="discipline-private/ouija-content.json",
+                              repo_type="dataset", token=os.environ["HF_TOKEN"])
+          shutil.copy(p, "App/Resources/ouija-content.json")
+          print("private content copied:", os.path.getsize("App/Resources/ouija-content.json"), "bytes")
+          PY
 
       - name: Install XcodeGen
         run: |
@@ -73,7 +93,7 @@ jobs:
           xcrun simctl bootstatus "$UDID" -b
           xcrun simctl list devices | grep "$UDID" | tee -a "$OUT/toolchain.txt"
 
-      - name: UI tests on the simulator (12 app flows with fixtures)
+      - name: UI tests on the simulator (app flows with fixtures)
         timeout-minutes: 80
         run: |
           mkdir -p "$OUT/screenshots"
@@ -85,8 +105,13 @@ jobs:
           # A UI test that fails is run again (up to 2 more times) before the run counts it as failed:
           # the shared simulator sometimes stalls (query timeouts, a system sheet slow to appear).
           # Every retry is listed in the log and in retries.txt.
+          ONLY_ARGS=""
+          if [ -n "${{ inputs.only }}" ]; then
+            for t in $(echo "${{ inputs.only }}" | tr ',' ' '); do ONLY_ARGS="$ONLY_ARGS -only-testing:$t"; done
+            echo "running only: $ONLY_ARGS"
+          fi
           TEST_RUNNER_SCREENSHOT_DIR="$OUT/screenshots" xcodebuild test -project Discipline.xcodeproj -scheme Discipline \
-            -destination "id=$UDID" \
+            -destination "id=$UDID" $ONLY_ARGS \
             -retry-tests-on-failure -test-iterations 3 \
             -resultBundlePath "$OUT/TestResults.xcresult" \
             CODE_SIGN_IDENTITY="-" > "$OUT/ui-tests.log" 2>&1 &
@@ -175,20 +200,20 @@ jobs:
           ls -la Payload/Discipline.app | head -40 >> ../ipa-verify.txt
           codesign -dv Payload/Discipline.app 2>&1 | tee -a ../ipa-verify.txt || echo "unsigned (expected): Plume Impactor signs it" | tee -a ../ipa-verify.txt
 
-      - name: Upload artifacts
+      # Public repo: GitHub artifacts are visible to anyone, so they carry only the result summaries.
+      # The IPA, screenshots, video and full logs (which show NCOM's private screens) go to the private
+      # Hugging Face dataset in the next step.
+      - name: Upload result summaries
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: discipline-${{ github.run_id }}
+          name: discipline-${{ github.run_id }}-summary
           path: |
-            out/*.ipa
+            out/final-results.txt
+            out/retries.txt
+            out/toolchain.txt
+            out/ipa-verify.txt
             out/*.sha256
-            out/*.txt
-            out/*.json
-            out/*.log
-            out/screenshots
-            out/attachments
-            out/walkthrough.mp4
           retention-days: 14
 
       - name: Copy outputs to the private Hugging Face dataset (for Tab to read back)

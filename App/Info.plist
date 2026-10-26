@@ -2,6 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.ncom.discipline.refresh</string>
+	</array>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_ncom-ouija._tcp</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Discipline uses the camera only to scan an NCOM code (QR) that unlocks Ouija Board.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Ouija Board's local-network pairing option looks for NCOM test devices on your local network.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>

@@ -1,7 +1,7 @@
 import XCTest
 
 final class ExpiryUITests: DisciplineUITestCase {
-    func testTrackRefreshRemindAndBudget() {
+    func testTrackRefreshAutoRefreshAndBudget() {
         launch()
         tab("Expiry")
         XCTAssertTrue(el("expiry.empty").waitForExistence(timeout: 5))
@@ -23,8 +23,10 @@ final class ExpiryUITests: DisciplineUITestCase {
         tap("expiry.refreshed.com.kdt.livecontainer")
         expectToast(contains: "LiveContainer marked refreshed")
         dismissToast()
-        flip("expiry.reminders")
-        expectToast(contains: "Reminders on: 3 scheduled")
+        // Auto refresh replaces reminders and is on by default.
+        XCTAssertFalse(el("expiry.reminders").exists)
+        flip("expiry.autoRefresh")
+        expectToast(contains: "Auto refresh off")
         dismissToast()
         tap("expiry.logAppID")
         expectToast(contains: "Logged 1 App ID")
@@ -34,8 +36,8 @@ final class ExpiryUITests: DisciplineUITestCase {
         tap("expiry.resetBudget")
         expectToast(contains: "App ID log cleared")
         dismissToast()
-        flip("expiry.reminders")
-        expectToast(contains: "Reminders off")
+        flip("expiry.autoRefresh")
+        expectToast(contains: "Auto refresh on")
         dismissToast()
         // Home now counts down and can mark everything refreshed.
         tab("Home")

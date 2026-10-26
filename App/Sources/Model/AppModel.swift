@@ -20,8 +20,29 @@ final class AppModel: ObservableObject {
     @Published var installed: Set<Companion> = []
     @Published var tunnel: TunnelState = .notConnected
     @Published var toast: Toast?
-    @Published var labUnlocked = false
     @Published var now = Date()
+    /// The Ouija Board / NCOM Lab unlock (25 taps, 7 long presses, or a signed NCOM QR). Saved.
+    var labUnlocked: Bool {
+        get { settings.ouijaUnlocked }
+        set { settings.ouijaUnlocked = newValue }
+    }
+    /// Shows the magic-ring animation over the app; set when a valid NCOM code arrives.
+    @Published var magicRing: MagicRingState?
+    /// Asks More to open the Ouija Board screen (after the magic ring finishes).
+    @Published var openOuija = false
+    /// Last thing the Ouija Board did, for its "Loading/install stat message" line.
+    @Published var ouijaStatus = "Ready. No prototype device connected."
+
+    // Auto refresh
+    @Published var autoRefreshStatus = ""
+    /// Discipline's own signature, read from its embedded provisioning profile.
+    @Published var ownSignature: OwnSignature = .notRead
+    let autoPlanner = AutoRefreshPlanner()
+
+    // Self-update
+    @Published var selfUpdate: GitHubRelease?
+    @Published var selfUpdateStatus = "Not checked yet"
+    @Published var updateChecking = false
 
     // GitHub
     @Published var gitHubQuery = ""
@@ -30,6 +51,18 @@ final class AppModel: ObservableObject {
     @Published var gitHubLoading = false
     @Published var gitHubError: String?
     @Published var downloadingAssetID: Int?
+
+    enum OwnSignature: Equatable {
+        case notRead
+        case unreadable(String)
+        case read(expires: Date, tier: AccountTier)
+    }
+
+    struct MagicRingState: Equatable, Identifiable {
+        let id = UUID()
+        let accepted: Bool
+        let message: String
+    }
 
     struct Toast: Equatable, Identifiable {
         let id = UUID()
@@ -68,6 +101,48 @@ final class AppModel: ObservableObject {
         if TestHooks.openSampleIPA, let url = TestHooks.sampleIPAURL {
             handleIncoming(url)
         }
+        // v0.2 reminders are replaced by auto refresh (she asked for no reminders).
+        if settings.remindersEnabled {
+            settings.remindersEnabled = false
+            if !TestHooks.isUITesting { ReminderService.cancelAll() }
+        }
+        if TestHooks.ouijaUnlocked { settings.ouijaUnlocked = true }
+        if TestHooks.autoRefreshOff { settings.autoRefresh = false }
+        if TestHooks.autoDownload { settings.autoDownloadUpdates = true }
+        if TestHooks.dueApp {
+            trackedApps = [TrackedApp(name: "SideStore", bundleID: "com.sidestore.test",
+                                      signedAt: Date().addingTimeInterval(-6 * 86_400), tier: .free)]
+        }
+        if TestHooks.seedRepos {
+            savedRepos = [SavedRepo(ref: GitHubRepoRef(owner: "missing", repo: "repo")),
+                          SavedRepo(ref: GitHubRepoRef(owner: "ncom", repo: "sample-app"), lastSeenTag: "v1.0.0", latestKnownTag: "v1.0.0")]
+        }
+        if TestHooks.seedSigned, let url = Bundle.main.url(forResource: "Signed", withExtension: "ipa") {
+            importIPA(from: url, origin: "Test fixture")
+            tab = .home
+            libraryPath = []
+        }
+        readOwnSignature()
+        if let code = TestHooks.ouijaCode, let url = URL(string: "discipline://ouija?code=\(code)") {
+            handleIncoming(url)
+        }
+    }
+
+    /// The background app-refresh wake: re-read expiry and check for updates (no UI).
+    func backgroundCheck() async {
+        readOwnSignature()
+        await autoCheckIfDue()
+    }
+
+    var appVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0" }
+
+    /// Runs each time Discipline comes to the front (and once at launch): re-reads its own signature,
+    /// starts an auto refresh when one is due, and checks for updates when it's time.
+    func becameActive() async {
+        refreshEnvironment()
+        readOwnSignature()
+        await runAutoRefreshIfDue()
+        await autoCheckIfDue()
     }
 
     var snapshot: Snapshot {
@@ -152,6 +227,8 @@ final class AppModel: ObservableObject {
         case "refresh":
             tab = .home
             Task { await refreshAll() }
+        case "ouija":
+            receiveOuijaCode(url.absoluteString)
         case "github":
             tab = .github
             if let repo = DeepLinks.queryValue("repo", in: url) {
@@ -232,6 +309,7 @@ final class AppModel: ObservableObject {
         guard let i = trackedApps.firstIndex(of: app) else { return }
         trackedApps[i].signedAt = Date()
         trackedApps[i].tier = settings.tier
+        trackedApps[i].profileExpiresAt = nil
         trackedApps.sort { $0.expiresAt < $1.expiresAt }
         show("\(app.name) marked refreshed")
         rescheduleIfNeeded()
@@ -239,7 +317,9 @@ final class AppModel: ObservableObject {
 
     func markAllRefreshed() {
         let d = Date()
-        for i in trackedApps.indices { trackedApps[i].signedAt = d; trackedApps[i].tier = settings.tier }
+        for i in trackedApps.indices where trackedApps[i].bundleID != Bundle.main.bundleIdentifier {
+            trackedApps[i].signedAt = d; trackedApps[i].tier = settings.tier; trackedApps[i].profileExpiresAt = nil
+        }
         show("All apps marked refreshed")
         rescheduleIfNeeded()
     }
@@ -317,19 +397,206 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func checkUpdates() async {
+    /// Checks every saved repo. One failing repo no longer stops the others.
+    /// - Parameter quiet: launch/background checks only speak up when something changed.
+    func checkUpdates(quiet: Bool = false) async {
         var updated = 0
+        var failed: [String] = []
+        var downloaded = 0
         for i in savedRepos.indices {
             do {
                 let list = try await gitHub.releases(savedRepos[i].ref)
-                savedRepos[i].latestKnownTag = ReleasePicker.newestWithIPA(list, includePrereleases: savedRepos[i].includePrereleases)?.tagName
-                if savedRepos[i].hasUpdate { updated += 1 }
+                let newest = ReleasePicker.newestWithIPA(list, includePrereleases: savedRepos[i].includePrereleases)
+                savedRepos[i].latestKnownTag = newest?.tagName
+                if savedRepos[i].hasUpdate {
+                    updated += 1
+                    if settings.autoDownloadUpdates, let release = newest, let asset = ReleasePicker.preferredAsset(release.assets) {
+                        if await autoDownload(asset, from: release, repo: savedRepos[i].ref) { downloaded += 1 }
+                    }
+                }
             } catch {
-                show("Update check failed: \(error.localizedDescription)", error: true)
-                return
+                failed.append(savedRepos[i].ref.fullName)
             }
         }
-        show(updated == 0 ? "All saved repos are up to date" : "\(updated) update\(updated == 1 ? "" : "s") available")
+        var text = updated == 0 ? "All saved repos are up to date" : "\(updated) update\(updated == 1 ? "" : "s") available"
+        if downloaded > 0 { text += " · \(downloaded) downloaded to Library" }
+        if !failed.isEmpty { text += " · couldn't check \(failed.joined(separator: ", "))" }
+        if !quiet || updated > 0 || !failed.isEmpty { show(text, error: updated == 0 && !failed.isEmpty) }
+    }
+
+    /// Downloads a saved repo's new .ipa into the Library without switching tabs.
+    private func autoDownload(_ asset: GitHubRelease.Asset, from release: GitHubRelease, repo: GitHubRepoRef) async -> Bool {
+        let origin = "GitHub \(repo.fullName) \(release.tagName)"
+        if library.contains(where: { $0.origin == origin }) { return false }
+        do {
+            let file = try await gitHub.download(asset)
+            defer { try? FileManager.default.removeItem(at: file) }
+            let keepTab = tab, keepPath = libraryPath
+            let item = importIPA(from: file, origin: origin, remoteURL: asset.browserDownloadURL)
+            tab = keepTab; libraryPath = keepPath
+            return item != nil
+        } catch {
+            return false
+        }
+    }
+
+    // MARK: Self-update and automatic checks
+
+    /// Launch / foreground / background check: saved repos and Discipline itself, at most every 6 hours.
+    func autoCheckIfDue(force: Bool = false) async {
+        guard settings.autoCheckUpdates else { return }
+        if TestHooks.isUITesting && !TestHooks.autoCheck { return }   // tests never touch the network unasked
+        if !force, let last = settings.lastUpdateCheck, Date().timeIntervalSince(last) < 6 * 3600, last <= Date() { return }
+        settings.lastUpdateCheck = Date()
+        await checkSelfUpdate(quiet: true)
+        if !savedRepos.isEmpty { await checkUpdates(quiet: true) }
+    }
+
+    /// Looks for a newer Discipline on GitHub Releases and keeps its release notes ("what's new").
+    func checkSelfUpdate(quiet: Bool = false) async {
+        updateChecking = true
+        defer { updateChecking = false }
+        do {
+            let list = try await gitHub.releases(AppConfig.updateRepo)
+            if let u = VersionCompare.update(for: appVersion, in: list, includePrereleases: settings.includePrereleases) {
+                selfUpdate = u
+                var shown = u.tagName
+                if shown.lowercased().hasPrefix("v") { shown.removeFirst() }
+                selfUpdateStatus = "Discipline \(shown) is available"
+                show(selfUpdateStatus, detail: u.tagName)
+                if settings.autoDownloadUpdates { await downloadSelfUpdate(openDetail: false) }
+            } else {
+                selfUpdate = nil
+                selfUpdateStatus = list.isEmpty ? "No Discipline release is published on GitHub yet" : "Discipline \(appVersion) is the newest"
+                if !quiet { show(selfUpdateStatus) }
+            }
+        } catch {
+            selfUpdateStatus = "Couldn't check: \(error.localizedDescription)"
+            if !quiet { show(selfUpdateStatus, error: true) }
+        }
+    }
+
+    /// Puts the new Discipline .ipa in the Library, where Install with SideStore / LiveContainer re-signs it.
+    /// (iOS doesn't let an app replace itself; the signer does the install.)
+    func downloadSelfUpdate(openDetail: Bool = true) async {
+        guard let u = selfUpdate, let asset = ReleasePicker.preferredAsset(u.assets) else { return }
+        let origin = "Discipline update \(u.tagName)"
+        if !openDetail, library.contains(where: { $0.origin == origin }) { return }
+        do {
+            let file = try await gitHub.download(asset)
+            defer { try? FileManager.default.removeItem(at: file) }
+            let keepTab = tab, keepPath = libraryPath
+            let item = importIPA(from: file, origin: origin, remoteURL: asset.browserDownloadURL)
+            if !openDetail { tab = keepTab; libraryPath = keepPath }
+            if item != nil {
+                selfUpdateStatus = "\(u.tagName) downloaded. Install it with SideStore or LiveContainer."
+            }
+        } catch {
+            show("Download failed: \(error.localizedDescription)", error: true)
+        }
+    }
+
+    // MARK: Auto refresh
+
+    /// Reads the expiry from Discipline's own provisioning profile and keeps it in the tracked list,
+    /// so its countdown is always the real one (no typed date).
+    func readOwnSignature() {
+        guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision") else {
+            ownSignature = .unreadable("No provisioning profile in this build (simulator or unsigned). On your iPhone the signer adds one and Discipline reads it.")
+            return
+        }
+        do {
+            let profile = try ProvisioningProfile.parse([UInt8](try Data(contentsOf: url)))
+            let tier = profile.tier()
+            ownSignature = .read(expires: profile.expirationDate, tier: tier)
+            let id = Bundle.main.bundleIdentifier ?? "com.ncom.discipline"
+            let me = TrackedApp(name: "Discipline", bundleID: id, signedAt: profile.creationDate ?? Date(), tier: tier,
+                                profileExpiresAt: profile.expirationDate)
+            if let i = trackedApps.firstIndex(where: { $0.bundleID == id }) {
+                if trackedApps[i] != me { trackedApps[i] = me; trackedApps.sort { $0.expiresAt < $1.expiresAt } }
+            } else {
+                trackedApps.append(me); trackedApps.sort { $0.expiresAt < $1.expiresAt }
+            }
+        } catch {
+            ownSignature = .unreadable("Couldn't read the provisioning profile (\(error)).")
+        }
+    }
+
+    func setAutoRefresh(_ on: Bool) async {
+        settings.autoRefresh = on
+        if on {
+            show("Auto refresh on")
+            await runAutoRefreshIfDue()
+        } else {
+            autoRefreshStatus = "Off"
+            show("Auto refresh off")
+        }
+    }
+
+    /// The automatic part: no reminder, no button. When an app is close to expiring, Discipline starts
+    /// SideStore's refresh by itself (LocalDevVPN on, then SideStore) the moment it comes to the front,
+    /// from the Shortcuts automation, or from discipline://refresh.
+    func runAutoRefreshIfDue() async {
+        guard settings.autoRefresh else { autoRefreshStatus = "Off"; return }
+        let short: (Date) -> String = { $0.formatted(date: .abbreviated, time: .shortened) }
+        switch autoPlanner.decide(apps: trackedApps, lastRun: settings.lastAutoRefresh, now: Date()) {
+        case .nothingTracked:
+            autoRefreshStatus = "On · nothing tracked yet"
+        case .nothingDue(let next):
+            autoRefreshStatus = "On · next refresh from \(short(next))"
+        case .ranRecently(let next):
+            autoRefreshStatus = "On · refresh started recently; next try after \(short(next))"
+        case .refresh(let due):
+            let names = trackedApps.filter { due.contains($0.bundleID) }.map(\.name).joined(separator: ", ")
+            guard installed.contains(.localDevVPN) || installed.contains(.sideStore) else {
+                autoRefreshStatus = "On · \(names) due, but LocalDevVPN and SideStore aren't installed (More → Setup)"
+                return
+            }
+            settings.lastAutoRefresh = Date()
+            autoRefreshStatus = "On · refreshing \(names)"
+            await refreshAll()
+        }
+    }
+
+    /// Track an imported app. A signed .ipa carries its expiry, so nothing is typed.
+    /// Returns false when the .ipa has no provisioning profile (the caller asks for the date).
+    func trackFromProfile(_ item: LibraryItem) -> Bool {
+        guard let data = try? Data(contentsOf: fileURL(for: item)),
+              let profile = try? IPAReader.provisioningProfile(bytes: [UInt8](data)) else { return false }
+        addTracked(TrackedApp(name: item.displayName, bundleID: item.bundleID, signedAt: profile.creationDate ?? Date(),
+                              tier: profile.tier(), profileExpiresAt: profile.expirationDate))
+        show("Tracking \(item.displayName) · expiry read from its signature")
+        return true
+    }
+
+    // MARK: Ouija Board unlock
+
+    /// A QR (from the Camera app link, the in-app scanner, or a photo) was read.
+    func receiveOuijaCode(_ text: String) {
+        switch OuijaCode.check(text, publicKeys: AppConfig.ouijaKeys) {
+        case .valid:
+            magicRing = MagicRingState(accepted: true, message: OuijaContent.shared.ringSigned)
+        case .notACode:
+            show("That QR isn't an NCOM code.", error: true)
+        case .badSignature:
+            magicRing = MagicRingState(accepted: false, message: "Not signed by NCOM")
+        case .wrongContent:
+            show("That NCOM code isn't an Ouija Board unlock.", error: true)
+        }
+    }
+
+    /// Called when the magic ring finishes.
+    func finishMagicRing() {
+        guard let ring = magicRing else { return }
+        magicRing = nil
+        if ring.accepted {
+            labUnlocked = true
+            tab = .more
+            openOuija = true
+            show("Ouija Board unlocked")
+        } else {
+            show("That code isn't signed by NCOM. Nothing unlocked.", error: true)
+        }
     }
 
     func openSaved(_ repo: SavedRepo) async {

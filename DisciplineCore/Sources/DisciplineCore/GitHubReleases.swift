@@ -68,11 +68,15 @@ public struct GitHubRelease: Codable, Equatable, Identifiable, Sendable {
     public let prerelease: Bool
     public let publishedAt: String?
     public let assets: [Asset]
+    /// The release notes (Markdown) the author wrote: "what's new in this version".
+    public let body: String?
+    public let htmlURL: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, draft, prerelease, assets
+        case id, name, draft, prerelease, assets, body
         case tagName = "tag_name"
         case publishedAt = "published_at"
+        case htmlURL = "html_url"
     }
 
     public var ipaAssets: [Asset] { assets.filter(\.isIPA) }
@@ -119,6 +123,44 @@ public enum ReleasePicker {
             return !n.contains("debug") && !n.contains("simulator") && !n.contains("-sim")
         }
         return (clean.isEmpty ? ipas : clean).max { $0.size < $1.size }
+    }
+}
+
+/// Compares release tags with the app's own version ("v0.3.1" vs "0.3.0").
+public enum VersionCompare {
+    /// Numeric parts of a tag: "v1.2.3-beta" -> ([1, 2, 3], "beta").
+    public static func parts(_ tag: String) -> (numbers: [Int], suffix: String)? {
+        var s = tag.trimmingCharacters(in: .whitespaces)
+        if s.lowercased().hasPrefix("v") { s.removeFirst() }
+        let main = s.split(separator: "-", maxSplits: 1).map(String.init)
+        guard let head = main.first, !head.isEmpty else { return nil }
+        var nums: [Int] = []
+        for p in head.split(separator: ".", omittingEmptySubsequences: false) {
+            guard let n = Int(p) else { return nil }
+            nums.append(n)
+        }
+        return (nums, main.count > 1 ? main[1] : "")
+    }
+
+    /// True when `tag` is a higher version than `current`. A pre-release suffix sorts below the
+    /// same number without one. Tags that aren't versions are never "newer".
+    public static func isNewer(_ tag: String, than current: String) -> Bool {
+        guard let a = parts(tag), let b = parts(current) else { return false }
+        let n = max(a.numbers.count, b.numbers.count)
+        for i in 0..<n {
+            let x = i < a.numbers.count ? a.numbers[i] : 0
+            let y = i < b.numbers.count ? b.numbers[i] : 0
+            if x != y { return x > y }
+        }
+        if a.suffix.isEmpty != b.suffix.isEmpty { return a.suffix.isEmpty }
+        return a.suffix > b.suffix
+    }
+
+    /// The newest release (with an .ipa) that is a higher version than `current`, or nil.
+    public static func update(for current: String, in releases: [GitHubRelease], includePrereleases: Bool) -> GitHubRelease? {
+        releases
+            .filter { !$0.draft && (includePrereleases || !$0.prerelease) && !$0.ipaAssets.isEmpty && isNewer($0.tagName, than: current) }
+            .max { a, b in isNewer(b.tagName, than: a.tagName) }
     }
 }
 

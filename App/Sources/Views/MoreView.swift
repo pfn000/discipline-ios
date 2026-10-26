@@ -8,6 +8,8 @@ struct MoreView: View {
     @EnvironmentObject var model: AppModel
     @State var versionTaps = 0
     @State var versionHolds = 0
+    @State var lastTapAt = Date.distantPast
+    @State var scanning = false
 
     var body: some View {
         NavigationStack {
@@ -19,7 +21,11 @@ struct MoreView: View {
                         .accessibilityIdentifier("more.settings")
                     NavigationLink { GuardView().modifier(MoreNavigationBack()) } label: { Label("Ouija Guard", systemImage: "eye.trianglebadge.exclamationmark") }
                         .accessibilityIdentifier("more.guard")
+                    NavigationLink { UpdatesView().modifier(MoreNavigationBack()) } label: { Label("Updates", systemImage: "arrow.down.circle") }
+                        .accessibilityIdentifier("more.updates")
                     if model.labUnlocked {
+                        NavigationLink { OuijaBoardView().modifier(MoreNavigationBack()) } label: { Label("Ouija Board", systemImage: "circle.hexagongrid") }
+                            .accessibilityIdentifier("more.ouija")
                         NavigationLink { LabView().modifier(MoreNavigationBack()) } label: { Label("NCOM Lab", systemImage: "flask") }
                             .accessibilityIdentifier("more.lab")
                     }
@@ -38,6 +44,10 @@ struct MoreView: View {
                         .frame(maxWidth: .infinity)
                         .contentShape(Rectangle())
                         .onTapGesture {
+                            // 25 taps in a row; a pause of more than 3 seconds starts the count again.
+                            let now = Date()
+                            if now.timeIntervalSince(lastTapAt) > 3 { versionTaps = 0 }
+                            lastTapAt = now
                             versionTaps += 1
                             if versionTaps >= 25 && !model.labUnlocked {
                                 model.labUnlocked = true
@@ -53,6 +63,11 @@ struct MoreView: View {
                         })
                         .accessibilityIdentifier("more.version")
                         .accessibilityAddTraits(.isStaticText)
+                    Button { scanning = true } label: {
+                        Label("Scan NCOM code", systemImage: "qrcode.viewfinder").font(.footnote)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("more.scanQR")
                 }
                 .listRowBackground(Color.clear)
                 Section {
@@ -61,6 +76,8 @@ struct MoreView: View {
                 }
             }
             .navigationTitle("More")
+            .navigationDestination(isPresented: $model.openOuija) { OuijaBoardView().modifier(MoreNavigationBack()) }
+            .sheet(isPresented: $scanning) { OuijaScannerSheet() }
         }
     }
 }
@@ -232,15 +249,16 @@ struct LimitsView: View {
     var body: some View {
         List {
             Section("Signatures") {
-                Text("Nothing makes a signature permanent. A free Apple ID signs for 7 days, a paid developer account for 365. Discipline keeps apps alive by reminding you and making refresh one tap; it can't stop Apple's clock.")
+                Text("Nothing makes a signature permanent. A free Apple ID signs for 7 days, a paid developer account for 365. Discipline keeps apps alive by starting the refresh itself (auto refresh); it can't stop Apple's clock and it can't re-sign apps by itself.")
                 Text("Apps inside LiveContainer don't expire on their own: only LiveContainer (and SideStore) need refreshing.")
             }
             Section("What a free Apple ID can't sign") {
                 Text("VPN / Network Extensions, push notifications, Screen Time (Family Controls), NFC tag reading, Siri, iCloud. That's why Discipline uses the App Store LocalDevVPN instead of its own VPN.")
             }
             Section("Refreshing") {
-                Text("SideStore has no link that starts a refresh, so Refresh All opens LocalDevVPN, which opens SideStore. You tap Refresh All there.")
-                Text("Discipline can't see whether SideStore's refresh worked. Mark apps refreshed after it does.")
+                Text("SideStore has no link that starts a refresh, so auto refresh and Refresh All open LocalDevVPN, which opens SideStore. If SideStore's own background refresh is off, you still tap Refresh All there.")
+                Text("Discipline reads its own expiry from its signature. It can't see other apps' signatures on the phone (iOS doesn't allow it), so for those it reads the .ipa you imported, or the date you give it.")
+                Text("iOS never lets an app open another app while it's in the background, so auto refresh runs when you open Discipline or when a Shortcuts automation opens it.")
             }
             Section("iOS betas") {
                 Text("Apple tightened the VPN check in iOS 26.4. Betas can change it again. Keep LocalDevVPN updated.")
