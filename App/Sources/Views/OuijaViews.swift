@@ -116,11 +116,14 @@ struct OuijaBoardMain: View {
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("ouija.session")
 
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
-                    ForEach(tiles) { tile in
-                        Button { tap(tile) } label: { tileFace(tile) }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("ouija.tile.\(tile.id)")
+                // Native Liquid Glass: each tile face is .glassEffect(.regular.interactive()); the container lets them blend and morph together.
+                GlassEffectContainer(spacing: 10) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
+                        ForEach(tiles) { tile in
+                            Button { tap(tile) } label: { tileFace(tile) }
+                                .buttonStyle(.plain) // glass-ok: the label itself is native interactive glass (tileFace)
+                                .accessibilityIdentifier("ouija.tile.\(tile.id)")
+                        }
                     }
                 }
 

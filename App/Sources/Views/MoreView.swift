@@ -66,6 +66,7 @@ struct MoreView: View {
                     Button { scanning = true } label: {
                         Label("Scan NCOM code", systemImage: "qrcode.viewfinder").font(.footnote)
                     }
+                    .buttonStyle(.glass)
                     .frame(maxWidth: .infinity)
                     .accessibilityIdentifier("more.scanQR")
                 }
@@ -193,7 +194,7 @@ struct SettingsView: View {
                     Button("Remove token", role: .destructive) { model.saveToken(""); token = "" }
                         .accessibilityIdentifier("settings.removeToken")
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(.glass)
             } header: { Text("GitHub") } footer: {
                 Text("Stored only in this iPhone's Keychain. A read-only token with no scopes is enough for public repos.")
             }

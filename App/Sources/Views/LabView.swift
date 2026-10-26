@@ -48,6 +48,7 @@ struct LabView: View {
                     .accessibilityIdentifier("lab.inspectPicker")
                     Button { inspect() } label: { Label("Inspect entitlements", systemImage: "doc.viewfinder") }
                         .disabled(inspectedID == nil)
+                        .buttonStyle(.glass)
                         .accessibilityIdentifier("lab.inspect")
                 }
                 if let inspectError { Text(inspectError).foregroundStyle(.orange).font(.caption) }
@@ -98,14 +99,17 @@ struct LabView: View {
                     .font(.caption).foregroundStyle(blocked.isEmpty ? .green : .orange)
                     .accessibilityIdentifier("lab.presetStatus")
                 Button { copyEntitlements() } label: { Label("Copy entitlements plist", systemImage: "doc.on.doc") }
+                    .buttonStyle(.glass)
                     .accessibilityIdentifier("lab.copy")
                 Button { makeExport() } label: { Label("Build preset files", systemImage: "hammer") }
+                    .buttonStyle(.glass)
                     .accessibilityIdentifier("lab.build")
                 if !exportURLs.isEmpty {
                     ShareLink(items: exportURLs) { Label("Share preset files", systemImage: "square.and.arrow.up") }
                         .accessibilityIdentifier("lab.share")
                 }
                 Button("Reset to Ouija Board preset") { preset = .ouijaBoard; exportURLs = [] }
+                    .buttonStyle(.glass)
                     .accessibilityIdentifier("lab.reset")
             } header: { Text("Signing preset") } footer: {
                 Text("Put the .entitlements file in your app's Xcode project (Code Signing Entitlements) and the Info.plist keys in its Info.plist. Plume Impactor and SideStore then ask Apple for those entitlements when they sign; restricted ones fail on a free account.")

@@ -64,7 +64,13 @@ jobs:
           /tmp/xg/xcodegen/bin/xcodegen generate
           ls
 
+      - name: Liquid Glass check (native glass only, no fake materials)
+        run: |
+          set -o pipefail
+          python3 scripts/check_liquid_glass.py | tee "$OUT/liquid-glass-check.txt"
+
       - name: Core logic tests (swift test)
+        id: core
         working-directory: DisciplineCore
         run: |
           set -o pipefail
@@ -131,6 +137,13 @@ jobs:
             while kill -0 $XB 2>/dev/null; do
               SIZE=$(wc -c < "$OUT/ui-tests.log")
               if [ "$SIZE" != "$LAST" ]; then LAST=$SIZE; QUIET=0; else QUIET=$((QUIET+10)); fi
+              # Hard stop (CI #23 sat in this step 90+ min): the log quiet for 10 min before the suite ended means a stuck runner.
+              if [ $QUIET -ge 600 ] && ! grep -qE "Test Suite 'All tests' (passed|failed)" "$OUT/ui-tests.log"; then
+                kill -INT $REC 2>/dev/null || true
+                echo "hard watchdog: the test log was quiet for 600 s before the suite ended; stopped xcodebuild (results are incomplete)" > "$OUT/watchdog-hard.txt"
+                kill -TERM $XB 2>/dev/null || true; sleep 5; kill -KILL $XB 2>/dev/null || true
+                exit 0
+              fi
               if [ $QUIET -ge 150 ] && grep -qE "Test Suite 'All tests' (passed|failed)" "$OUT/ui-tests.log"; then
                 kill -INT $REC 2>/dev/null || true
                 # A marker file, not the log: xcodebuild's own final writes can overwrite a line appended to its log.
@@ -171,15 +184,16 @@ jobs:
             echo "every test's last result passed; xcodebuild exit $STATUS came from the watchdog stop"; STATUS=0
           fi
           if [ $FINAL -ne 0 ]; then STATUS=1; fi
-          xcrun xcresulttool get test-results summary --path "$OUT/TestResults.xcresult" > "$OUT/test-summary.json" 2>/dev/null || true
-          xcrun xcresulttool get test-results tests --path "$OUT/TestResults.xcresult" > "$OUT/test-list.json" 2>/dev/null || true
-          xcrun xcresulttool export attachments --path "$OUT/TestResults.xcresult" --output-path "$OUT/attachments" || true
+          if [ -f "$OUT/watchdog-hard.txt" ]; then cat "$OUT/watchdog-hard.txt"; STATUS=1; fi
+          perl -e 'alarm shift; exec @ARGV' 180 xcrun xcresulttool get test-results summary --path "$OUT/TestResults.xcresult" > "$OUT/test-summary.json" 2>/dev/null || true
+          perl -e 'alarm shift; exec @ARGV' 180 xcrun xcresulttool get test-results tests --path "$OUT/TestResults.xcresult" > "$OUT/test-list.json" 2>/dev/null || true
+          perl -e 'alarm shift; exec @ARGV' 180 xcrun xcresulttool export attachments --path "$OUT/TestResults.xcresult" --output-path "$OUT/attachments" || true
           cat "$OUT/test-summary.json" || true
           echo "ui tests exit status: $STATUS"
           exit $STATUS
 
       - name: Build unsigned IPA (Release, device)
-        if: success()
+        if: ${{ !cancelled() && steps.core.outcome == 'success' }}
         run: |
           VERSION=$(grep MARKETING_VERSION project.yml | head -1 | sed 's/.*"\(.*\)".*/\1/')
           NAME="Discipline-v${VERSION}-unsigned.ipa"
@@ -195,7 +209,7 @@ jobs:
           echo "IPA_NAME=$NAME" >> "$GITHUB_ENV"
 
       - name: Verify IPA
-        if: success()
+        if: ${{ !cancelled() && steps.core.outcome == 'success' }}
         run: |
           cd "$OUT"
           rm -rf verify && mkdir verify && cd verify
