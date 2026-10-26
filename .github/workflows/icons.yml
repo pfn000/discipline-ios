@@ -1,7 +1,7 @@
 name: icons
 # Builds the layered Liquid Glass app icons with Apple's own Icon Composer tool (ictool, bundled in Xcode)
-# and checks that Xcode compiles the Discipline icon into the app. Runs only on the "icons" branch,
-# so it never cancels or replaces the main app build.
+# and checks that Xcode's asset compiler (actool) accepts them. Runs only on the "icons" branch,
+# so it never cancels or replaces the main app build. Nothing here is wired into the app.
 on:
   push:
     branches: [icons]
@@ -21,14 +21,18 @@ jobs:
       - uses: actions/checkout@v4
       - name: Select newest Xcode and find ictool
         run: |
-          mkdir -p "$OUT/icons"
+          mkdir -p "$OUT/icons" "$OUT/symbols"
           XC=$(ls -d /Applications/Xcode_27*.app | sort -V | tail -1)
           sudo xcode-select -s "$XC"
-          { xcodebuild -version; xcodebuild -showsdks; } | tee "$OUT/toolchain.txt"
+          { xcodebuild -version; xcodebuild -showsdks; sw_vers; } | tee "$OUT/toolchain.txt"
           IC="$XC/Contents/Applications/Icon Composer.app/Contents/Executables/ictool"
           test -x "$IC"
           "$IC" --version | tee -a "$OUT/toolchain.txt"
           echo "IC=$IC" >> "$GITHUB_ENV"
+      - name: Export SF Symbol apple.logo (system-drawn, not hand-drawn)
+        run: |
+          perl -e 'alarm shift; exec @ARGV' 300 xcrun swift scripts/export_symbol.swift "$OUT/symbols" 2>&1 | tee "$OUT/symbols/export-log.txt"
+          ls -la "$OUT/symbols"
       - name: Fetch Jena's icon source (private; never committed to this public repo)
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -37,41 +41,35 @@ jobs:
           python3 -m pip install -q --break-system-packages huggingface_hub || python3 -m pip install -q huggingface_hub
           python3 - <<'PY'
           import os, shutil
-          from huggingface_hub import hf_hub_download
-          for rel in ["icon.json", "Assets/Jena.png", "Assets/Halo.svg"]:
-              p = hf_hub_download(repo_id=os.environ["HF_OUT_REPO"], filename=f"discipline-private/icons/Jena-v2.icon/{rel}",
-                                  repo_type="dataset", token=os.environ["HF_TOKEN"])
-              dst = os.path.join("/tmp/private-icons/Jena-v2.icon", rel)
-              os.makedirs(os.path.dirname(dst), exist_ok=True)
-              shutil.copy(p, dst)
-          print("Jena.icon fetched")
+          from huggingface_hub import snapshot_download
+          p = snapshot_download(repo_id=os.environ["HF_OUT_REPO"], repo_type="dataset", token=os.environ["HF_TOKEN"],
+                                allow_patterns=["discipline-private/icons/v3/**"])
+          src = os.path.join(p, "discipline-private/icons/v3")
+          shutil.copytree(src, "/tmp/private-icons", dirs_exist_ok=True)
+          print("private icons:", os.listdir("/tmp/private-icons"))
           PY
       - name: Render every appearance with Icon Composer (ictool)
         run: |
           set +e
           FAIL=0
-          for ICON in icons/Discipline-v2.icon /tmp/private-icons/Jena-v2.icon; do
+          for ICON in icons/v3/*.icon icons/v3/test/*.icon /tmp/private-icons/*.icon; do
+            [ -d "$ICON" ] || continue
             N=$(basename "$ICON" .icon)
+            case "$ICON" in *test/*) SIZES="256"; FULL=0;; *) SIZES="1024 180 120 87 58"; FULL=1;; esac
             for R in Default Dark ClearLight ClearDark TintedLight TintedDark; do
-              perl -e 'alarm shift; exec @ARGV' 120 "$IC" "$ICON" --export-image --output-file "$OUT/icons/$N-iOS-$R-1024.png" \
-                --platform iOS --rendition $R --width 1024 --height 1024 --scale 1
-              S=$?; echo "$N $R exit=$S" | tee -a "$OUT/icons/render-log.txt"; [ $S -eq 0 ] || FAIL=1
-            done
-            perl -e 'alarm shift; exec @ARGV' 120 "$IC" "$ICON" --export-image --output-file "$OUT/icons/$N-iOS-Default-gen26-1024.png" \
-              --platform iOS --rendition Default --width 1024 --height 1024 --scale 1 --design-generation 26
-            echo "$N Default gen26 exit=$?" | tee -a "$OUT/icons/render-log.txt"
-            for R in Default Dark ClearLight ClearDark TintedLight TintedDark; do
-              for PX in 180 120 87 58; do
-                perl -e 'alarm shift; exec @ARGV' 60 "$IC" "$ICON" --export-image --output-file "$OUT/icons/$N-iOS-$R-$PX.png" \
+              for PX in $SIZES; do
+                perl -e 'alarm shift; exec @ARGV' 120 "$IC" "$ICON" --export-image --output-file "$OUT/icons/$N-iOS-$R-$PX.png" \
                   --platform iOS --rendition $R --width $PX --height $PX --scale 1
+                S=$?; [ "$PX" = 1024 -o "$PX" = 256 ] && echo "$N $R $PX exit=$S" | tee -a "$OUT/icons/render-log.txt"; [ $S -eq 0 ] || FAIL=1
               done
             done
           done
           ls -la "$OUT/icons"
           exit $FAIL
-      - name: Compile both icons with Apple's asset compiler (actool)
+      - name: Compile the icons with Apple's asset compiler (actool)
         run: |
-          for ICON in icons/Discipline-v2.icon /tmp/private-icons/Jena-v2.icon; do
+          for ICON in icons/v3/*.icon /tmp/private-icons/*.icon; do
+            [ -d "$ICON" ] || continue
             N=$(basename "$ICON" .icon)
             mkdir -p "/tmp/actool-$N"
             xcrun actool "$ICON" --compile "/tmp/actool-$N" --platform iphoneos --minimum-deployment-target 26.0 \
@@ -87,11 +85,10 @@ jobs:
           HF_OUT_REPO: ${{ vars.HF_OUT_REPO }}
         run: |
           python3 - <<'PY'
-          import os, glob
+          import os
           from huggingface_hub import HfApi
           api = HfApi(token=os.environ["HF_TOKEN"])
           out, run = os.environ["OUT"], os.environ["GITHUB_RUN_ID"]
-          # One commit for the whole folder (one upload_file per render hit the hub's commit rate limit).
           api.upload_folder(folder_path=out, path_in_repo=f"runs/icons-{run}",
                             repo_id=os.environ["HF_OUT_REPO"], repo_type="dataset",
                             commit_message=f"icons run {run}")

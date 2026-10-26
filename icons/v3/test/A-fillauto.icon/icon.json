@@ -1,0 +1,92 @@
+{
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "BarRight.svg",
+          "name": "Bar right (front)",
+          "glass": true,
+          "hidden": false,
+          "opacity": 1,
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "extended-gray:1.00000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:0.78431,0.74510,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:1.00000,1.00000"
+              }
+            }
+          ]
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.4
+      },
+      "name": "Bar right (front)",
+      "specular": true,
+      "lighting": "individual",
+      "blur-material": 0.22
+    },
+    {
+      "layers": [
+        {
+          "image-name": "BarLeft.svg",
+          "name": "Bar left (back)",
+          "glass": true,
+          "hidden": false,
+          "opacity": 1,
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "srgb:0.83922,0.80784,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:0.58824,0.53333,0.92157,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:1.00000,0.80000"
+              }
+            }
+          ]
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.55
+      },
+      "name": "Bar left (back)",
+      "specular": true,
+      "lighting": "individual",
+      "blur-material": 0.22
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  },
+  "fill": "automatic"
+}
