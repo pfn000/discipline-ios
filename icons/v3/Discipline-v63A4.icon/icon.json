@@ -26,7 +26,8 @@
                 "solid": "extended-gray:1.00000,1.00000"
               }
             }
-          ]
+          ],
+          "blend-mode": "plus-lighter"
         },
         {
           "image-name": "LogoApple.svg",
@@ -52,7 +53,8 @@
                 "solid": "extended-gray:1.00000,1.00000"
               }
             }
-          ]
+          ],
+          "blend-mode": "plus-lighter"
         }
       ],
       "shadow": {
@@ -93,7 +95,8 @@
                 "solid": "extended-gray:1.00000,1.00000"
               }
             }
-          ]
+          ],
+          "blend-mode": "plus-lighter"
         }
       ],
       "shadow": {
@@ -131,7 +134,7 @@
             {
               "appearance": "tinted",
               "value": {
-                "solid": "extended-gray:1.00000,0.46000"
+                "solid": "extended-gray:1.00000,0.32000"
               }
             }
           ]
@@ -157,7 +160,7 @@
             {
               "appearance": "tinted",
               "value": {
-                "solid": "extended-gray:1.00000,0.36000"
+                "solid": "extended-gray:1.00000,0.24000"
               }
             }
           ]
@@ -183,7 +186,7 @@
             {
               "appearance": "tinted",
               "value": {
-                "solid": "extended-gray:1.00000,0.27000"
+                "solid": "extended-gray:1.00000,0.17000"
               }
             }
           ]
@@ -224,7 +227,7 @@
             {
               "appearance": "tinted",
               "value": {
-                "solid": "extended-gray:1.00000,0.14000"
+                "solid": "extended-gray:1.00000,0.08000"
               }
             }
           ]
