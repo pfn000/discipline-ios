@@ -1,0 +1,210 @@
+{
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "LogoNCOM.svg",
+          "name": "NCOM symbol (left face)",
+          "glass": true,
+          "hidden": false,
+          "opacity": 1,
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "extended-gray:1.00000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "extended-gray:1.00000,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:1.00000,1.00000"
+              }
+            }
+          ]
+        },
+        {
+          "image-name": "LogoApple.svg",
+          "name": "Apple logo (right face)",
+          "glass": true,
+          "hidden": false,
+          "opacity": 1,
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "extended-gray:1.00000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "extended-gray:1.00000,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:1.00000,1.00000"
+              }
+            }
+          ]
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.1
+      },
+      "name": "Logos",
+      "specular": true,
+      "lighting": "individual"
+    },
+    {
+      "layers": [
+        {
+          "image-name": "FaceTop.svg",
+          "name": "Top face",
+          "glass": true,
+          "hidden": false,
+          "opacity": 1,
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "srgb:0.70000,0.74000,0.82000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:0.60000,0.63000,0.71000,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:0.85000,0.70000"
+              }
+            }
+          ]
+        },
+        {
+          "image-name": "FaceLeft.svg",
+          "name": "Left face",
+          "glass": true,
+          "hidden": false,
+          "opacity": 1,
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "srgb:0.52000,0.57000,0.67000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:0.46000,0.50000,0.59000,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:0.70000,0.70000"
+              }
+            }
+          ]
+        },
+        {
+          "image-name": "FaceRight.svg",
+          "name": "Right face",
+          "glass": true,
+          "hidden": false,
+          "opacity": 1,
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "srgb:0.40000,0.45000,0.55000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:0.36000,0.40000,0.49000,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:0.55000,0.70000"
+              }
+            }
+          ]
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.35
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.5
+      },
+      "name": "Front faces",
+      "specular": true,
+      "lighting": "individual",
+      "blur-material": 0.3
+    },
+    {
+      "layers": [
+        {
+          "image-name": "BackPanes.svg",
+          "name": "Back, left-back and bottom panes",
+          "glass": true,
+          "hidden": false,
+          "opacity": 0.6,
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "srgb:0.45000,0.50000,0.60000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:0.40000,0.44000,0.53000,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
+              "value": {
+                "solid": "extended-gray:0.60000,0.60000"
+              }
+            }
+          ]
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.2
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.6
+      },
+      "name": "Back faces",
+      "specular": true,
+      "lighting": "individual",
+      "blur-material": 0.2
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}
