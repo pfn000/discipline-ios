@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><g transform="matrix(0.45087 0.13885 0.00000 0.57012 89.49838 221.80789)"><g transform="scale(0.5)">
 
 <g transform="translate(0.000000,2048.000000) scale(0.100000,-0.100000)"
-fill="#FFFFFF" stroke="none">
+fill="#FFFFFF" stroke="#FFFFFF" stroke-width="140" stroke-linejoin="round">
 <path d="M8937 15300 c-261 -13 -343 -30 -548 -116 -205 -86 -362 -191 -579
 -385 -121 -109 -555 -536 -1815 -1789 -423 -421 -1321 -1312 -1994 -1980 -763
 -758 -1263 -1261 -1329 -1340 -114 -136 -248 -332 -325 -477 -71 -135 -154
@@ -15,7 +15,7 @@ fill="#FFFFFF" stroke="none">
 </g><g transform="scale(0.5)">
 
 <g transform="translate(0.000000,2048.000000) scale(0.100000,-0.100000)"
-fill="#FFFFFF" stroke="none">
+fill="#FFFFFF" stroke="#FFFFFF" stroke-width="140" stroke-linejoin="round">
 <path d="M16115 15309 c-166 -17 -351 -67 -470 -126 -160 -80 -294 -175 -457
 -325 -421 -386 -5499 -5461 -5898 -5893 -215 -233 -394 -519 -453 -725 -94
 -325 -100 -416 -101 -1545 -1 -994 -5 -933 70 -1092 31 -65 57 -98 151 -194
