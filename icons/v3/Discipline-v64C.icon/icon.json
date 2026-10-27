@@ -115,23 +115,23 @@
           "name": "Top face",
           "glass": true,
           "hidden": false,
-          "opacity": 0.62,
+          "opacity": 0.74,
           "fill-specializations": [
             {
               "value": {
-                "automatic-gradient": "srgb:0.45000,0.88000,1.00000,1.00000"
+                "automatic-gradient": "srgb:0.30000,0.80000,1.00000,1.00000"
               }
             },
             {
               "appearance": "dark",
               "value": {
-                "automatic-gradient": "srgb:0.40000,0.84000,1.00000,1.00000"
+                "automatic-gradient": "srgb:0.40000,0.86000,1.00000,1.00000"
               }
             },
             {
               "appearance": "tinted",
               "value": {
-                "solid": "extended-gray:1.00000,0.12000"
+                "solid": "extended-gray:1.00000,0.13000"
               }
             }
           ]
@@ -141,23 +141,23 @@
           "name": "Left face",
           "glass": true,
           "hidden": false,
-          "opacity": 0.62,
+          "opacity": 0.74,
           "fill-specializations": [
             {
               "value": {
-                "automatic-gradient": "srgb:0.22000,0.58000,1.00000,1.00000"
+                "automatic-gradient": "srgb:0.12000,0.50000,1.00000,1.00000"
               }
             },
             {
               "appearance": "dark",
               "value": {
-                "automatic-gradient": "srgb:0.24000,0.56000,1.00000,1.00000"
+                "automatic-gradient": "srgb:0.26000,0.62000,1.00000,1.00000"
               }
             },
             {
               "appearance": "tinted",
               "value": {
-                "solid": "extended-gray:1.00000,0.09000"
+                "solid": "extended-gray:1.00000,0.10000"
               }
             }
           ]
@@ -167,23 +167,23 @@
           "name": "Right face",
           "glass": true,
           "hidden": false,
-          "opacity": 0.62,
+          "opacity": 0.74,
           "fill-specializations": [
             {
               "value": {
-                "automatic-gradient": "srgb:0.60000,0.42000,1.00000,1.00000"
+                "automatic-gradient": "srgb:0.50000,0.32000,1.00000,1.00000"
               }
             },
             {
               "appearance": "dark",
               "value": {
-                "automatic-gradient": "srgb:0.62000,0.44000,1.00000,1.00000"
+                "automatic-gradient": "srgb:0.64000,0.46000,1.00000,1.00000"
               }
             },
             {
               "appearance": "tinted",
               "value": {
-                "solid": "extended-gray:1.00000,0.06000"
+                "solid": "extended-gray:1.00000,0.07000"
               }
             }
           ]
@@ -195,7 +195,7 @@
       },
       "translucency": {
         "enabled": true,
-        "value": 0.5
+        "value": 0.45
       },
       "name": "Front faces",
       "specular": true,
@@ -236,7 +236,7 @@
       },
       "translucency": {
         "enabled": true,
-        "value": 0.6
+        "value": 0.55
       },
       "name": "Back faces",
       "specular": true,
