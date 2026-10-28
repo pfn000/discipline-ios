@@ -85,7 +85,7 @@ final class MockGitHubProtocol: URLProtocol {
                 status = 404
                 body = Data(#"{"message":"Not Found"}"#.utf8)
             } else if url.path.contains("/repos/pfn000/discipline-ios/") {
-                // Discipline's own releases: a newer 0.3.1 with release notes (self-update).
+                // Discipline's own releases: a fixture v99.0.0 (always newer) with release notes (self-update).
                 if let f = Bundle.main.url(forResource: "self-releases", withExtension: "json"), let d = try? Data(contentsOf: f) { body = d }
             } else {
                 // First call for a repo answers releases.json; later calls answer releases-next.json,

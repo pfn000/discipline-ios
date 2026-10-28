@@ -58,8 +58,10 @@ final class UpdatesUITests: DisciplineUITestCase {
         tab("GitHub")
         XCTAssertTrue(el("github.updateBadge.sample-app").waitForExistence(timeout: 5))
         openMore("more.updates")
-        XCTAssertEqual(el("updates.status").label, "Discipline 0.3.2 is available")
-        XCTAssertTrue(el("updates.notes").label.contains("what's new in 0.3.2"))
+        // The fixture's "newer" release is v99.0.0 so it stays newer than any real version (CI #26 went red when
+        // the app caught up with a v0.3.1 fixture).
+        XCTAssertEqual(el("updates.status").label, "Discipline 99.0.0 is available")
+        XCTAssertTrue(el("updates.notes").label.contains("what's new in 99.0.0"))
         snap("33-updates-available")
         tap("updates.download")
         XCTAssertTrue(el("ipa.name").waitForExistence(timeout: 15))

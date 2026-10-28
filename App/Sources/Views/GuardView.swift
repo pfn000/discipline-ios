@@ -79,6 +79,7 @@ struct GuardView: View {
                 Text("Apple only lets apps open their own Settings page; from there go back to Privacy & Security.")
             }
         }
+        .disciplineListBackdrop()
         .navigationTitle("Ouija Guard")
         .fileImporter(isPresented: $importingReport, allowedContentTypes: [UTType(filenameExtension: "ndjson") ?? .json, .json, .plainText, .data]) { result in
             if case .success(let url) = result { loadReport(url) }

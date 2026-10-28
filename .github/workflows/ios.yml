@@ -224,7 +224,9 @@ jobs:
           if [ -n "$IPAS" ]; then echo "FAIL: .ipa files inside the app: $IPAS" | tee -a ../ipa-verify.txt; exit 1; fi
           echo "no .ipa inside the app: OK" | tee -a ../ipa-verify.txt
           plutil -p Payload/Discipline.app/Info.plist | grep -q '"CFBundleIconName" => "AppIcon"'
-          echo "AppIcon renditions in Assets.car: $(xcrun assetutil --info Payload/Discipline.app/Assets.car 2>/dev/null | grep -c '"AppIcon')" | tee -a ../ipa-verify.txt
+          N_ICON=$(xcrun assetutil --info Payload/Discipline.app/Assets.car 2>/dev/null | grep -c '"AppIcon' || true)
+          echo "AppIcon renditions in Assets.car: $N_ICON" | tee -a ../ipa-verify.txt
+          if [ "${N_ICON:-0}" -lt 1 ]; then echo "FAIL: no AppIcon in Assets.car (final icon Discipline-v64C missing)" | tee -a ../ipa-verify.txt; exit 1; fi
           ls -la Payload/Discipline.app | head -40 >> ../ipa-verify.txt
           codesign -dv Payload/Discipline.app 2>&1 | tee -a ../ipa-verify.txt || echo "unsigned (expected): Plume Impactor signs it" | tee -a ../ipa-verify.txt
 

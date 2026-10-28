@@ -76,6 +76,7 @@ struct MoreView: View {
                         .accessibilityIdentifier("more.installModes")
                 }
             }
+            .disciplineListBackdrop()
             .navigationTitle("More")
             .navigationDestination(isPresented: $model.openOuija) { OuijaBoardView().modifier(MoreNavigationBack()) }
             .sheet(isPresented: $scanning) { OuijaScannerSheet() }

@@ -1,20 +1,20 @@
 [
   {
     "id": 9031,
-    "tag_name": "v0.3.2",
-    "name": "Discipline 0.3.2 (test fixture)",
+    "tag_name": "v99.0.0",
+    "name": "Discipline 99.0.0 (test fixture, always newer)",
     "draft": false,
     "prerelease": false,
     "published_at": "2026-10-26T12:00:00Z",
-    "html_url": "https://github.com/pfn000/discipline-ios/releases/tag/v0.3.2",
-    "body": "Test fixture release notes: what's new in 0.3.2.\n- Example change one\n- Example change two",
+    "html_url": "https://github.com/pfn000/discipline-ios/releases/tag/v99.0.0",
+    "body": "Test fixture release notes: what's new in 99.0.0.\n- Example change one\n- Example change two",
     "assets": [
       {
         "id": 90311,
-        "name": "Discipline-v0.3.2-unsigned.ipa",
+        "name": "Discipline-v99.0.0-unsigned.ipa",
         "size": 3547,
         "download_count": 0,
-        "browser_download_url": "https://github.com/pfn000/discipline-ios/releases/download/v0.3.2/Discipline-v0.3.2-unsigned.ipa"
+        "browser_download_url": "https://github.com/pfn000/discipline-ios/releases/download/v99.0.0/Discipline-v99.0.0-unsigned.ipa"
       }
     ]
   },
