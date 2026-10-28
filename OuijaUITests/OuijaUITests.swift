@@ -15,7 +15,7 @@ final class OuijaAgreementUITests: DisciplineUITestCase {
         XCTAssertTrue(handle.waitForExistence(timeout: 10))
         XCTAssertEqual(handle.value as? String, "locked", "slider must start locked")
         // Dragging while locked does nothing.
-        handle.press(forDuration: 0.2, thenDragTo: handle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).withOffset(CGVector(dx: 320, dy: 0)))
+        handle.slide(by: 320)
         XCTAssertEqual(handle.value as? String, "locked", "a drag before scrolling must not agree")
         XCTAssertTrue(el("ouija.agreement").exists)
         snap("81-ouija-agreement-locked")
@@ -25,7 +25,7 @@ final class OuijaAgreementUITests: DisciplineUITestCase {
         XCTAssertEqual(handle.value as? String, "unlocked", "scrolling to the end unlocks the slider")
         snap("82-ouija-agreement-unlocked")
 
-        handle.press(forDuration: 0.2, thenDragTo: handle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).withOffset(CGVector(dx: 330, dy: 0)))
+        handle.slide(by: 330)
         XCTAssertEqual(handle.value as? String, "agreed")
         XCTAssertTrue(el("agreement.status").label.hasPrefix("Agreed "), "the time is recorded: \(el("agreement.status").label)")
         snap("83-ouija-agreement-agreed")
@@ -72,7 +72,7 @@ final class OuijaAuthorizeUITests: DisciplineUITestCase {
         XCTAssertTrue(el("authorize.handle").waitForExistence(timeout: 10))
 
         let h = el("authorize.handle")
-        h.press(forDuration: 0.2, thenDragTo: h.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).withOffset(CGVector(dx: 330, dy: 0)))
+        h.slide(by: 330)
         XCTAssertEqual(h.value as? String, "agreed")
         snap("88-ouija-authorize-approved")
     }

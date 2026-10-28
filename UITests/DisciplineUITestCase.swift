@@ -234,3 +234,12 @@ class DisciplineUITestCase: XCTestCase {
         tap(id)
     }
 }
+
+extension XCUIElement {
+    /// Press-and-drag this element sideways by `dx` points at a finger's pace (slide-to-agree handles).
+    func slide(by dx: CGFloat, hold: TimeInterval = 0.2) {
+        let start = coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        start.press(forDuration: hold, thenDragTo: start.withOffset(CGVector(dx: dx, dy: 0)),
+                    withVelocity: XCUIGestureVelocity(rawValue: 700), thenHoldForDuration: 0.1)
+    }
+}

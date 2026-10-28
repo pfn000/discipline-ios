@@ -93,15 +93,14 @@ final class SignInWithOuijaUITests: DisciplineUITestCase {
         if handle.waitForExistence(timeout: 5) {
             let terms = ouija.descendants(matching: .any)["agreement.terms"]
             for _ in 0..<8 where (handle.value as? String) == "locked" { terms.swipeUp() }
-            handle.press(forDuration: 0.2, thenDragTo: handle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).withOffset(CGVector(dx: 330, dy: 0)))
+            handle.slide(by: 330)
         }
         let sheet = ouija.descendants(matching: .any)["authorize.title"]
         XCTAssertTrue(sheet.waitForExistence(timeout: 15), "no authorize sheet in Ouija")
         sleep(1)
         snap("72-ouija-authorize-from-discipline")
         let ah = ouija.descendants(matching: .any)["authorize.handle"]
-        let start = ah.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        ah.press(forDuration: 0.2, thenDragTo: start.withOffset(CGVector(dx: 330, dy: 0)))
+        ah.slide(by: 330)
 
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 20), "Discipline didn't come back")
         let account = el("ouijaSignIn.account")

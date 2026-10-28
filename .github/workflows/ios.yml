@@ -96,7 +96,10 @@ jobs:
               v=(int(m.group(1)),int(m.group(2)))
               for dev in devs:
                   if not dev["name"].startswith("iPhone"): continue
-                  score=(v, "Pro" in dev["name"] and "Max" not in dev["name"], dev["name"])
+                  # One screen only: plain numbered iPhones ("iPhone 18 Pro" best); a foldable like
+                  # "iPhone Duo" has two displays, which breaks the screen recorder and screenshots.
+                  num=re.match(r"iPhone (\d+)( Pro)?$", dev["name"])
+                  score=(v, num is not None, bool(num and num.group(2)), int(num.group(1)) if num else 0, dev["name"])
                   if best is None or score>best[0]: best=(score,dev["udid"],dev["name"],rt)
           print(best[1]); print(best[2]+" | "+best[3], file=sys.stderr)
           ')

@@ -21,8 +21,9 @@ struct KeysView: View {
                                 .font(.headline)
                                 .textContentType(.name)
                                 .accessibilityIdentifier("keys.name")
+                            let photoLabel = model.profileImage == nil ? "Add photo" : "Change photo"
                             PhotosPicker(selection: $photo, matching: .images) {
-                                Text(model.profileImage == nil ? "Add photo" : "Change photo").font(.subheadline)
+                                Text(photoLabel).font(.subheadline)
                             }
                             .accessibilityIdentifier("keys.photo")
                         }
