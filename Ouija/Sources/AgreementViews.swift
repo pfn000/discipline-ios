@@ -221,7 +221,8 @@ struct ProfileSlideToAgree: View {
     }
 
     private func drag(maxX: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 2)
+        // Global space: the handle moves with the finger, so a local translation would shrink as it slides.
+        DragGesture(minimumDistance: 2, coordinateSpace: .global)
             .onChanged { v in
                 guard !locked, !done else { return }
                 offset = min(max(0, v.translation.width), maxX)

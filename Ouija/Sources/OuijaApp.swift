@@ -11,6 +11,12 @@ struct OuijaApp: App {
             OuijaRoot()
                 .environmentObject(model)
                 .onOpenURL { model.handle($0) }
+                .task {
+                    guard let url = model.testURL else { return }
+                    model.testURL = nil
+                    try? await Task.sleep(for: .milliseconds(700))
+                    model.handle(url)
+                }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { model.checkIslandApproval() }
                 }

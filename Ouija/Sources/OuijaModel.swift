@@ -84,6 +84,7 @@ final class OuijaModel: ObservableObject {
     @Published var settings: OuijaSettings { didSet { save() } }
     @Published var tab: OuijaTab = .board
     @Published var pendingRequest: AuthRequest?
+    var testURL: URL?
     @Published var ouijaStatus = ""
     @Published var profileImage: UIImage?
     @Published var lastCallbackResult = ""
@@ -113,9 +114,8 @@ final class OuijaModel: ObservableObject {
         if let tab = OuijaTest.value("-uiTestingTab") {
             self.tab = tab == "rings" ? .rings : (tab == "keys" ? .keys : .board)
         }
-        if let link = OuijaTest.value("-uiTestingOpenURL"), let url = URL(string: link) {
-            DispatchQueue.main.async { self.handle(url) }
-        }
+        // Handled once the window is up (OuijaApp's .task); a sheet asked for before that never shows.
+        if let link = OuijaTest.value("-uiTestingOpenURL") { testURL = URL(string: link) }
     }
 
     private func save() {

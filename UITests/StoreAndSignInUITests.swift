@@ -6,10 +6,9 @@ final class StoreUITests: DisciplineUITestCase {
     func testStorefrontFromLiveSources() {
         launch(["-uiTestingResetStore"])
         tab("Store Apps")
-        let summary = el("store.summary")
-        XCTAssertTrue(summary.waitForExistence(timeout: 90), "the store never finished loading")
         let trending = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'store.trending.'")).firstMatch
-        XCTAssertTrue(trending.waitForExistence(timeout: 30), "no trending apps")
+        XCTAssertTrue(trending.waitForExistence(timeout: 90),
+                      el("store.empty").exists ? "the store loaded no sources" : "the store never finished loading")
         sleep(3)   // icons
         snap("60-store")
         let name = String(trending.identifier.dropFirst("store.trending.".count))
@@ -61,7 +60,12 @@ final class StoreUITests: DisciplineUITestCase {
             XCTAssertTrue(row.waitForNonExistence(timeout: 5), "the source wasn't removed")
         }
         tap("source.done")
-        XCTAssertTrue(el("store.summary").waitForExistence(timeout: 10), "the store kept working")
+        XCTAssertTrue(trending.waitForExistence(timeout: 10), "the store kept working")
+        // The summary sits in the list footer ("N apps from X of Y sources").
+        let summary = el("store.summary")
+        scrollTo(summary, maxSwipes: 15)
+        XCTAssertTrue(summary.waitForExistence(timeout: 5), "no store summary")
+        snap("66-store-summary")
     }
 }
 
