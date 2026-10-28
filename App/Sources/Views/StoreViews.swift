@@ -358,6 +358,22 @@ struct StoreSourcesSheet: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("Add source") {
+                    TextField("https://…/apps.json", text: $newURL)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                        .accessibilityIdentifier("source.newURL")
+                    Button(adding ? "Adding…" : "Add source") {
+                        adding = true
+                        Task {
+                            message = await store.addSource(newURL) ?? "Added."
+                            if message == "Added." { newURL = "" }
+                            adding = false
+                        }
+                    }
+                    .disabled(newURL.isEmpty || adding)
+                    .accessibilityIdentifier("source.add")
+                    if !message.isEmpty { Text(message).font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("source.message") }
+                }
                 Section {
                     ForEach(store.sources) { s in
                         VStack(alignment: .leading, spacing: 3) {
@@ -379,22 +395,6 @@ struct StoreSourcesSheet: View {
                     .onDelete { store.removeSources(at: $0) }
                 } header: { Text("Sources") } footer: {
                     Text("The 10 verified sources were checked live on Oct 28, 2026. Swipe to remove any source.")
-                }
-                Section("Add source") {
-                    TextField("https://…/apps.json", text: $newURL)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
-                        .accessibilityIdentifier("source.newURL")
-                    Button(adding ? "Adding…" : "Add source") {
-                        adding = true
-                        Task {
-                            message = await store.addSource(newURL) ?? "Added."
-                            if message == "Added." { newURL = "" }
-                            adding = false
-                        }
-                    }
-                    .disabled(newURL.isEmpty || adding)
-                    .accessibilityIdentifier("source.add")
-                    if !message.isEmpty { Text(message).font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("source.message") }
                 }
                 Section {
                     Button("Restore verified sources") { Task { await store.restoreDefaults() } }
