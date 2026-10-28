@@ -14,6 +14,10 @@ on:
         description: "optional: run only these UI tests (comma-separated, e.g. DisciplineUITests/OuijaUITests)"
         required: false
         default: ""
+      build_only:
+        description: "true = skip the UI tests (compile check + IPAs only)"
+        required: false
+        default: "false"
 run-name: "ios ${{ github.ref_name }} ${{ inputs.req }}"
 # Read-only: this workflow never creates a GitHub Release (the repo is public; publishing a Release is
 # Saidie's call). The IPA goes only to her private Hugging Face dataset.
@@ -53,6 +57,7 @@ jobs:
           p = hf_hub_download(repo_id=os.environ["HF_OUT_REPO"], filename="discipline-private/ouija-content.json",
                               repo_type="dataset", token=os.environ["HF_TOKEN"])
           shutil.copy(p, "App/Resources/ouija-content.json")
+          shutil.copy(p, "Ouija/Resources/ouija-content.json")
           print("private content copied:", os.path.getsize("App/Resources/ouija-content.json"), "bytes")
           PY
 
@@ -91,7 +96,10 @@ jobs:
               v=(int(m.group(1)),int(m.group(2)))
               for dev in devs:
                   if not dev["name"].startswith("iPhone"): continue
-                  score=(v, "Pro" in dev["name"] and "Max" not in dev["name"], dev["name"])
+                  # One screen only: plain numbered iPhones ("iPhone 18 Pro" best); a foldable like
+                  # "iPhone Duo" has two displays, which breaks the screen recorder and screenshots.
+                  num=re.match(r"iPhone (\d+)( Pro)?$", dev["name"])
+                  score=(v, num is not None, bool(num and num.group(2)), int(num.group(1)) if num else 0, dev["name"])
                   if best is None or score>best[0]: best=(score,dev["udid"],dev["name"],rt)
           print(best[1]); print(best[2]+" | "+best[3], file=sys.stderr)
           ')
@@ -107,7 +115,21 @@ jobs:
           fi
           xcrun simctl list devices | grep "$UDID" | tee -a "$OUT/toolchain.txt"
 
+      - name: "UI tests: Discipline before Ouija is installed (Install Ouija to pair)"
+        if: ${{ inputs.build_only != 'true' && inputs.only == '' }}
+        timeout-minutes: 30
+        run: |
+          xcrun simctl uninstall "${{ steps.sim.outputs.udid }}" com.ncom.ouija || true
+          scripts/run_uitests.sh pre-ouija Discipline "${{ steps.sim.outputs.udid }}" 1500 \
+            -only-testing:DisciplineUITests/SignInWithOuijaUITests/testNoOuijaShowsInstallPrompt
+
+      - name: "UI tests: Ouija app"
+        if: ${{ inputs.build_only != 'true' && inputs.only == '' }}
+        timeout-minutes: 50
+        run: scripts/run_uitests.sh ouija Ouija "${{ steps.sim.outputs.udid }}" 2700
+
       - name: UI tests on the simulator (app flows with fixtures)
+        if: ${{ inputs.build_only != 'true' }}
         timeout-minutes: 80
         run: |
           mkdir -p "$OUT/screenshots"
@@ -125,7 +147,7 @@ jobs:
             echo "running only: $ONLY_ARGS"
           fi
           TEST_RUNNER_SCREENSHOT_DIR="$OUT/screenshots" xcodebuild test -project Discipline.xcodeproj -scheme Discipline \
-            -destination "id=$UDID" $ONLY_ARGS \
+            -destination "id=$UDID" $ONLY_ARGS -skip-testing:DisciplineUITests/SignInWithOuijaUITests/testNoOuijaShowsInstallPrompt \
             -retry-tests-on-failure -test-iterations 3 \
             -resultBundlePath "$OUT/TestResults.xcresult" \
             CODE_SIGN_IDENTITY="-" > "$OUT/ui-tests.log" 2>&1 &
@@ -189,24 +211,39 @@ jobs:
           perl -e 'alarm shift; exec @ARGV' 180 xcrun xcresulttool get test-results tests --path "$OUT/TestResults.xcresult" > "$OUT/test-list.json" 2>/dev/null || true
           perl -e 'alarm shift; exec @ARGV' 180 xcrun xcresulttool export attachments --path "$OUT/TestResults.xcresult" --output-path "$OUT/attachments" || true
           cat "$OUT/test-summary.json" || true
+          for f in pre-ouija ouija; do
+            if [ -f "$OUT/$f-status.txt" ]; then echo "$f: $(cat "$OUT/$f-status.txt")"; cat "$OUT/$f-final-results.txt" || true
+              if [ "$(cat "$OUT/$f-status.txt")" != PASS ]; then STATUS=1; fi; fi
+          done
           echo "ui tests exit status: $STATUS"
           exit $STATUS
 
-      - name: Build unsigned IPA (Release, device)
+      - name: Build unsigned IPAs (Release, device)
         if: ${{ !cancelled() && steps.core.outcome == 'success' }}
         run: |
-          VERSION=$(grep MARKETING_VERSION project.yml | head -1 | sed 's/.*"\(.*\)".*/\1/')
-          NAME="Discipline-v${VERSION}-unsigned.ipa"
           set -o pipefail
-          xcodebuild -project Discipline.xcodeproj -scheme Discipline -configuration Release \
-            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tail -20
-          rm -rf Payload && mkdir Payload
-          cp -R build/Build/Products/Release-iphoneos/Discipline.app Payload/
-          zip -qry "$OUT/$NAME" Payload
-          cd "$OUT"
-          shasum -a 256 "$NAME" | tee "$NAME.sha256"
-          echo "IPA_NAME=$NAME" >> "$GITHUB_ENV"
+          for APP in Discipline Ouija; do
+            if [ "$APP" = Discipline ]; then VERSION=$(grep MARKETING_VERSION project.yml | head -1 | sed 's/.*"\(.*\)".*/\1/'); else VERSION=0.1.0; fi
+            NAME="${APP}-v${VERSION}-unsigned.ipa"
+            # perl alarm = a hard deadline (macOS has no GNU timeout); a hung compile shows its tail instead of eating the job.
+            if ! perl -e 'alarm shift; exec @ARGV' 1500 xcodebuild -project Discipline.xcodeproj -scheme "$APP" -configuration Release \
+              -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build -showBuildTimingSummary \
+              OTHER_SWIFT_FLAGS='$(inherited) -Xfrontend -warn-long-function-bodies=400 -Xfrontend -warn-long-expression-type-checking=400' \
+              CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build > "$OUT/build-$APP.log" 2>&1; then
+              echo "BUILD FAILED or timed out: $APP"; grep -E "error:|BUILD FAILED" "$OUT/build-$APP.log" | sort -u | head -60
+              echo "--- slow type-checking ---"; grep -E "took [0-9]+ms to type-check" "$OUT/build-$APP.log" | sort -u | head -20
+              echo "--- log tail ---"; tail -40 "$OUT/build-$APP.log" | cut -c1-300; exit 1
+            fi
+            grep -E "took [0-9]+ms to type-check" "$OUT/build-$APP.log" | sort -u | head -20 || true
+            grep -A25 "Build Timing Summary" "$OUT/build-$APP.log" | head -26 || true
+            grep -E "warning:" "$OUT/build-$APP.log" | sort -u | head -15 || true
+            rm -rf Payload && mkdir Payload
+            cp -R "build/Build/Products/Release-iphoneos/$APP.app" Payload/
+            zip -qry "$OUT/$NAME" Payload
+            (cd "$OUT" && shasum -a 256 "$NAME" | tee "$NAME.sha256")
+            echo "IPA_$APP=$NAME" >> "$GITHUB_ENV"
+          done
+          echo "IPA_NAME=$(ls "$OUT" | grep '^Discipline-v.*-unsigned.ipa$')" >> "$GITHUB_ENV"
 
       - name: Verify IPA
         if: ${{ !cancelled() && steps.core.outcome == 'success' }}
@@ -224,9 +261,25 @@ jobs:
           if [ -n "$IPAS" ]; then echo "FAIL: .ipa files inside the app: $IPAS" | tee -a ../ipa-verify.txt; exit 1; fi
           echo "no .ipa inside the app: OK" | tee -a ../ipa-verify.txt
           plutil -p Payload/Discipline.app/Info.plist | grep -q '"CFBundleIconName" => "AppIcon"'
-          echo "AppIcon renditions in Assets.car: $(xcrun assetutil --info Payload/Discipline.app/Assets.car 2>/dev/null | grep -c '"AppIcon')" | tee -a ../ipa-verify.txt
+          N_ICON=$(xcrun assetutil --info Payload/Discipline.app/Assets.car 2>/dev/null | grep -c '"AppIcon' || true)
+          echo "AppIcon renditions in Assets.car: $N_ICON" | tee -a ../ipa-verify.txt
+          if [ "${N_ICON:-0}" -lt 1 ]; then echo "FAIL: no AppIcon in Assets.car (final icon Discipline-v64C missing)" | tee -a ../ipa-verify.txt; exit 1; fi
           ls -la Payload/Discipline.app | head -40 >> ../ipa-verify.txt
           codesign -dv Payload/Discipline.app 2>&1 | tee -a ../ipa-verify.txt || echo "unsigned (expected): Plume Impactor signs it" | tee -a ../ipa-verify.txt
+          # Ouija: its own bundle id, ouija:// scheme, Live Activities, embedded widget extension, icon.
+          rm -rf ../verify-ouija && mkdir ../verify-ouija && cd ../verify-ouija
+          unzip -q "../$IPA_Ouija"
+          P=Payload/Ouija.app
+          plutil -p $P/Info.plist | grep -E "CFBundleIdentifier|CFBundleShortVersionString|NSSupportsLiveActivities|ouija|discipline" | tee -a ../ipa-verify.txt
+          plutil -p $P/Info.plist | grep -q '"CFBundleIdentifier" => "com.ncom.ouija"'
+          plutil -p $P/Info.plist | grep -q '"NSSupportsLiveActivities" => true'
+          test -d $P/PlugIns/OuijaWidgets.appex && echo "widget extension embedded: OK" | tee -a ../ipa-verify.txt
+          plutil -p $P/PlugIns/OuijaWidgets.appex/Info.plist | grep -q widgetkit-extension
+          lipo -info $P/Ouija | tee -a ../ipa-verify.txt | grep -q arm64
+          N_OI=$(xcrun assetutil --info $P/Assets.car 2>/dev/null | grep -c '"AppIcon' || true)
+          echo "Ouija AppIcon renditions: $N_OI" | tee -a ../ipa-verify.txt
+          if [ "${N_OI:-0}" -lt 1 ]; then echo "FAIL: Ouija has no AppIcon"; exit 1; fi
+          plutil -p ../verify/Payload/Discipline.app/Info.plist | grep -A6 LSApplicationQueriesSchemes | grep -q ouija && echo "Discipline can query ouija://: OK" | tee -a ../ipa-verify.txt
 
       # Public repo: GitHub artifacts are visible to anyone, so they carry only the result summaries.
       # The IPA, screenshots, video and full logs (which show NCOM's private screens) go to the private
@@ -238,6 +291,8 @@ jobs:
           name: discipline-${{ github.run_id }}-summary
           path: |
             out/final-results.txt
+            out/*-final-results.txt
+            out/*-status.txt
             out/retries.txt
             out/toolchain.txt
             out/ipa-verify.txt

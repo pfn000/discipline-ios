@@ -8,12 +8,15 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    statStrip
                     expiryHero
+                    if model.trackedApps.count > 1 { signaturesCard }
                     companionsCard
                     vpnCard
                 }
                 .padding()
             }
+            .disciplineBackdrop()
             .navigationTitle("Discipline")
             .refreshable { model.refreshEnvironment() }
             .toolbar {
@@ -27,16 +30,41 @@ struct HomeView: View {
         }
     }
 
+    private var statStrip: some View {
+        StatStrip {
+            StatTile(value: "\(model.trackedApps.count)", label: "Tracked", systemImage: "timer",
+                     tint: model.settings.tint.color, id: "home.stat.tracked")
+            StatTile(value: "\(model.library.count)", label: "In Library", systemImage: "shippingbox",
+                     tint: .purple, id: "home.stat.library")
+            StatTile(value: "\(model.savedRepos.filter(\.hasUpdate).count)", label: "Updates", systemImage: "arrow.down.app",
+                     tint: .green, id: "home.stat.updates")
+        }
+    }
+
+    private var signaturesCard: some View {
+        GlassCard {
+            Text("Signatures at a glance").font(.headline)
+            ExpiryChart()
+        }
+    }
+
     private var expiryHero: some View {
         GlassCard(tinted: true) {
             Text("Never let an app expire").font(.headline)
             if let app = model.soonest {
                 let status = model.tracker.status(of: app, now: model.now)
-                HStack(alignment: .firstTextBaseline) {
-                    Text(ExpiryTracker.shortText(status))
-                        .font(.system(size: 44, weight: .bold, design: .rounded))
-                        .accessibilityIdentifier("home.countdown")
-                    Text("left on \(app.name)").foregroundStyle(.secondary)
+                HStack(spacing: 16) {
+                    RingGauge(progress: status.fractionLeft(of: app.tier), tint: status.tintColor) {
+                        Image(systemName: "timer").font(.title.weight(.semibold)).foregroundStyle(status.tintColor)
+                    }
+                    .accessibilityIdentifier("home.ring")
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(ExpiryTracker.shortText(status))
+                            .font(.system(size: 44, weight: .bold, design: .rounded))
+                            .lineLimit(1).minimumScaleFactor(0.5)
+                            .accessibilityIdentifier("home.countdown")
+                        Text("left on \(app.name)").foregroundStyle(.secondary)
+                    }
                 }
             } else {
                 Text("Track your sideloaded apps in Expiry and Discipline counts down their signatures.")
@@ -66,10 +94,27 @@ struct HomeView: View {
 
     private var companionsCard: some View {
         GlassCard {
-            Text("Your sideloading kit").font(.headline)
+            HStack {
+                Text("Your sideloading kit").font(.headline)
+                Spacer()
+                Gauge(value: Double(model.installed.count), in: 0...Double(max(1, Companion.allCases.count))) {
+                    EmptyView()
+                } currentValueLabel: {
+                    Text("\(model.installed.count)/\(Companion.allCases.count)").font(.caption2.bold())
+                }
+                .gaugeStyle(.accessoryCircularCapacity)
+                .tint(model.settings.tint.color)
+                .scaleEffect(0.8)
+                .accessibilityIdentifier("home.kitGauge")
+            }
             ForEach(Companion.allCases) { c in
                 HStack(spacing: 12) {
-                    StatusDot(ok: model.installed.contains(c))
+                    Image(systemName: model.installed.contains(c) ? "checkmark" : "arrow.down")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(model.installed.contains(c) ? Color.green : Color.orange)
+                        .frame(width: 34, height: 34)
+                        .glassEffect(.regular.tint((model.installed.contains(c) ? Color.green : Color.orange).opacity(0.22)), in: .circle)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(c.displayName).font(.subheadline.weight(.semibold))
                         Text(c.role).font(.caption).foregroundStyle(.secondary)

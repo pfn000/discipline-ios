@@ -1,0 +1,8 @@
+{
+ "key": "NCOMKEY1.C9NqXXwlhxk4a38wfaOQRnXj_d9JmBjRdQl6Qj073M8",
+ "session": "0d18232e39444f5a65707b86919ca7b2",
+ "iat": 1800000000,
+ "message": "010d18232e39444f5a65707b86919ca7b26b49d200eb8a227418d48ec8c4ff3a67c0d60a251d154c033518c05648471c0fee3169ac49be94046ff46a7d3a0f5118281514c85dc5933db99a9d67566227c8fa4fa1a5e184ec07",
+ "frames": 7,
+ "note": "Made by web/index.html?fixture=1 in headless Chromium (WebCrypto Ed25519 + ring.js), canvas screenshots at 1x, resized to 300px, odd frames blurred."
+}

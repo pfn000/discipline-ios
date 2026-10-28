@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#07080a">
+  <title>Ouija · Ring sign-in</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23f4f4f6' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23f4f4f6' stroke-width='2' stroke-dasharray='4 3'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23f4f4f6'/%3E%3C/svg%3E">
+</head>
+<body>
+  <a class="skip" href="#stage">Skip to the rings</a>
+  <header class="bar">
+    <div class="brand">
+      <svg class="glyph" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14"/><circle cx="16" cy="16" r="8" stroke-dasharray="4 3"/><circle cx="16" cy="16" r="2.5" class="dot"/></svg>
+      <span class="name">Ouija</span><span class="sep" aria-hidden="true">/</span><span class="page">Ring sign-in</span>
+    </div>
+    <span class="chip" id="linkChip" data-state="idle" role="status"><span class="led" aria-hidden="true"></span><span id="linkText">No phone yet</span></span>
+  </header>
+
+  <main class="grid">
+    <section class="stage card" id="stage" aria-labelledby="stageTitle">
+      <div class="stage-head">
+        <h1 id="stageTitle">Sign In with Your Rings</h1>
+        <p class="lede" id="stageLede">Open Ouija on your iPhone, tap Sign in, and point the camera here.</p>
+      </div>
+      <div class="canvas-wrap" data-live="false" id="canvasWrap">
+        <canvas id="rings" role="img" aria-label="Ring code. Waiting for a session from your phone."></canvas>
+        <div class="veil" id="veil"><span id="veilText">Waiting for your phone</span></div>
+      </div>
+      <dl class="meta" aria-live="polite">
+        <div><dt>Frame</dt><dd id="frameMeta">–</dd></div>
+        <div><dt>Session</dt><dd id="sessionMeta">–</dd></div>
+        <div><dt>Fresh for</dt><dd id="ttlMeta">–</dd></div>
+      </dl>
+      <div class="actions">
+        <button class="btn primary" id="resign" type="button" disabled>Sign Again</button>
+        <button class="btn ghost" id="pause" type="button" disabled aria-pressed="false">Pause</button>
+      </div>
+    </section>
+
+    <aside class="steps" aria-label="Setup">
+      <section class="card step" aria-labelledby="s1">
+        <div class="step-head"><span class="num" aria-hidden="true">1</span><h2 id="s1">This Computer&rsquo;s Key</h2></div>
+        <p class="muted">Enroll it once: in Ouija open <b>Keys</b>, tap <b>Add key</b>, paste this. The fingerprint on the phone must match.</p>
+        <div class="fp-row">
+          <span class="label">Fingerprint</span>
+          <span class="fp" id="fp" translate="no">····-····</span>
+        </div>
+        <div class="keybox">
+          <code id="keyText" translate="no">Making a key…</code>
+          <button class="btn small" id="copyKey" type="button" disabled>Copy</button>
+        </div>
+        <p class="hint" id="keyHint" aria-live="polite"></p>
+      </section>
+
+      <section class="card step" aria-labelledby="s2">
+        <div class="step-head"><span class="num" aria-hidden="true">2</span><h2 id="s2">Connect Your Phone</h2></div>
+        <ul class="routes">
+          <li class="route">
+            <div class="route-head"><span class="route-name">Wi-Fi Helper</span><span class="pill" id="wifiState">Checking…</span></div>
+            <p class="muted" id="wifiHelp">Same Wi-Fi as your phone. Run <kbd>python3 ouija_host.py</kbd> in the <kbd>web</kbd> folder and open the address it prints.</p>
+          </li>
+          <li class="route">
+            <div class="route-head"><span class="route-name">Bluetooth</span><span class="pill" id="bleState">Off</span></div>
+            <p class="muted" id="bleHelp">Chrome or Edge on a Mac or PC. Keep Ouija open on the Sign in tab.</p>
+            <button class="btn" id="bleBtn" type="button">Connect over Bluetooth</button>
+          </li>
+        </ul>
+      </section>
+
+      <section class="card step quiet" aria-labelledby="s3">
+        <div class="step-head"><span class="num" aria-hidden="true">3</span><h2 id="s3">What the Phone Checks</h2></div>
+        <p class="muted">Your enrolled key, an Ed25519 signature over the session your phone just made, and the time. A code works for two minutes and only for that session. The private key never leaves this browser.</p>
+        <button class="btn ghost small" id="resetKey" type="button">Make a New Key</button>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="foot"><span>NCOM · Ouija ring code v1</span><span id="envNote"></span></footer>
+  <script src="ring.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

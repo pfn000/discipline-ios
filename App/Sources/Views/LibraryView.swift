@@ -15,6 +15,20 @@ struct LibraryView: View {
     var body: some View {
         NavigationStack(path: $model.libraryPath) {
             List {
+                if !model.library.isEmpty {
+                    Section {
+                        StatStrip {
+                            StatTile(value: "\(model.library.count)", label: "Apps", systemImage: "shippingbox.fill",
+                                     tint: model.settings.tint.color, id: "library.stat.apps")
+                            StatTile(value: byteText(model.library.reduce(0) { $0 + $1.fileSize }), label: "On device",
+                                     systemImage: "internaldrive", tint: .purple, id: "library.stat.size")
+                            StatTile(value: "\(model.library.reduce(0) { $0 + $1.appIDCost })", label: "App IDs to sign",
+                                     systemImage: "signature", tint: .orange, id: "library.stat.appIDs")
+                        }
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                    }
+                }
                 Section {
                     GlassEffectContainer(spacing: 12) {
                         HStack(spacing: 12) {
@@ -49,6 +63,7 @@ struct LibraryView: View {
                     }
                 }
             }
+            .disciplineListBackdrop()
             .navigationTitle("Library")
             .navigationDestination(for: UUID.self) { id in
                 if let item = model.library.first(where: { $0.id == id }) { IPADetailView(item: item) }

@@ -71,6 +71,14 @@ struct GitHubView: View {
 
                 if !model.savedRepos.isEmpty {
                     Section {
+                        StatStrip {
+                            StatTile(value: "\(model.savedRepos.count)", label: "Saved repos", systemImage: "star.fill",
+                                     tint: .yellow, id: "github.stat.saved")
+                            StatTile(value: "\(model.savedRepos.filter(\.hasUpdate).count)", label: "Updates", systemImage: "arrow.down.app.fill",
+                                     tint: .green, id: "github.stat.updates")
+                        }
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                         ForEach(model.savedRepos) { repo in
                             Button { Task { await model.openSaved(repo) } } label: {
                                 HStack {
@@ -94,7 +102,9 @@ struct GitHubView: View {
                     } header: { Text("Saved repos") }
                 }
             }
+            .disciplineListBackdrop()
             .navigationTitle("GitHub to iOS")
+            .toolbar { ToolbarItem(placement: .principal) { StoreModePicker() } }
         }
     }
 }

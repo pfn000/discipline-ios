@@ -9,3 +9,5 @@ xcuserdata/
 
 # NCOM private Ouija Board content: copied in by CI from private storage, never committed
 App/Resources/ouija-content.json
+Ouija/Resources/ouija-content.json
+__pycache__/

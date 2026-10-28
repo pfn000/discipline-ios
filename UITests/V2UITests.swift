@@ -58,8 +58,10 @@ final class UpdatesUITests: DisciplineUITestCase {
         tab("GitHub")
         XCTAssertTrue(el("github.updateBadge.sample-app").waitForExistence(timeout: 5))
         openMore("more.updates")
-        XCTAssertEqual(el("updates.status").label, "Discipline 0.3.1 is available")
-        XCTAssertTrue(el("updates.notes").label.contains("what's new in 0.3.1"))
+        // The fixture's "newer" release is v99.0.0 so it stays newer than any real version (CI #26 went red when
+        // the app caught up with a v0.3.1 fixture).
+        XCTAssertEqual(el("updates.status").label, "Discipline 99.0.0 is available")
+        XCTAssertTrue(el("updates.notes").label.contains("what's new in 99.0.0"))
         snap("33-updates-available")
         tap("updates.download")
         XCTAssertTrue(el("ipa.name").waitForExistence(timeout: 15))
@@ -105,7 +107,7 @@ final class OuijaUITests: DisciplineUITestCase {
         while Date() < deadline, !(msg.exists && msg.label.contains("Signed")) { usleep(150_000) }
         XCTAssertTrue(msg.exists && msg.label.hasPrefix("Signed"), "ring did not sign off")
         snap("36-magic-ring-signed")
-        XCTAssertTrue(el("ouija.attention").waitForExistence(timeout: 10), "Ouija Board opens after the ring")
+        XCTAssertTrue(el("ouija.handoff").waitForExistence(timeout: 10), "the Ouija page opens after the ring")
         back()
         XCTAssertTrue(el("more.ouija").waitForExistence(timeout: 5))
         XCTAssertTrue(el("more.lab").exists)
@@ -152,61 +154,4 @@ final class OuijaUITests: DisciplineUITestCase {
         XCTAssertTrue(el("lab.tier").waitForExistence(timeout: 5))
     }
 
-    /// The sketch pages: Attention (slide), Agreement (agree button), the board, pairing, the shell.
-    /// NCOM's words are private (CI copies them in), so this test checks identifiers, not wording,
-    /// and never prints a label.
-    func testOuijaBoardScreensFromSketch() {
-        launch(["-uiTestingOuijaUnlocked", "-uiTestingSeedLibrary"])
-        openMore("more.ouija")
-        XCTAssertTrue(el("ouija.attention").waitForExistence(timeout: 5))
-        XCTAssertEqual(el("ouija.warning").label, "Ouija Board is only meant for NCOM developers.")
-        snap("37-ouija-attention")
-        app.sliders["ouija.slide"].firstMatch.adjust(toNormalizedSliderPosition: 1.0)
-        XCTAssertTrue(el("ouija.agreement").waitForExistence(timeout: 5))
-        XCTAssertTrue(el("ouija.signedIn").exists)
-        snap("38-ouija-agreement")
-        tap("ouija.agree")
-        XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 5))
-        XCTAssertFalse(el("ouija.deviceName").label.isEmpty)
-        let source = el("ouija.contentSource")
-        scrollTo(source)
-        XCTAssertEqual(source.value as? String, "private", "CI must build with NCOM's private content")
-        for i in 1...12 { XCTAssertTrue(el("ouija.tile.\(i)").exists, "tile \(i)") }
-        snap("39-ouija-board")
-        tap("ouija.tile.3")
-        XCTAssertTrue(el("ouija.status").label.hasPrefix("Tile 3: prototype feature."))
-        XCTAssertTrue(el("ouija.status").label.hasSuffix("Not connected."))
-        app.segmentedControls["ouija.session"].buttons.element(boundBy: 1).tap()
-        tap("ouija.connection")
-        XCTAssertTrue(el("pair.instructions").waitForExistence(timeout: 5))
-        for i in 1...6 { XCTAssertTrue(el("pair.option.opt\(i)").exists, "pairing option \(i)") }
-        tap("pair.start")
-        XCTAssertEqual(shown("pair.result").label, "Choose an option first.")
-        tap("pair.option.opt4")   // the local-network option: a real Bonjour search (instant and empty under tests)
-        tap("pair.start")
-        let result = shown("pair.result")
-        XCTAssertTrue(result.exists)
-        XCTAssertEqual(result.label, "No NCOM devices found on this network.")
-        snap("40-start-searching")
-        tap("pair.option.opt5")   // a hardware-only option
-        tap("pair.start")
-        XCTAssertTrue(shown("pair.result").label.hasSuffix("needs NCOM prototype hardware. Nothing is paired."))
-        tap("pair.option.opt1")   // the UWB option
-        tap("pair.start")
-        XCTAssertTrue(shown("pair.result").label.contains("Nearby Interaction"))
-        back()
-        XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 5))
-        let field = el("ouija.shellInput")
-        scrollTo(field)
-        type("ouija.shellInput", "apps")
-        tap("ouija.shellSend")
-        XCTAssertEqual(el("ouija.shellOutput").label, "2 IPA files in Discipline's Library; none run inside Discipline.")
-        hideKeyboard()
-        snap("41-ouija-shell")
-        // The agreement is remembered: leaving and coming back goes straight to the board.
-        back()
-        tap("more.ouija")
-        XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 5))
-        XCTAssertFalse(el("ouija.attention").exists)
-    }
 }

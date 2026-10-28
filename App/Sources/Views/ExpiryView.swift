@@ -80,7 +80,15 @@ struct ExpiryView: View {
                 } header: { Text("App ID slots") } footer: {
                     Text("A free Apple ID can create 10 App IDs per 7 days; every app and every extension signed directly uses one. Apps inside LiveContainer use none.")
                 }
+
+                if !model.trackedApps.isEmpty {
+                    Section("At a glance") {
+                        ExpiryChart()
+                            .padding(.vertical, 6)
+                    }
+                }
             }
+            .disciplineListBackdrop()
             .navigationTitle("Expiry")
             .sheet(isPresented: $showAdd) { AddTrackedAppSheet() }
         }

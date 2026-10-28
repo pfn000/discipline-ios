@@ -1,3 +1,11 @@
+Discipline v0.4.0 (unsigned build)
+
+- Final app icon Discipline-v64C (Icon Composer .icon, Liquid Glass layers) is the app icon.
+- 37.6 pt corners on every rounded card and container.
+- More visual screens: tinted mesh backdrop under Liquid Glass, stat tiles (Home, Library, GitHub), a signature ring on Home, a days-left chart (Home, Expiry), a sideloading-kit gauge. All earlier features kept.
+- Self-update UI test fixture is now v99.0.0, so it stays newer than any real version (CI #26 was red because the app caught up with the old fixture).
+- Version 0.4.0 (build 5).
+
 Discipline v0.1.0 (unsigned build; not published as a Release)
 
 What's in it (implemented flows; tested only on an iOS 27.0 simulator with fixtures; the hand-offs to other apps, real downloads and installation are not yet device-tested)

@@ -76,6 +76,13 @@ class DisciplineUITestCase: XCTestCase {
 
     func tab(_ name: String, file: StaticString = #filePath, line: UInt = #line) {
         hideKeyboard()
+        // v0.5: GitHub lives in the Store tab (Apps | GitHub switch at the top).
+        if name == "GitHub" || name == "Store Apps" {
+            tab("Store", file: file, line: line)
+            let seg = app.segmentedControls["store.mode"].buttons[name == "GitHub" ? "GitHub" : "Apps"]
+            if seg.waitForExistence(timeout: 5) { seg.tap() } else { app.buttons[name == "GitHub" ? "GitHub" : "Apps"].firstMatch.tap() }
+            return
+        }
         let b = app.tabBars.buttons[name]
         if b.waitForExistence(timeout: 5) { b.tap(); return }
         // A minimized tab bar (scrolled down) shows only the current tab: scroll back up to expand it.
@@ -225,5 +232,14 @@ class DisciplineUITestCase: XCTestCase {
     func openMore(_ id: String) {
         tab("More")
         tap(id)
+    }
+}
+
+extension XCUIElement {
+    /// Press-and-drag this element sideways by `dx` points at a finger's pace (slide-to-agree handles).
+    func slide(by dx: CGFloat, hold: TimeInterval = 0.2) {
+        let start = coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        start.press(forDuration: hold, thenDragTo: start.withOffset(CGVector(dx: dx, dy: 0)),
+                    withVelocity: XCUIGestureVelocity(rawValue: 700), thenHoldForDuration: 0.1)
     }
 }

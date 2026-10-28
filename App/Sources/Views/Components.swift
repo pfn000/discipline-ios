@@ -2,6 +2,8 @@ import SwiftUI
 import UIKit
 import DisciplineCore
 
+// DisciplineShape (the 37.6 pt corner) lives in Shared/DisciplineShape.swift, used by both apps.
+
 extension TintChoice {
     var color: Color {
         switch self {
@@ -25,7 +27,7 @@ struct GlassCard<Content: View>: View {
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .glassEffect(tinted ? .regular.tint(model.settings.tint.color.opacity(0.35)) : .regular,
-                         in: .rect(cornerRadius: 24))
+                         in: .rect(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
     }
 }
 
