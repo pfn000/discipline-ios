@@ -29,20 +29,8 @@ final class CoverageUITests: DisciplineUITestCase {
         snap("51-updates")
         back()
 
-        // Ouija Board settings sheet: Done, then "Show the Attention page again".
+        // v0.5: the Ouija Board is its own app; Discipline's row leads to the hand-off page.
         tap("more.ouija")
-        if el("ouija.attention").waitForExistence(timeout: 5) {
-            app.sliders["ouija.slide"].firstMatch.adjust(toNormalizedSliderPosition: 1.0)
-            tap("ouija.agree")
-        }
-        XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 5))
-        tap("ouija.settings")
-        XCTAssertTrue(el("ouija.settingsDone").waitForExistence(timeout: 5), "settings sheet did not open")
-        snap("52-ouija-settings")
-        tap("ouija.settingsDone")
-        XCTAssertTrue(el("ouija.settingsDone").waitForNonExistence(timeout: 5))
-        tap("ouija.settings")
-        tap("ouija.resetAgreement")
-        XCTAssertTrue(el("ouija.attention").waitForExistence(timeout: 5), "the Attention page should show again")
+        XCTAssertTrue(el("ouija.handoff").waitForExistence(timeout: 5))
     }
 }

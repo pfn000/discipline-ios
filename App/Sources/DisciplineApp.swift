@@ -42,7 +42,7 @@ struct RootView: View {
         TabView(selection: $model.tab) {
             Tab("Home", systemImage: "shield.lefthalf.filled", value: AppTab.home) { HomeView() }
             Tab("Library", systemImage: "shippingbox", value: AppTab.library) { LibraryView() }
-            Tab("GitHub", systemImage: "arrow.down.app", value: AppTab.github) { GitHubView() }
+            Tab("Store", systemImage: "bag.fill", value: AppTab.github) { StoreTab() }
             Tab("Expiry", systemImage: "timer", value: AppTab.expiry) { ExpiryView() }
             Tab("More", systemImage: "ellipsis.circle", value: AppTab.more) { MoreView() }
         }

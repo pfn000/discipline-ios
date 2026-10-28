@@ -5,6 +5,9 @@ import DisciplineCore
 
 enum AppTab: Hashable { case home, library, github, expiry, more }
 
+/// The Store tab shows the sideload sources' apps, or the GitHub-release finder.
+enum StoreMode: String, Hashable { case apps, github }
+
 @MainActor
 final class AppModel: ObservableObject {
     // Persistent state
@@ -30,6 +33,7 @@ final class AppModel: ObservableObject {
     @Published var magicRing: MagicRingState?
     /// Asks More to open the Ouija Board screen (after the magic ring finishes).
     @Published var openOuija = false
+    @Published var storeMode: StoreMode = .apps
     /// Last thing the Ouija Board did, for its "Loading/install stat message" line.
     @Published var ouijaStatus = "Ready. No prototype device connected."
 
@@ -229,8 +233,13 @@ final class AppModel: ObservableObject {
             Task { await refreshAll() }
         case "ouija":
             receiveOuijaCode(url.absoluteString)
+        case "ouija-callback":
+            tab = .more
+            let (line, ok) = OuijaLink.shared.receive(url)
+            show(line, error: !ok)
         case "github":
             tab = .github
+            storeMode = .github
             if let repo = DeepLinks.queryValue("repo", in: url) {
                 gitHubQuery = repo
                 Task { await findReleases() }

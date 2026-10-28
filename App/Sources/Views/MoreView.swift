@@ -14,6 +14,7 @@ struct MoreView: View {
     var body: some View {
         NavigationStack {
             List {
+                SignInWithOuijaSection()
                 Section {
                     NavigationLink { SetupView().modifier(MoreNavigationBack()) } label: { Label("Setup checklist", systemImage: "checklist") }
                         .accessibilityIdentifier("more.setup")
@@ -24,7 +25,7 @@ struct MoreView: View {
                     NavigationLink { UpdatesView().modifier(MoreNavigationBack()) } label: { Label("Updates", systemImage: "arrow.down.circle") }
                         .accessibilityIdentifier("more.updates")
                     if model.labUnlocked {
-                        NavigationLink { OuijaBoardView().modifier(MoreNavigationBack()) } label: { Label("Ouija Board", systemImage: "circle.hexagongrid") }
+                        NavigationLink { OuijaHandoffView().modifier(MoreNavigationBack()) } label: { Label("Ouija Board", systemImage: "circle.hexagongrid") }
                             .accessibilityIdentifier("more.ouija")
                         NavigationLink { LabView().modifier(MoreNavigationBack()) } label: { Label("NCOM Lab", systemImage: "flask") }
                             .accessibilityIdentifier("more.lab")
@@ -78,7 +79,7 @@ struct MoreView: View {
             }
             .disciplineListBackdrop()
             .navigationTitle("More")
-            .navigationDestination(isPresented: $model.openOuija) { OuijaBoardView().modifier(MoreNavigationBack()) }
+            .navigationDestination(isPresented: $model.openOuija) { OuijaHandoffView().modifier(MoreNavigationBack()) }
             .sheet(isPresented: $scanning) { OuijaScannerSheet() }
         }
     }

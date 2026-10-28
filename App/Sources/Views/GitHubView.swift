@@ -104,6 +104,7 @@ struct GitHubView: View {
             }
             .disciplineListBackdrop()
             .navigationTitle("GitHub to iOS")
+            .toolbar { ToolbarItem(placement: .principal) { StoreModePicker() } }
         }
     }
 }

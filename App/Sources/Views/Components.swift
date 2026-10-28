@@ -2,11 +2,7 @@ import SwiftUI
 import UIKit
 import DisciplineCore
 
-/// Saidie's corner rule (WhatsApp, Oct 26 2026, 2:41 PM): every rounded card or container uses 37.6.
-/// SwiftUI corner radii are in points, so this is 37.6 pt. Change it here and every card follows.
-enum DisciplineShape {
-    static let cornerRadius: CGFloat = 37.6
-}
+// DisciplineShape (the 37.6 pt corner) lives in Shared/DisciplineShape.swift, used by both apps.
 
 extension TintChoice {
     var color: Color {
