@@ -86,9 +86,14 @@ final class SignInWithOuijaUITests: DisciplineUITestCase {
         let button = el("ouijaSignIn.button")
         XCTAssertTrue(button.waitForExistence(timeout: 10), "Ouija should be installed for this test")
         snap("71-signin-with-ouija-button")
-        button.tap()
-
+        // Start Ouija once in test mode (fresh state, no pulsing animation holding XCTest's idle wait),
+        // then let Discipline's button bring it forward with the real ouija://authorize link.
         let ouija = XCUIApplication(bundleIdentifier: "com.ncom.ouija")
+        ouija.launchArguments = ["-uiTesting", "-uiTestingResetState"]
+        ouija.launch()
+        app.activate()
+        XCTAssertTrue(button.waitForExistence(timeout: 10))
+        button.tap()
         XCTAssertTrue(ouija.wait(for: .runningForeground, timeout: 20), "Ouija didn't open")
         // A fresh Ouija shows Attention and the Agreement first.
         let iAgree = ouija.buttons["ouija.iAgree"]
@@ -100,7 +105,8 @@ final class SignInWithOuijaUITests: DisciplineUITestCase {
             handle.slide(by: 330)
         }
         let sheet = ouija.descendants(matching: .any)["authorize.title"]
-        XCTAssertTrue(sheet.waitForExistence(timeout: 15), "no authorize sheet in Ouija")
+        XCTAssertTrue(sheet.waitForExistence(timeout: 15),
+                      "no authorize sheet in Ouija; agreement slide: \(labelIfAny("agreement.handle.trace", in: ouija)), handle value \(handle.exists ? String(describing: handle.value) : "gone")")
         sleep(1)
         snap("72-ouija-authorize-from-discipline")
         let ah = ouija.descendants(matching: .any)["authorize.handle"]

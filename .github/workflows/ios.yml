@@ -311,6 +311,16 @@ jobs:
             out/*.sha256
           retention-days: 14
 
+      - name: Failing tests as annotations (readable through the API)
+        if: always()
+        run: |
+          for f in "$OUT"/pre-ouija.log "$OUT"/ouija.log "$OUT"/ui-tests.log; do
+            [ -f "$f" ] || continue
+            MSG=$(grep -E "error: -\[" "$f" | sed -E 's#^.*/(UITests|OuijaUITests)/#\1/#' | sort -u | head -15 | tr '\n' '|' | sed 's/%/%25/g' | cut -c1-3500)
+            [ -n "$MSG" ] && echo "::warning title=$(basename "$f")::$MSG"
+          done
+          true
+
       - name: Copy outputs to the private Hugging Face dataset (for Tab to read back)
         if: always()
         env:
@@ -328,9 +338,17 @@ jobs:
           keep = [p for p in glob.glob(out + "/*") if os.path.isfile(p) and not p.endswith(".xcresult")]
           keep += glob.glob(out + "/screenshots/*.png") + glob.glob(out + "/screenshots/*.txt")
           keep += [p for p in glob.glob(out + "/attachments/*") if p.endswith((".png", ".json"))]
-          for p in keep:
-              rel = os.path.relpath(p, out)
-              api.upload_file(path_or_fileobj=p, path_in_repo=f"runs/discipline-{run}/{rel}",
-                              repo_id=os.environ["HF_OUT_REPO"], repo_type="dataset")
-              print("uploaded", rel)
+          # One commit for the whole run (one commit per file hit the hub's commit rate limit), with retries.
+          import time
+          from huggingface_hub import CommitOperationAdd
+          ops = [CommitOperationAdd(path_in_repo=f"runs/discipline-{run}/{os.path.relpath(p, out)}", path_or_fileobj=p) for p in keep]
+          for attempt in range(6):
+              try:
+                  api.create_commit(repo_id=os.environ["HF_OUT_REPO"], repo_type="dataset", operations=ops,
+                                    commit_message=f"discipline run {run}")
+                  print("uploaded", len(ops), "files"); break
+              except Exception as e:
+                  print("upload attempt", attempt + 1, "failed:", str(e)[:300])
+                  if attempt == 5: raise
+                  time.sleep(30 * (attempt + 1))
           PY

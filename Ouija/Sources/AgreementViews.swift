@@ -170,6 +170,7 @@ struct ProfileSlideToAgree: View {
 
     @State private var offset: CGFloat = 0
     @State private var pulse = false
+    @State private var trace = "no drag yet"   // UI tests read it when a slide doesn't finish
     private let knob: CGFloat = 56
     private let inset: CGFloat = 5
 
@@ -198,7 +199,7 @@ struct ProfileSlideToAgree: View {
                         }
                     }
                     .offset(x: inset + offset)
-                    .gesture(drag(maxX: maxX))
+                    .highPriorityGesture(drag(maxX: maxX))
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("Profile slider")
                     .accessibilityValue(done ? "agreed" : (locked ? "locked" : "unlocked"))
@@ -207,6 +208,12 @@ struct ProfileSlideToAgree: View {
             }
             .glassEffect(.regular, in: Capsule())
             .onChange(of: done) { _, d in if d { offset = maxX } }
+            .overlay(alignment: .bottomTrailing) {
+                if OuijaTest.active {
+                    Text(trace).font(.system(size: 2)).opacity(0.02)
+                        .accessibilityIdentifier(identifier + ".trace")
+                }
+            }
         }
         .frame(height: knob + inset * 2)
         .opacity(locked ? 0.5 : 1)
@@ -224,10 +231,12 @@ struct ProfileSlideToAgree: View {
         // Global space: the handle moves with the finger, so a local translation would shrink as it slides.
         DragGesture(minimumDistance: 2, coordinateSpace: .global)
             .onChanged { v in
+                if OuijaTest.active { trace = "moving \(Int(v.translation.width)) of \(Int(maxX))\(locked ? " locked" : "")" }
                 guard !locked, !done else { return }
                 offset = min(max(0, v.translation.width), maxX)
             }
-            .onEnded { _ in
+            .onEnded { v in
+                if OuijaTest.active { trace = "ended \(Int(v.translation.width)) offset \(Int(offset)) of \(Int(maxX))\(locked ? " locked" : "")" }
                 guard !locked, !done else { return }
                 if offset >= maxX * 0.85 {
                     withAnimation(.spring(duration: 0.25)) { offset = maxX }

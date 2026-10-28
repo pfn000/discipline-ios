@@ -26,7 +26,7 @@ final class OuijaAgreementUITests: DisciplineUITestCase {
         snap("82-ouija-agreement-unlocked")
 
         handle.slide(by: 330)
-        XCTAssertEqual(handle.value as? String, "agreed")
+        XCTAssertEqual(handle.value as? String, "agreed", "slide: \(labelIfAny("agreement.handle.trace")), handle \(handle.frame), screen \(app.frame)")
         XCTAssertTrue(el("agreement.status").label.hasPrefix("Agreed "), "the time is recorded: \(el("agreement.status").label)")
         snap("83-ouija-agreement-agreed")
         XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 10), "board opens after agreeing")
@@ -73,7 +73,7 @@ final class OuijaAuthorizeUITests: DisciplineUITestCase {
 
         let h = el("authorize.handle")
         h.slide(by: 330)
-        XCTAssertEqual(h.value as? String, "agreed")
+        XCTAssertEqual(h.value as? String, "agreed", "slide: \(labelIfAny("authorize.handle.trace")), handle \(h.frame), screen \(app.frame)")
         snap("88-ouija-authorize-approved")
     }
 
