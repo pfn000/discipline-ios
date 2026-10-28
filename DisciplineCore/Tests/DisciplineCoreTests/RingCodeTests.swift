@@ -90,6 +90,35 @@ final class RingCodeTests: XCTestCase {
         XCTAssertEqual(RingLogin.unhex(RingLogin.hex(session)), session)
     }
 
+    /// The real web page (web/index.html?fixture=1 in headless Chromium: WebCrypto Ed25519 + web/ring.js)
+    /// drew these rings; the phone's reader must stitch them back and the phone's check must accept them.
+    func testWebPageRingsReadBackAndVerify() throws {
+        let meta = try XCTUnwrap(JSONSerialization.jsonObject(with: try fixture("web-ring-login.json")) as? [String: Any])
+        let key = try XCTUnwrap(RingLogin.parseKey(meta["key"] as? String ?? ""))
+        let session = try XCTUnwrap(RingLogin.unhex(meta["session"] as? String ?? ""))
+        let expected = try XCTUnwrap(RingLogin.unhex(meta["message"] as? String ?? ""))
+        let count = try XCTUnwrap(meta["frames"] as? Int)
+        var asm = RingCode.Assembler()
+        for i in 0..<count {
+            let img = try XCTUnwrap(GrayImage(pgm: try fixture("web-ring-frame\(i).pgm")), "pgm \(i)")
+            let f = try XCTUnwrap(RingReader.read(img), "web frame \(i) should read")
+            XCTAssertEqual(f.index, i)
+            asm.add(f)
+        }
+        XCTAssertTrue(asm.isComplete)
+        let msg = Array(try XCTUnwrap(asm.message).prefix(RingLogin.length))
+        XCTAssertEqual(msg, expected)
+        let iat = try XCTUnwrap(meta["iat"] as? Int)
+        #if canImport(CryptoKit)
+        XCTAssertEqual(RingLogin.verify(msg, session: session, enrolled: [key], now: Date(timeIntervalSince1970: TimeInterval(iat + 10))),
+                       .accepted(keyID: RingCode.fnv1a(key)))
+        XCTAssertEqual(RingLogin.verify(msg, session: session, enrolled: [key], now: Date(timeIntervalSince1970: TimeInterval(iat + 600))), .expired)
+        var forged = msg; forged[30] ^= 1
+        XCTAssertEqual(RingLogin.verify(forged, session: session, enrolled: [key], now: Date(timeIntervalSince1970: TimeInterval(iat))), .badSignature)
+        #endif
+        XCTAssertEqual(RingLogin.verify(msg, session: [UInt8](repeating: 0, count: 16), enrolled: [[UInt8](repeating: 1, count: 32)]), .unknownKey)
+    }
+
     func testPGMParses() {
         let d = Data("P5\n# c\n2 2\n255\n".utf8) + Data([0, 50, 100, 255])
         let g = GrayImage(pgm: d)
