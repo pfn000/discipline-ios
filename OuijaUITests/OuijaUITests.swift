@@ -58,7 +58,7 @@ final class OuijaAuthorizeUITests: DisciplineUITestCase {
 
     func testAuthorizeSheetAndLiveActivity() {
         launch(["-uiTestingResetState", "-uiTestingAgreed", "-uiTestingProfileName", "Saidie Newara", "-uiTestingOpenURL", Self.request])
-        XCTAssertTrue(el("authorize.title").waitForExistence(timeout: 10))
+        XCTAssertTrue(el("authorize.title").waitForExistence(timeout: 10), "no sheet: \(labelIfAny("ouija.urlTrace"))")
         XCTAssertEqual(el("authorize.title").label, "Discipline wants to sign in to your account")
         XCTAssertEqual(el("authorize.account").label, "Saidie Newara")
         sleep(1)

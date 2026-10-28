@@ -246,7 +246,9 @@ extension DisciplineUITestCase {
 extension XCUIElement {
     /// Press-and-drag this element sideways by `dx` points at a finger's pace (slide-to-agree handles).
     func slide(by dx: CGFloat, hold: TimeInterval = 0.1) {
-        let start = coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        // Start on the handle: at the leading end of the track (the element is the whole track).
+        let w = frame.width
+        let start = coordinate(withNormalizedOffset: CGVector(dx: w > 0 ? min(0.5, 33 / w) : 0.5, dy: 0.5))
         start.press(forDuration: hold, thenDragTo: start.withOffset(CGVector(dx: dx, dy: 0)))
     }
 }

@@ -168,6 +168,11 @@ struct StoreBrowseView: View {
                     .accessibilityIdentifier("store.failed")
             }
             Text("Discipline only lists and links. Every app downloads from the link its own source publishes.")
+            Button("Edit sources") { showSources = true }
+                .font(.footnote.weight(.semibold))
+                .buttonStyle(.glass)
+                .padding(.top, 6)
+                .accessibilityIdentifier("store.editSources")
         }
         .font(.footnote)
         .foregroundStyle(.secondary)

@@ -199,23 +199,26 @@ struct ProfileSlideToAgree: View {
                         }
                     }
                     .offset(x: inset + offset)
-                    .highPriorityGesture(drag(maxX: maxX))
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("Profile slider")
-                    .accessibilityValue(done ? "agreed" : (locked ? "locked" : "unlocked"))
-                    .accessibilityAddTraits(.allowsDirectInteraction)
-                    .accessibilityIdentifier(identifier)
             }
             .glassEffect(.regular, in: Capsule())
+            // The whole track takes the drag (the handle follows the finger's travel), and the whole
+            // control is one accessibility element: XCTest reports it at the track's frame anyway.
+            .contentShape(Capsule())
+            .highPriorityGesture(drag(maxX: maxX))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Profile slider")
+            .accessibilityValue(done ? "agreed" : (locked ? "locked" : "unlocked"))
+            .accessibilityAddTraits(.allowsDirectInteraction)
+            .accessibilityIdentifier(identifier)
             .onChange(of: done) { _, d in if d { offset = maxX } }
-            .overlay(alignment: .bottomTrailing) {
-                if OuijaTest.active {
-                    Text(trace).font(.system(size: 2)).opacity(0.02)
-                        .accessibilityIdentifier(identifier + ".trace")
-                }
-            }
         }
         .frame(height: knob + inset * 2)
+        .overlay(alignment: .bottomTrailing) {
+            if OuijaTest.active {
+                Text(trace).font(.system(size: 2)).opacity(0.02)
+                    .accessibilityIdentifier(identifier + ".trace")
+            }
+        }
         .opacity(locked ? 0.5 : 1)
         .onChange(of: locked) { _, l in startPulse(!l) }
         .onAppear { startPulse(!locked) }

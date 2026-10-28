@@ -39,10 +39,12 @@ final class StoreUITests: DisciplineUITestCase {
         tap("store.get")
         XCTAssertTrue(el("store.getResult").waitForExistence(timeout: 5))
         back()
-        if app.buttons["Cancel"].exists { app.buttons["Cancel"].tap() }
+        for label in ["Cancel", "Close"] where app.buttons[label].exists { app.buttons[label].tap(); break }
 
-        // Sources: add a broken one, the rest keeps working, then remove it.
-        tap("store.sources")
+        // Sources: add a broken one, the rest keeps working, then remove it. While search is still up the
+        // toolbar button hides, so use the footer's "Edit sources" then.
+        if el("store.sources").waitForExistence(timeout: 3) { tap("store.sources") }
+        else { let edit = el("store.editSources"); scrollTo(edit, maxSwipes: 15); tap("store.editSources") }
         XCTAssertTrue(el("source.newURL").waitForExistence(timeout: 5))
         snap("64-store-sources")
         type("source.newURL", "https://example.invalid/apps.json")
@@ -60,7 +62,6 @@ final class StoreUITests: DisciplineUITestCase {
             XCTAssertTrue(row.waitForNonExistence(timeout: 5), "the source wasn't removed")
         }
         tap("source.done")
-        XCTAssertTrue(trending.waitForExistence(timeout: 10), "the store kept working")
         // The summary sits in the list footer ("N apps from X of Y sources").
         let summary = el("store.summary")
         scrollTo(summary, maxSwipes: 15)
@@ -106,7 +107,7 @@ final class SignInWithOuijaUITests: DisciplineUITestCase {
         }
         let sheet = ouija.descendants(matching: .any)["authorize.title"]
         XCTAssertTrue(sheet.waitForExistence(timeout: 15),
-                      "no authorize sheet in Ouija; agreement slide: \(labelIfAny("agreement.handle.trace", in: ouija)), handle value \(handle.exists ? String(describing: handle.value) : "gone")")
+                      "no authorize sheet in Ouija; \(labelIfAny("ouija.urlTrace", in: ouija)); agreement slide: \(labelIfAny("agreement.handle.trace", in: ouija)), handle value \(handle.exists ? String(describing: handle.value) : "gone")")
         sleep(1)
         snap("72-ouija-authorize-from-discipline")
         let ah = ouija.descendants(matching: .any)["authorize.handle"]

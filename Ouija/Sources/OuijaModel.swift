@@ -85,6 +85,7 @@ final class OuijaModel: ObservableObject {
     @Published var tab: OuijaTab = .board
     @Published var pendingRequest: AuthRequest?
     var testURL: URL?
+    @Published var urlTrace = "no link yet"   // UI tests read it when a sheet doesn't show
     @Published var ouijaStatus = ""
     @Published var profileImage: UIImage?
     @Published var lastCallbackResult = ""
@@ -171,6 +172,7 @@ final class OuijaModel: ObservableObject {
     // MARK: Sign in with Ouija
 
     func handle(_ url: URL) {
+        urlTrace = "link \(url.host ?? "-") agreed=\(settings.agreedAt != nil)"
         guard url.scheme == "ouija" else { return }
         switch url.host ?? "" {
         case "authorize":
@@ -180,6 +182,7 @@ final class OuijaModel: ObservableObject {
             }
             let req = AuthRequest(id: UUID().uuidString, request: r)
             pendingRequest = req
+            urlTrace += " request from \(r.client)"
             startLiveActivity(for: req)
         case "review":
             break   // tapping the Live Activity opens Ouija; the pending sheet is already up
