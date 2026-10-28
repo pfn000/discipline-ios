@@ -86,23 +86,35 @@ jobs:
         timeout-minutes: 15
         run: |
           xcrun simctl list runtimes
-          UDID=$(xcrun simctl list devices available -j | python3 -c '
-          import json,sys,re
-          d=json.load(sys.stdin)["devices"]
-          best=None
-          for rt,devs in d.items():
-              m=re.search(r"iOS-(\d+)-(\d+)",rt)
-              if not m: continue
-              v=(int(m.group(1)),int(m.group(2)))
-              for dev in devs:
-                  if not dev["name"].startswith("iPhone"): continue
-                  # One screen only: plain numbered iPhones ("iPhone 18 Pro" best); a foldable like
-                  # "iPhone Duo" has two displays, which breaks the screen recorder and screenshots.
-                  num=re.match(r"iPhone (\d+)( Pro)?$", dev["name"])
-                  score=(v, num is not None, bool(num and num.group(2)), int(num.group(1)) if num else 0, dev["name"])
-                  if best is None or score>best[0]: best=(score,dev["udid"],dev["name"],rt)
-          print(best[1]); print(best[2]+" | "+best[3], file=sys.stderr)
-          ')
+          # One screen only. A foldable like "iPhone Duo" has two displays, which breaks the screen
+          # recorder and screenshots, so use (or create) a plain "iPhone NN Pro" on the newest iOS runtime.
+          UDID=$(python3 - <<'PY' 2>>"$OUT/simulators.txt"
+          import json, re, subprocess, sys
+          j = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "-j"]))
+          rts = [r for r in j["runtimes"] if r.get("isAvailable") and r.get("platform", "iOS") == "iOS" and "iOS" in r["name"]]
+          rts.sort(key=lambda r: [int(x) for x in re.findall(r"\d+", r["version"])], reverse=True)
+          def pro(name):
+              m = re.match(r"iPhone (\d+) Pro$", name)
+              return int(m.group(1)) if m else -1
+          for rt in rts:
+              devs = [d for d in j["devices"].get(rt["identifier"], []) if d.get("isAvailable", True) and pro(d["name"]) >= 0]
+              if devs:
+                  d = max(devs, key=lambda d: pro(d["name"]))
+                  print(d["udid"]); print("using", d["name"], rt["name"], file=sys.stderr); sys.exit(0)
+              types = [t for t in rt.get("supportedDeviceTypes", []) if pro(t["name"]) >= 0]
+              if types:
+                  t = max(types, key=lambda t: pro(t["name"]))
+                  u = subprocess.check_output(["xcrun", "simctl", "create", "CI " + t["name"], t["identifier"], rt["identifier"]]).decode().strip()
+                  print(u); print("created", t["name"], rt["name"], file=sys.stderr); sys.exit(0)
+          # Fallback: any single-screen iPhone, newest runtime first.
+          for rt in rts:
+              for d in j["devices"].get(rt["identifier"], []):
+                  if d["name"].startswith("iPhone") and not re.search(r"Duo|Fold|Flip", d["name"]):
+                      print(d["udid"]); print("fallback", d["name"], rt["name"], file=sys.stderr); sys.exit(0)
+          sys.exit("no usable iPhone simulator")
+          PY
+          )
+          cat "$OUT/simulators.txt"
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
           xcrun simctl boot "$UDID" || true
           # A simulator can hang while booting (CI #22 sat here 20+ min). Give it 4 min, then erase and boot once more.
