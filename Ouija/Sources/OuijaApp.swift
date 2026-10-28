@@ -48,6 +48,13 @@ struct OuijaRoot: View {
             }
         }
         .tint(OuijaStyle.accent)
+        .overlay(alignment: .bottomLeading) {
+            if OuijaTest.active {
+                Text(model.urlTrace + (model.pendingRequest == nil ? " · no pending" : " · pending"))
+                    .font(.system(size: 2)).opacity(0.02)
+                    .accessibilityIdentifier("ouija.urlTrace")
+            }
+        }
         .sheet(item: Binding(get: { model.settings.agreedAt == nil ? nil : model.pendingRequest },
                              set: { model.pendingRequest = $0 })) { req in
             AuthorizeSheet(request: req)

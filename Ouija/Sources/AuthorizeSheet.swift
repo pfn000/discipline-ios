@@ -47,6 +47,8 @@ struct AuthorizeSheet: View {
         }
         .padding(.horizontal, 22)
         .padding(.bottom, 16)
+        // .contain keeps the children's own identifiers (a bare identifier on a stack overrides them all).
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("authorize.sheet")
     }
 }

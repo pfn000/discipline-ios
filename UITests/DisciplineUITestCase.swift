@@ -235,11 +235,20 @@ class DisciplineUITestCase: XCTestCase {
     }
 }
 
+extension DisciplineUITestCase {
+    /// The label of an element if it's on screen, for failure messages (reading a missing one fails the test).
+    func labelIfAny(_ id: String, in a: XCUIApplication? = nil) -> String {
+        let e = (a ?? app).descendants(matching: .any)[id].firstMatch
+        return e.exists ? e.label : "(no \(id))"
+    }
+}
+
 extension XCUIElement {
     /// Press-and-drag this element sideways by `dx` points at a finger's pace (slide-to-agree handles).
-    func slide(by dx: CGFloat, hold: TimeInterval = 0.2) {
-        let start = coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        start.press(forDuration: hold, thenDragTo: start.withOffset(CGVector(dx: dx, dy: 0)),
-                    withVelocity: XCUIGestureVelocity(rawValue: 700), thenHoldForDuration: 0.1)
+    func slide(by dx: CGFloat, hold: TimeInterval = 0.1) {
+        // Start on the handle: at the leading end of the track (the element is the whole track).
+        let w = frame.width
+        let start = coordinate(withNormalizedOffset: CGVector(dx: w > 0 ? min(0.5, 33 / w) : 0.5, dy: 0.5))
+        start.press(forDuration: hold, thenDragTo: start.withOffset(CGVector(dx: dx, dy: 0)))
     }
 }

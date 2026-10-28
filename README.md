@@ -19,6 +19,8 @@
 | 🛡️ | **Ouija Guard** | Scans .ipa files for 20 known tracker SDKs and reads your App Privacy Report |
 | 🧪 | **NCOM Lab** *(hidden)* | Entitlements inspector, capability map for the Ouija Board app (UWB, BLE, NFC, Wi-Fi Aware…) and a signing preset builder. To unlock it, long-press the version number in More 7 times |
 | 🧭 | **Setup** | A checklist for Developer Mode, LocalDevVPN, SideStore and LiveContainer, with the right link for each step |
+| 🛍️ | **Store** | Browse apps from 10 verified public AltStore/SideStore sources (add or remove your own): trending from real signals (featured lists, release dates, GitHub stars), categories, search, details, and Get hands off to SideStore or LiveContainer. Cached for offline use; Discipline hosts nothing |
+| 🔐 | **Sign in with Ouija** | Pairs with the separate Ouija app: Discipline asks over `ouija://`, Ouija answers with a signed Ed25519 assertion. Without Ouija installed it says "Install Ouija to pair" |
 | 💜 | **Support** | A tip button that opens NCOM's Stripe donate page |
 
 **These are implemented app flows, not device-verified integrations.** CI exercised them only on an iOS 27.0 simulator with fixtures: a sample .ipa opened by a test flag, a mock GitHub API, simulated companion apps (the tests check that Discipline sends the right link, not what LocalDevVPN, SideStore or LiveContainer then do) and a sample privacy report. Importing from Files or Safari, real GitHub downloads, the LocalDevVPN / SideStore / LiveContainer hand-offs, Shortcuts, reminders actually firing, backup restore and installing an app still need real-device testing.
@@ -32,6 +34,12 @@ Captured by the UI tests in [CI run #8](https://github.com/pfn000/discipline-ios
 | Home | Library | GitHub to iOS | Expiry |
 | <img src="docs/screenshots/17-setup.png" width="200" alt="Setup"> | <img src="docs/screenshots/21-guard-scan.png" width="200" alt="Ouija Guard"> | <img src="docs/screenshots/16-settings-dark.png" width="200" alt="Settings (dark)"> | <img src="docs/screenshots/23-lab-capabilities.png" width="200" alt="NCOM Lab"> |
 | Setup | Ouija Guard | Settings (dark) | NCOM Lab |
+
+## Ouija (second app, v0.1)
+
+`Ouija/` is its own app (`com.ncom.ouija`, `ouija://`): the Ouija Board, the Agreement (read to the end, then slide your profile photo to agree), magic-ring sign-in for your computer, enrolled keys and your developer profile, and a Live Activity with an Approve button when Discipline asks to sign in. The computer side is `web/`: run `python3 web/ouija_host.py` and open http://localhost:8737 (see `web/README.md`).
+
+With a free Apple ID, Discipline + Ouija + SideStore are 3 apps, which is the free limit of 3 active sideloaded apps.
 
 ## Install
 
