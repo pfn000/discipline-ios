@@ -222,11 +222,17 @@ jobs:
           for APP in Discipline Ouija; do
             if [ "$APP" = Discipline ]; then VERSION=$(grep MARKETING_VERSION project.yml | head -1 | sed 's/.*"\(.*\)".*/\1/'); else VERSION=0.1.0; fi
             NAME="${APP}-v${VERSION}-unsigned.ipa"
-            if ! xcodebuild -project Discipline.xcodeproj -scheme "$APP" -configuration Release \
-              -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            # perl alarm = a hard deadline (macOS has no GNU timeout); a hung compile shows its tail instead of eating the job.
+            if ! perl -e 'alarm shift; exec @ARGV' 1500 xcodebuild -project Discipline.xcodeproj -scheme "$APP" -configuration Release \
+              -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build -showBuildTimingSummary \
+              OTHER_SWIFT_FLAGS='$(inherited) -Xfrontend -warn-long-function-bodies=400 -Xfrontend -warn-long-expression-type-checking=400' \
               CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build > "$OUT/build-$APP.log" 2>&1; then
-              echo "BUILD FAILED: $APP"; grep -E "error:|BUILD FAILED" "$OUT/build-$APP.log" | sort -u | head -60; exit 1
+              echo "BUILD FAILED or timed out: $APP"; grep -E "error:|BUILD FAILED" "$OUT/build-$APP.log" | sort -u | head -60
+              echo "--- slow type-checking ---"; grep -E "took [0-9]+ms to type-check" "$OUT/build-$APP.log" | sort -u | head -20
+              echo "--- log tail ---"; tail -40 "$OUT/build-$APP.log" | cut -c1-300; exit 1
             fi
+            grep -E "took [0-9]+ms to type-check" "$OUT/build-$APP.log" | sort -u | head -20 || true
+            grep -A25 "Build Timing Summary" "$OUT/build-$APP.log" | head -26 || true
             grep -E "warning:" "$OUT/build-$APP.log" | sort -u | head -15 || true
             rm -rf Payload && mkdir Payload
             cp -R "build/Build/Products/Release-iphoneos/$APP.app" Payload/
