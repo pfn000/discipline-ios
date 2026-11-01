@@ -69,12 +69,13 @@ struct MagicSphereView: View {
             dots = dance.frame(at: t)
         }
         // Far dots first so near ones sit on top.
-        for d in dots.sorted(by: { $0.pos.z < $1.pos.z }) {
+        let weights = broken ? [Double](repeating: 1, count: dots.count) : dance.weights
+        for (i, d) in dots.enumerated().sorted(by: { $0.element.pos.z < $1.element.pos.z }).map({ ($0.offset, $0.element) }) {
             let z = d.pos.z
             let persp = 1 / (1 - z * 0.18)
             let depth = min(max((z + 1) / 2, 0), 1)
             // Size about 3:1 near to far, as in the reference; a glowing dot swells a little.
-            let r = R * (0.06 + 0.085 * depth) * (1 + 0.3 * d.glow)
+            let r = R * (0.06 + 0.085 * depth) * (1 + 0.3 * d.glow) * weights[i]
             let base = (broken ? 0.35 : 0.20) + (broken ? 0.60 : 0.70) * depth
             let a = base + (1 - base) * d.glow
             let x = c.x + d.pos.x * R * persp, y = c.y - d.pos.y * R * persp

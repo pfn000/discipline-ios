@@ -127,6 +127,9 @@ final class MagicSphereDanceTests: XCTestCase {
         let zs = d.frame(at: 3.3).map(\.pos.z)
         XCTAssertGreaterThan(zs.max()!, 0.6); XCTAssertLessThan(zs.min()!, -0.6)
         XCTAssertEqual(d.dotCount, 26)
+        // Pieces have identity (like a cube's colours): a few dots are always bigger.
+        XCTAssertEqual(d.weights.filter { $0 > 1.1 }.count, 7)
+        XCTAssertNotEqual(d.weights, dance(nd + "x", gv).weights)
     }
 
     func testTumblesOnMoreThanOneAxis() {

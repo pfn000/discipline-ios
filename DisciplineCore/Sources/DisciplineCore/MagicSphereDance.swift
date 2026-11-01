@@ -70,6 +70,9 @@ public struct SphereDance: Equatable, Sendable {
     public let turns: [[Double]]                  // per step, per dot: radians turned about the step's axis (rigid moves)
     public let turns2: [[Double]]                 // per step, per dot: radians turned about the second axis (veer)
     public let stagger: [Double]                  // per dot delay, seconds
+    /// Per dot size weight (like a cube piece's colour): a few dots are always bigger, so when the slices twist and the
+    /// groups glide, the pattern of big and small visibly lands somewhere new. From the halves too.
+    public let weights: [Double]
     public let cycle: Double
     let kickStartA: [Double], kickStartB: [Double] // tumble angle already done at each step's start
 
@@ -345,6 +348,9 @@ extension MagicSphere {
         }
         let cycle = t
         let stagger = (0..<n).map { _ in rng.range(0, 0.05) }
+        var weights = (0..<n).map { _ in rng.range(0.72, 0.95) }
+        var heavy = Array(0..<n); rng.shuffle(&heavy)
+        for i in heavy.prefix(7) { weights[i] = rng.range(1.18, 1.38) }
 
         // "The front" of the sphere in the body frame at a step (so clusters swell toward the viewer).
         func toBody(_ v: Vec3, at k: Int) -> Vec3 {
@@ -428,7 +434,7 @@ extension MagicSphere {
         }
         return SphereDance(dotCount: n, beat: beat, spinAxis: spinAxis, spin: spin, axisA: axisA, axisB: axisB,
                            steps: steps, targets: targets, glows: glows, turns: turns, turns2: turns2, stagger: stagger,
-                           cycle: cycle, kickStartA: startsA, kickStartB: startsB)
+                           weights: weights, cycle: cycle, kickStartA: startsA, kickStartB: startsB)
     }
 
     /// The idle sphere (nothing to authenticate yet): the same look, from fixed placeholder halves.
