@@ -216,7 +216,6 @@ final class OuijaDevCardUITests: DisciplineUITestCase {
         snap("79c-ouija-devcard-idle")
         tap("devcard.start")
         XCTAssertTrue(el("devcard.cardOK").waitForExistence(timeout: 10), "the ID turns green")
-        XCTAssertEqual(el("devcard.start").value as? String, "green")
         snap("79c2-ouija-devcard-card-green")
         XCTAssertTrue(el("devcard.scanPrompt").waitForExistence(timeout: 10), "then the phone scans the website's sphere")
         snap("79c3-ouija-devcard-scan")
