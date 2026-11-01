@@ -128,8 +128,8 @@ struct DevCardSheet: View {
                 VStack(spacing: 18) {
                     stage.frame(width: 220, height: 220).padding(.top, 8)
                     status
+                    buttons      // above the steps so the choice is always on screen
                     steps
-                    buttons
                     footer
                 }
                 .padding(.horizontal, 22).padding(.bottom, 28)

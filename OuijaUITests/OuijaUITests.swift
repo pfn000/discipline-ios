@@ -5,8 +5,9 @@ import XCTest
 final class OuijaAgreementUITests: DisciplineUITestCase {
     /// No made-up user or device anywhere on the way in.
     func assertNoPlaceholders(_ where_: String) {
+        // Case-sensitive: the real button "NCOM developer? Tap your ID card" must not count as the old fake name.
         for fake in ["Focals", "NCOM Developer", "Prototype device"] {
-            let hit = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] %@", fake)).firstMatch
+            let hit = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", fake)).firstMatch
             XCTAssertFalse(hit.exists, "placeholder '\(fake)' shown on \(where_)")
         }
     }

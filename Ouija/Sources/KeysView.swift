@@ -46,36 +46,6 @@ struct KeysView: View {
                     Text("Shown on the Agreement slider, in sign-in requests and in the Dynamic Island. Without a photo, your initials are used.")
                 }
 
-                Section {
-                    if let dev = model.settings.developer {
-                        LabeledContent("Developer", value: "\(dev.ownerName) · card \(dev.cardID)")
-                            .accessibilityIdentifier("keys.developer")
-                    } else {
-                        Text("Not signed in with an NCOM ID card.").foregroundStyle(.secondary).accessibilityIdentifier("keys.developer")
-                    }
-                    Button("Tap NCOM ID card") { showCard = true }.accessibilityIdentifier("keys.devCard")
-                    TextField("NCOM verifier address (https://…)", text: $model.settings.verifierURL)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
-                        .font(.footnote.monospaced())
-                        .accessibilityIdentifier("keys.verifierURL")
-                    TextField("NCOM Dev public key", text: $model.settings.ncomDevKey)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled().font(.footnote.monospaced())
-                    TextField("GlassVault public key", text: $model.settings.glassVaultKey)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled().font(.footnote.monospaced())
-                    LabeledContent("This iPhone's card key", value: "\(model.magicKey.fingerprint) · \(model.magicKey.kind)")
-                        .font(.footnote)
-                    if !model.settings.securityReports.isEmpty {
-                        ForEach(model.settings.securityReports.prefix(5)) { r in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(r.detail).font(.footnote)
-                                Text("\(r.at.formatted(date: .abbreviated, time: .shortened)) · \(r.kind)\(r.reportedToIT ? " · reported to IT" : "")")
-                                    .font(.caption2).foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                } header: { Text("Developer card") } footer: {
-                    Text("The NCOM ID card signs you in as a developer only when NCOM Dev, GlassVault and this iPhone all agree. Give NCOM this iPhone's card key to register it.")
-                }
 
                 Section {
                     if model.settings.enrolled.isEmpty {
@@ -126,6 +96,37 @@ struct KeysView: View {
                     }
                 } header: { Text("This iPhone") } footer: {
                     Text("Apps that use Sign in with Ouija pin this key the first time and refuse any other.")
+                }
+
+                Section {
+                    if let dev = model.settings.developer {
+                        LabeledContent("Developer", value: "\(dev.ownerName) · card \(dev.cardID)")
+                            .accessibilityIdentifier("keys.developer")
+                    } else {
+                        Text("Not signed in with an NCOM ID card.").foregroundStyle(.secondary).accessibilityIdentifier("keys.developer")
+                    }
+                    Button("Tap NCOM ID card") { showCard = true }.accessibilityIdentifier("keys.devCard")
+                    TextField("NCOM verifier address (https://…)", text: $model.settings.verifierURL)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                        .font(.footnote.monospaced())
+                        .accessibilityIdentifier("keys.verifierURL")
+                    TextField("NCOM Dev public key", text: $model.settings.ncomDevKey)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled().font(.footnote.monospaced())
+                    TextField("GlassVault public key", text: $model.settings.glassVaultKey)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled().font(.footnote.monospaced())
+                    LabeledContent("This iPhone's card key", value: "\(model.magicKey.fingerprint) · \(model.magicKey.kind)")
+                        .font(.footnote)
+                    if !model.settings.securityReports.isEmpty {
+                        ForEach(model.settings.securityReports.prefix(5)) { r in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(r.detail).font(.footnote)
+                                Text("\(r.at.formatted(date: .abbreviated, time: .shortened)) · \(r.kind)\(r.reportedToIT ? " · reported to IT" : "")")
+                                    .font(.caption2).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } header: { Text("Developer card") } footer: {
+                    Text("The NCOM ID card signs you in as a developer only when NCOM Dev, GlassVault and this iPhone all agree. Give NCOM this iPhone's card key to register it.")
                 }
             }
             .navigationTitle("Keys")
