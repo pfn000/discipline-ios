@@ -63,52 +63,81 @@ struct GlassIDCard: View {
 
     private var card: some View {
         let shape = RoundedRectangle(cornerRadius: landscape ? 22 : 26, style: .continuous)
-        return ZStack(alignment: .bottom) {
-            // Her photo fills the whole card, edge to edge (aspect fill, cropped to the card).
-            GeometryReader { g in
-                if let photo {
-                    Image(uiImage: photo).resizable().scaledToFill().frame(width: g.size.width, height: g.size.height).clipped()
-                } else {
-                    // No photo in the app yet: a labelled slot that fills the card (no stock or made-up face).
-                    ZStack {
-                        Rectangle().fill(OuijaStyle.hairline)
-                        VStack(spacing: 6) {
-                            Image(systemName: "person.crop.rectangle").font(.system(size: 34, weight: .light))
-                            Text("Photo slot · your photo fills the card").font(.caption2.weight(.semibold))
+        return GeometryReader { g in
+            let w = g.size.width, h = g.size.height
+            ZStack(alignment: .bottom) {
+                // Her photo fills the whole card, edge to edge (aspect fill, cropped to the card).
+                Group {
+                    if let photo {
+                        Image(uiImage: photo).resizable().scaledToFill()
+                    } else {
+                        // No photo in the app yet: a labelled slot that fills the card (no stock or made-up face).
+                        ZStack {
+                            Rectangle().fill(OuijaStyle.hairline)
+                            VStack(spacing: 6) {
+                                Image(systemName: "person.crop.rectangle").font(.system(size: 34, weight: .light))
+                                Text("Photo slot · your photo fills the card").font(.caption2.weight(.semibold))
+                                    .lineLimit(1).minimumScaleFactor(0.6).padding(.horizontal, 10)
+                            }
+                            .foregroundStyle(OuijaStyle.ink.opacity(0.55))
                         }
-                        .foregroundStyle(OuijaStyle.ink.opacity(0.55))
+                        .accessibilityIdentifier("idcard.photoSlot")
                     }
-                    .frame(width: g.size.width, height: g.size.height)
-                    .accessibilityIdentifier("idcard.photoSlot")
+                }
+                .frame(width: w, height: h).clipped()
+                band(width: w).frame(width: w)
+                if let tint {
+                    Rectangle().fill(tint.opacity(0.38)).allowsHitTesting(false)
+                    Image(systemName: look == .ok ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .font(.system(size: min(w, h) * 0.3, weight: .semibold))
+                        .foregroundStyle(OuijaStyle.alwaysWhite, tint)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .transition(.scale.combined(with: .opacity))
                 }
             }
-            // Glass band with her two real logos.
-            HStack(spacing: 10) {
-                Image("OuijaLogoWhite").resizable().scaledToFit().frame(height: landscape ? 30 : 34)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(owner ?? "NCOM Developer ID").font(.subheadline.weight(.semibold)).lineLimit(1)
-                    Text(owner == nil ? "Tap to the top of your iPhone" : "NCOM Developer ID").font(.caption2).opacity(0.8).lineLimit(1)
-                }
-                .foregroundStyle(OuijaStyle.alwaysWhite)
-                Spacer(minLength: 4)
-                Image("NCOMLogo").resizable().scaledToFit().frame(height: landscape ? 24 : 22)
-            }
-            .padding(.horizontal, 14).padding(.vertical, 10)
-            .background(OuijaStyle.alwaysBlack.opacity(0.42))
-            .background(.ultraThinMaterial)
-            if let tint {
-                Rectangle().fill(tint.opacity(0.38)).allowsHitTesting(false)
-                Image(systemName: look == .ok ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.system(size: 58, weight: .semibold))
-                    .foregroundStyle(OuijaStyle.alwaysWhite, tint)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .transition(.scale.combined(with: .opacity))
-            }
+            .frame(width: w, height: h)
         }
         .clipShape(shape)
         .overlay(shape.strokeBorder((tint ?? OuijaStyle.accent(scheme)).opacity(tint == nil ? 0.35 : 0.9), lineWidth: tint == nil ? 1 : 2.5))
         .glassEffect(.regular, in: shape)
         .animation(.easeInOut(duration: 0.35), value: look)
+    }
+
+    /// The glass band with her two real logos, sized from the card's width so nothing overflows.
+    @ViewBuilder private func band(width w: CGFloat) -> some View {
+        let title = owner ?? "NCOM Developer ID"
+        let sub = owner == nil ? "Tap to the top of your iPhone" : "NCOM Developer ID"
+        Group {
+            if landscape {
+                HStack(spacing: w * 0.03) {
+                    Image("OuijaLogoWhite").resizable().scaledToFit().frame(height: w * 0.085)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(title).font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.6)
+                        Text(sub).font(.caption2).opacity(0.8).lineLimit(1).minimumScaleFactor(0.6)
+                    }
+                    .foregroundStyle(OuijaStyle.alwaysWhite)
+                    .layoutPriority(-1)
+                    Spacer(minLength: 2)
+                    Image("NCOMLogo").resizable().scaledToFit().frame(height: w * 0.062)
+                }
+                .padding(.horizontal, w * 0.045).padding(.vertical, w * 0.028)
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Image("OuijaLogoWhite").resizable().scaledToFit().frame(height: w * 0.17)
+                        Spacer(minLength: 4)
+                        Image("NCOMLogo").resizable().scaledToFit().frame(height: w * 0.11)
+                    }
+                    Text(title).font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.6)
+                    Text(sub).font(.caption2).opacity(0.8).lineLimit(2).minimumScaleFactor(0.7)
+                }
+                .foregroundStyle(OuijaStyle.alwaysWhite)
+                .padding(w * 0.065)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(OuijaStyle.alwaysBlack.opacity(0.42))
+        .background(.ultraThinMaterial)
     }
 }
 

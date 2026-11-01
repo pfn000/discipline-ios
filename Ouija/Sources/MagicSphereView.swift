@@ -43,7 +43,8 @@ struct MagicSphereView: View {
 
     var body: some View {
         // .animation with no minimum interval runs at the display's own rate (60 Hz, 120 on ProMotion).
-        TimelineView(.animation(paused: frozen)) { tl in
+        // (The CI simulator renders in software; under UI tests it asks for 30 fps so the recording drops fewer frames.)
+        TimelineView(.animation(minimumInterval: OuijaTest.active ? 1.0 / 30 : nil, paused: frozen)) { tl in
             let t = frozen ? (state.isBroken ? 2.0 : dance.stillTime) : tl.date.timeIntervalSince(startedAt)
             Canvas { ctx, size in draw(&ctx, size: size, t: t) }
         }
