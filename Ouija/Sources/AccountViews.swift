@@ -48,7 +48,7 @@ struct AccountPage: View {
                 }
                 Button(action: save) {
                     Text(valid ? "Continue as \(OuijaAccount.validName(name).successValue ?? name)" : "Continue")
-                        .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
+                        .font(.headline).foregroundStyle(OuijaStyle.onAccent).frame(maxWidth: .infinity).padding(.vertical, 6)
                 }
                 .buttonStyle(.glassProminent)
                 .controlSize(.large)
@@ -177,7 +177,7 @@ struct DevCardSheet: View {
         case .talking: Text("Checking with NCOM Dev and GlassVault…").font(.headline)
         case .dancing:
             Text("Both halves agree").font(.title2.bold()).accessibilityIdentifier("devcard.agree")
-            Text("The rings are drawn from NCOM Dev's and GlassVault's signatures together.").font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            Text("The sphere moves to NCOM Dev's and GlassVault's signatures together.").font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
         case .granted(let name):
             Text("Signed in as \(name)").font(.title2.bold()).accessibilityIdentifier("devcard.result")
             Text("Developer card · three thumbs up").font(.callout).foregroundStyle(.secondary)
@@ -219,16 +219,16 @@ struct DevCardSheet: View {
         switch flow.phase {
         case .idle, .failed:
             Button { flow.start(model: model) } label: {
-                Text(flow.phase == .idle ? "Tap card" : "Try again").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
+                Text(flow.phase == .idle ? "Tap card" : "Try again").font(.headline).foregroundStyle(OuijaStyle.onAccent).frame(maxWidth: .infinity).padding(.vertical, 6)
             }
             .buttonStyle(.glassProminent).controlSize(.large).accessibilityIdentifier("devcard.start")
         case .granted:
-            Button { flow.commit(model: model); dismiss() } label: { Text("Continue").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6) }
+            Button { flow.commit(model: model); dismiss() } label: { Text("Continue").font(.headline).foregroundStyle(OuijaStyle.onAccent).frame(maxWidth: .infinity).padding(.vertical, 6) }
                 .buttonStyle(.glassProminent).controlSize(.large).accessibilityIdentifier("devcard.continue")
         case .choice:
             VStack(spacing: 10) {
                 Button { flow.phase = .failed("To replace the card or this iPhone's key, use your one-time recovery code with NCOM, then tap the new card.") } label: {
-                    Label("Replace card / key", systemImage: "arrow.triangle.2.circlepath").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
+                    Label("Replace card / key", systemImage: "arrow.triangle.2.circlepath").font(.headline).foregroundStyle(OuijaStyle.onAccent).frame(maxWidth: .infinity).padding(.vertical, 6)
                 }
                 .buttonStyle(.glassProminent).controlSize(.large).accessibilityIdentifier("devcard.replace")
                 Button { flow.reportToIT(model: model) } label: {

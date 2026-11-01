@@ -125,7 +125,8 @@ final class OuijaSniffUITests: DisciplineUITestCase {
 
         tap("ouija.sniff")
         XCTAssertTrue(el("ouija.sniff.results").waitForExistence(timeout: 5))
-        sleep(1)   // local network + UWB are done, Bluetooth is still scanning
+        // Local network + UWB answer within a second; the (simulated) Bluetooth scan runs ~7 s.
+        for _ in 0..<20 where !el("ouija.sniff.results").label.contains("Local network: 1 found") { usleep(200_000) }
         let mid = el("ouija.sniff.results").label
         XCTAssertTrue(mid.contains("Bluetooth: scanning"), mid)
         XCTAssertTrue(mid.contains("Local network: 1 found"), mid)
@@ -133,7 +134,7 @@ final class OuijaSniffUITests: DisciplineUITestCase {
         XCTAssertFalse(el("ouija.possessed").exists, "found is not possessed")
         snap("97-ouija-sniff-in-progress")
 
-        XCTAssertTrue(el("ouija.candidate.2").waitForExistence(timeout: 10), "three candidates after the scan")
+        XCTAssertTrue(el("ouija.candidate.2").waitForExistence(timeout: 20), "three candidates after the scan")
         XCTAssertEqual(el("ouija.sniff.results").label, "Bluetooth: 2 found · Local network: 1 found · UWB: no peer")
         XCTAssertFalse(el("ouija.possessed").exists, "still nothing possessed until one is hailed")
         snap("98-ouija-sniff-results")
@@ -164,7 +165,7 @@ final class OuijaSniffUITests: DisciplineUITestCase {
         XCTAssertFalse(el("ouija.sniff.results").exists)
         tap("ouija.autosniff")
         XCTAssertTrue(el("ouija.sniff.results").waitForExistence(timeout: 8), "auto-sniff started a sniff by itself")
-        XCTAssertTrue(el("ouija.candidate.0").waitForExistence(timeout: 10))
+        XCTAssertTrue(el("ouija.candidate.0").waitForExistence(timeout: 20))
         XCTAssertTrue(el("ouija.sniff.results").label.contains("Bluetooth: 1 found"))
         XCTAssertFalse(el("ouija.possessed").exists, "auto-sniff finds; only a connect possesses")
         snap("102-ouija-auto-sniff")
@@ -204,6 +205,7 @@ final class OuijaDevCardUITests: DisciplineUITestCase {
         tap("devcard.start")
         XCTAssertTrue(el("devcard.agree").waitForExistence(timeout: 15), "the sphere moves when both halves agree")
         XCTAssertTrue(sphere("Magic sphere, both halves agree").waitForExistence(timeout: 5), "an alive sphere while both halves agree")
+        XCTAssertTrue(el("devcard.dance").exists, "still mid-dance (before the sign-in lands)")
         snap("79d-ouija-devcard-dance")
         XCTAssertTrue(el("devcard.result").waitForExistence(timeout: 15))
         XCTAssertEqual(el("devcard.result").label, "Signed in as Saidie Newara")
@@ -243,11 +245,13 @@ final class OuijaDevCardUITests: DisciplineUITestCase {
         tap("devcard.start")
         let s = sphere("Magic sphere, both halves agree")
         XCTAssertTrue(s.waitForExistence(timeout: 15))
+        XCTAssertTrue(el("devcard.dance").exists, "mid-dance")
+        snap("79i-ouija-sphere-live")
         let a = s.screenshot().pngRepresentation
         usleep(700_000)
         let b = s.screenshot().pngRepresentation
         XCTAssertNotEqual(a, b, "the sphere should have moved")
-        snap("79i-ouija-sphere-live")
+        sleep(4)   // keep it on screen for the recorded video
     }
 
     func testCardOnAnotherPhoneIsRefused() {

@@ -120,7 +120,7 @@ final class Sniffer: ObservableObject {
         })
         switch ch {
         case .bluetooth:
-            try? await Task.sleep(for: .seconds(OuijaTest.has("-uiTestingSniffHold") ? 30 : 3.5))
+            try? await Task.sleep(for: .seconds(OuijaTest.has("-uiTestingSniffHold") ? 30 : 7))
             let n = spec["ble"] ?? 0
             return ((0..<n).map { SniffCandidate(id: "sim-ble-\($0)", name: "Test bench \($0 + 1)", channel: .bluetooth, rssi: -48 - $0 * 9, simulated: true) }, nil)
         case .localNetwork:
@@ -211,7 +211,7 @@ struct TestingDevicesCard: View {
             .disabled(d.phase == .sniffing)
             .accessibilityIdentifier("ouija.sniff")
             Toggle("Auto-sniff", isOn: $autoSniff)
-                .tint(OuijaStyle.accent)
+                .tint(OuijaStyle.ok)
                 .accessibilityIdentifier("ouija.autosniff")
         }
     }

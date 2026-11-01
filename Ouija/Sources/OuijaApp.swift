@@ -62,6 +62,7 @@ struct OuijaRoot: View {
         .sheet(item: Binding(get: { model.settings.agreedAt == nil || model.account == nil ? nil : model.pendingRequest },
                              set: { model.pendingRequest = $0 })) { req in
             AuthorizeSheet(request: req)
+                .tint(OuijaStyle.accent)
                 .presentationDetents([.large])
                 .interactiveDismissDisabled()
         }

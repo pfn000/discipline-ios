@@ -280,7 +280,7 @@ final class MagicCardFlow: ObservableObject {
         if let owner = r.grantedOwner, let card = r.cardID {
             // The sphere moves to a hash of both halves of the magic QR before the sign-in lands.
             phase = .dancing
-            try? await Task.sleep(for: .seconds(OuijaTest.has("-uiTestingSphereLive") ? 5 : (OuijaTest.active ? 2.5 : 1.6)))
+            try? await Task.sleep(for: .seconds(OuijaTest.has("-uiTestingSphereLive") ? 12 : (OuijaTest.active ? 6 : 1.6)))
             model.settings.cardRecord = r.newRecord    // the card now holds this; keep it whatever happens next
             pendingGrant = (owner, card)
             phase = .granted(owner)

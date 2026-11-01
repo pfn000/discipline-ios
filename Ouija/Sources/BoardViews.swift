@@ -160,7 +160,7 @@ struct OuijaSettingsSheet: View {
                     .accessibilityIdentifier("ouija.settings.thisDevice")
                 }
                 Section {
-                    Toggle("Auto-sniff", isOn: $autoSniff).tint(OuijaStyle.accent)
+                    Toggle("Auto-sniff", isOn: $autoSniff).tint(OuijaStyle.ok)
                         .accessibilityIdentifier("ouija.settings.autosniff")
                     HStack {
                         Text("Possessed device")

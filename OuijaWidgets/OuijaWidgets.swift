@@ -37,9 +37,10 @@ struct OuijaSignInLiveActivity: Widget {
                     if context.state.status == "waiting" {
                         HStack(spacing: 10) {
                             Link(destination: URL(string: "ouija://review?id=\(context.attributes.requestID)")!) {
-                                Text("Slide in Ouija").frame(maxWidth: .infinity)
+                                Text("Slide in Ouija").foregroundStyle(OuijaStyle.alwaysWhite).frame(maxWidth: .infinity)
                             }
                             .buttonStyle(.bordered)
+                            .tint(OuijaStyle.alwaysWhite)
                             Button(intent: ApproveSignInIntent(requestID: context.attributes.requestID)) {
                                 Text("Approve").bold().foregroundStyle(OuijaStyle.alwaysBlack).frame(maxWidth: .infinity)
                             }

@@ -440,7 +440,7 @@ struct RingSignInView: View {
     }
 
     private func primary(_ title: String, id: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) { Text(title).font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6) }
+        Button(action: action) { Text(title).font(.headline).foregroundStyle(OuijaStyle.onAccent).frame(maxWidth: .infinity).padding(.vertical, 6) }
             .buttonStyle(.glassProminent).controlSize(.large).accessibilityIdentifier(id)
     }
 

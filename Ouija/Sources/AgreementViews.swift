@@ -33,6 +33,7 @@ struct AttentionPage: View {
             Button(action: onAgree) {
                 Text("I agree")
                     .font(.headline)
+                    .foregroundStyle(OuijaStyle.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)
             }
