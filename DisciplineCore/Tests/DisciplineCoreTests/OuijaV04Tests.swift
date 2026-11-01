@@ -15,6 +15,51 @@ final class MagicSphereDanceTests: XCTestCase {
         for t in stride(from: 0.0, through: 30.0, by: 0.37) { XCTAssertEqual(a.frame(at: t), b.frame(at: t)) }
     }
 
+    /// Saidie, Nov 1 5:27 PM: every sequence is generated live at scan time from that session's one-time halves,
+    /// never pre-stored or reused. The halves are signatures over a one-time challenge (card, rotation id, next key
+    /// digest), so a new tap means new halves; the dance is a pure function of them, and nothing writes it anywhere.
+    func testSequenceIsLiveFromThisSessionsHalvesAndNothingPersists() throws {
+        func session(_ rotation: String) -> SphereDance? {
+            let ch = MagicQRL.challenge(cardID: "card-1", rotationID: rotation, nextDigest: "digest-" + rotation)
+            let v = MagicQRL.combine(challenge: ch,
+                                     ncomDev: QRLHalf(party: .ncomDev, challenge: ch, signature: "nd-sig(" + ch + ")"),
+                                     glassVault: QRLHalf(party: .glassVault, challenge: ch, signature: "gv-sig(" + ch + ")"),
+                                     verify: { _, _, _ in true })
+            return MagicSphere.state(verdict: v).params.map { MagicSphere.dance(params: $0) }
+        }
+        let defaultsBefore = UserDefaults.standard.dictionaryRepresentation().keys.sorted()
+
+        let first = try XCTUnwrap(session("r1")), second = try XCTUnwrap(session("r2")), third = try XCTUnwrap(session("r3"))
+        XCTAssertNotEqual(first.patterns, second.patterns, "same app run, new halves: a new sequence")
+        XCTAssertNotEqual(second.patterns, third.patterns)
+        XCTAssertNotEqual(first.frame(at: 2), second.frame(at: 2))
+        // Nothing carried over inside the run: session 2 after session 1 is what session 2 alone would be.
+        XCTAssertEqual(session("r2"), second)
+
+        // Nothing written: no UserDefaults key appeared while the dances were made.
+        XCTAssertEqual(UserDefaults.standard.dictionaryRepresentation().keys.sorted(), defaultsBefore)
+
+        // And nothing can persist across launches: the sphere's code (core and app) touches no storage, and what
+        // Ouija keeps on the phone (OuijaModel) holds no halves, params or dance.
+        let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+        let sphereFiles = ["DisciplineCore/Sources/DisciplineCore/MagicSphere.swift",
+                           "DisciplineCore/Sources/DisciplineCore/MagicSphereDance.swift",
+                           "DisciplineCore/Sources/DisciplineCore/MagicQRL.swift",
+                           "DisciplineCore/Sources/DisciplineCore/SphereBeacon.swift",
+                           "Ouija/Sources/MagicSphereView.swift", "Ouija/Sources/GlassIDCard.swift"]
+        for f in sphereFiles {
+            let src = try String(contentsOf: repo.appendingPathComponent(f), encoding: .utf8)
+            for word in ["UserDefaults", "AppStorage", "FileManager", "Keychain", "SecItem", "write(to", "NSCache", "static var"] {
+                XCTAssertFalse(src.contains(word), "\(f) must not use \(word)")
+            }
+        }
+        let model = try String(contentsOf: repo.appendingPathComponent("Ouija/Sources/OuijaModel.swift"), encoding: .utf8)
+        for word in ["SphereParams", "SphereDance", "SphereState", "QRLVerdict", "QRLDance", "Signature"] {
+            XCTAssertFalse(model.contains(word), "Ouija's stored state must not hold \(word)")
+        }
+    }
+
     func testDifferentHalvesGiveADifferentSequence() {
         let base = dance(nd, gv)
         for other in [dance(nd + "x", gv), dance(nd, gv + "x"), dance(gv, nd)] {
