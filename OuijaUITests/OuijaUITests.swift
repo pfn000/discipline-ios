@@ -61,7 +61,9 @@ final class OuijaAgreementUITests: DisciplineUITestCase {
 
         // The agreement time and where the account is kept (Keys tab).
         tab("Keys")
-        XCTAssertTrue(el("keys.agreedAt").waitForExistence(timeout: 5))
+        let agreedAt = el("keys.agreedAt")   // in "This iPhone", below the account and key sections
+        for _ in 0..<8 where !agreedAt.exists { app.swipeUp() }
+        XCTAssertTrue(agreedAt.waitForExistence(timeout: 5))
         note("79-account-store", labelIfAny("keys.accountStore"))
     }
 
