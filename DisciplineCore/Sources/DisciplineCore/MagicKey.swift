@@ -239,8 +239,8 @@ public enum MagicStep: Int, CaseIterable, Codable, Sendable {
         case .ouijaLocalMatch: return "OuijaBoard: card matches what this iPhone wrote last"
         case .glassVaultVerdict: return "GlassVault says yes"
         case .ncomDevApproves: return "NCOM Dev approves: kill this key"
-        case .glassVaultRotates: return "GlassVault burns it and issues a new OuijaKey"
-        case .ouijaAuthenticates: return "OuijaBoard writes the new key and signs you in"
+        case .glassVaultRotates: return "New OuijaKey on the card; GlassVault burns the old one"
+        case .ouijaAuthenticates: return "OuijaBoard checks both halves and signs you in"
         }
     }
 }
