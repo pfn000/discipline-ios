@@ -282,6 +282,7 @@ struct PairingView: View {
             searching = false
             model.recordScan(found)
             result = note
+        case "localNetwork":
             searching = true
             model.ouijaStatus = "Loading: looking for NCOM devices on this network…"
             let found = OuijaTest.active ? [] : await browser.browse(seconds: 8)

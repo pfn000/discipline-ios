@@ -249,6 +249,7 @@ public struct MagicStepResult: Equatable, Sendable {
     public let step: MagicStep
     public let ok: Bool
     public let words: String
+    public init(step: MagicStep, ok: Bool, words: String) { self.step = step; self.ok = ok; self.words = words }
 }
 
 /// The whole handshake against in-memory parties. The simulator mock and the unit tests run exactly this;

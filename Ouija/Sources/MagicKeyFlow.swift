@@ -104,8 +104,9 @@ struct HTTPMagicVerifier: MagicVerifier {
             return out
         }
         // The server reports steps 2, 3 and 5-6 as it ran them.
-        for (i, s) in [MagicStep.ncomDevKnowsCard, .glassVaultDeviceMatch].enumerated() {
-            let ok = (j["steps"] as? [Bool])?.dropFirst(i).first ?? false
+        for s in [MagicStep.ncomDevKnowsCard, .glassVaultDeviceMatch] {
+            let flags = j["steps"] as? [Bool] ?? []
+            let ok = flags.count >= s.rawValue && flags[s.rawValue - 1]
             if !ok { add(s, false, (j["words"] as? String) ?? "No."); out.report = SecurityReport(at: Date(), cardID: j["card_id"] as? String, kind: "step-\(s.rawValue)", detail: (j["words"] as? String) ?? ""); return out }
             add(s, true, s.title)
         }
@@ -117,7 +118,7 @@ struct HTTPMagicVerifier: MagicVerifier {
         out.cardID = cardID
         // 4: this iPhone's own record of the card.
         if let local, local.cardID != cardID || local.deviceID != key.id || local.expectedDigest != MagicPhoneKey.digest(token) {
-            _ = try? await post("api/ouija/magic-key/reject", ["v": 1, "rotation_id": rid, "device_pk": key.id, "ts": ts,
+            _ = try? await post("api/ouija/magic-key/reject", ["v": 1, "rotation_id": rid, "card_id": cardID, "device_pk": key.id, "ts": ts,
                                                                "sig": (try? key.sign(message: "NCOM-MAGIC1|reject|\(rid)|\(ts)")) ?? ""])
             add(.ouijaLocalMatch, false, "This card doesn't match what this iPhone wrote on it last. Key burned, card locked.")
             out.report = SecurityReport(at: Date(), cardID: cardID, kind: "step-4", detail: "Card didn't match this iPhone's record.")
@@ -131,7 +132,7 @@ struct HTTPMagicVerifier: MagicVerifier {
             return out
         }
         let ts2 = Int(Date().timeIntervalSince1970)
-        guard let c = try? await post("api/ouija/magic-key/confirm", ["v": 1, "rotation_id": rid, "device_pk": key.id, "ts": ts2,
+        guard let c = try? await post("api/ouija/magic-key/confirm", ["v": 1, "rotation_id": rid, "card_id": cardID, "device_pk": key.id, "ts": ts2,
                                                                        "sig": (try? key.sign(message: "NCOM-MAGIC1|confirm|\(rid)|\(ts2)")) ?? ""]),
               c["status"] as? String == "granted", let owner = c["owner_name"] as? String else {
             add(.glassVaultRotates, false, "GlassVault didn't confirm. The new key is on the card; tap again.")
