@@ -13,7 +13,7 @@ struct AttentionPage: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 54, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.orange)
+                .foregroundStyle(OuijaStyle.accent)
             Text("Attention")
                 .font(.largeTitle.bold())
                 .padding(.top, 20)
@@ -146,15 +146,15 @@ struct ProfileAvatar: View {
             if let img = model.profileImage {
                 Image(uiImage: img).resizable().scaledToFill()
             } else {
-                LinearGradient(colors: [OuijaStyle.accent, OuijaStyle.accent.opacity(0.65)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                OuijaStyle.accent
                 Text(model.initials)
                     .font(.system(size: size * 0.38, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(OuijaStyle.onAccent)
             }
         }
         .frame(width: size, height: size)
         .clipShape(Circle())
-        .overlay(Circle().strokeBorder(.white.opacity(0.7), lineWidth: 2))
+        .overlay(Circle().strokeBorder(OuijaStyle.hairline, lineWidth: 2))
     }
 }
 
@@ -189,12 +189,12 @@ struct ProfileSlideToAgree: View {
                     .accessibilityHidden(true)
                 ProfileAvatar(size: knob)
                     .scaleEffect(pulse ? 1.07 : 1)
-                    .shadow(color: OuijaStyle.accent.opacity(pulse ? 0.55 : 0.0), radius: pulse ? 14 : 0)
+                    .shadow(color: OuijaStyle.accent.opacity(pulse ? 0.35 : 0.0), radius: pulse ? 10 : 0)
                     .overlay {
                         if done {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 22, weight: .bold))
-                                .foregroundStyle(.white, OuijaStyle.ok)
+                                .foregroundStyle(OuijaStyle.onAccent, OuijaStyle.ok)
                                 .offset(x: knob * 0.34, y: knob * 0.34)
                         }
                     }

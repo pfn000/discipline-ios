@@ -4,12 +4,14 @@ import DisciplineCore
 @main
 struct OuijaApp: App {
     @StateObject private var model = OuijaModel()
+    @StateObject private var sniffer = Sniffer()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
             OuijaRoot()
                 .environmentObject(model)
+                .environmentObject(sniffer)
                 .onOpenURL { model.handle($0) }
                 .task {
                     guard let url = model.testURL else { return }
@@ -64,11 +66,4 @@ struct OuijaRoot: View {
                 .interactiveDismissDisabled()
         }
     }
-}
-
-enum OuijaStyle {
-    /// One accent for the whole app: a muted violet that reads on both light and dark glass.
-    static let accent = Color(red: 0.48, green: 0.40, blue: 0.95)
-    static let ok = Color(red: 0.20, green: 0.78, blue: 0.47)
-    static let bad = Color(red: 0.95, green: 0.33, blue: 0.33)
 }

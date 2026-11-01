@@ -16,7 +16,7 @@ struct OuijaSignInLiveActivity: Widget {
         ActivityConfiguration(for: OuijaSignInAttributes.self) { context in
             LockScreenSignIn(context: context)
                 .padding(16)
-                .activityBackgroundTint(Color(red: 0.07, green: 0.06, blue: 0.14).opacity(0.85))
+                .activityBackgroundTint(OuijaStyle.alwaysBlack.opacity(0.85))
                 .activitySystemActionForegroundColor(.white)
                 .widgetURL(URL(string: "ouija://review?id=\(context.attributes.requestID)"))
         } dynamicIsland: { context in
@@ -25,7 +25,7 @@ struct OuijaSignInLiveActivity: Widget {
                     IslandAvatar(attributes: context.attributes, size: 44).padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Image(systemName: "lock.shield.fill").font(.title2).foregroundStyle(.purple)
+                    Image(systemName: "lock.shield.fill").font(.title2).foregroundStyle(OuijaStyle.alwaysWhite)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(spacing: 2) {
@@ -41,10 +41,10 @@ struct OuijaSignInLiveActivity: Widget {
                             }
                             .buttonStyle(.bordered)
                             Button(intent: ApproveSignInIntent(requestID: context.attributes.requestID)) {
-                                Text("Approve").bold().frame(maxWidth: .infinity)
+                                Text("Approve").bold().foregroundStyle(OuijaStyle.alwaysBlack).frame(maxWidth: .infinity)
                             }
                             .buttonStyle(.borderedProminent)
-                            .tint(.purple)
+                            .tint(OuijaStyle.alwaysWhite)
                         }
                     } else {
                         Text(context.state.status == "approved" ? "Approved" : "Declined").font(.headline)
@@ -58,7 +58,7 @@ struct OuijaSignInLiveActivity: Widget {
                 IslandAvatar(attributes: context.attributes, size: 22)
             }
             .widgetURL(URL(string: "ouija://review?id=\(context.attributes.requestID)"))
-            .keylineTint(.purple)
+            .keylineTint(OuijaStyle.alwaysWhite)
         }
     }
 }
@@ -72,8 +72,8 @@ struct IslandAvatar: View {
                 Image(uiImage: img).resizable().scaledToFill()
             } else {
                 ZStack {
-                    Circle().fill(Color.purple)
-                    Text(attributes.initials).font(.system(size: size * 0.4, weight: .semibold, design: .rounded)).foregroundStyle(.white)
+                    Circle().fill(OuijaStyle.alwaysWhite)
+                    Text(attributes.initials).font(.system(size: size * 0.4, weight: .semibold, design: .rounded)).foregroundStyle(OuijaStyle.alwaysBlack)
                 }
             }
         }
@@ -93,12 +93,12 @@ struct LockScreenSignIn: View {
             }
             Spacer(minLength: 6)
             if context.state.status == "waiting" {
-                Button(intent: ApproveSignInIntent(requestID: context.attributes.requestID)) { Text("Approve").bold() }
+                Button(intent: ApproveSignInIntent(requestID: context.attributes.requestID)) { Text("Approve").bold().foregroundStyle(OuijaStyle.alwaysBlack) }
                     .buttonStyle(.borderedProminent)
-                    .tint(.purple)
+                    .tint(OuijaStyle.alwaysWhite)
             } else {
                 Image(systemName: context.state.status == "approved" ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.title).foregroundStyle(context.state.status == "approved" ? Color.green : Color.red)
+                    .font(.title).foregroundStyle(context.state.status == "approved" ? OuijaStyle.ok : OuijaStyle.bad)
             }
         }
     }

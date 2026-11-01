@@ -81,8 +81,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ncom.ouija
         PRODUCT_NAME: Ouija
-        MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "2"
+        MARKETING_VERSION: "0.3.0"
+        CURRENT_PROJECT_VERSION: "3"
         CODE_SIGN_ENTITLEMENTS: Ouija/Ouija.entitlements
         INFOPLIST_FILE: Ouija/Info.plist
         GENERATE_INFOPLIST_FILE: NO
@@ -100,6 +100,7 @@ targets:
       - path: OuijaWidgets
         excludes: ["Info.plist"]
       - path: Shared/OuijaSignInActivity.swift
+      - path: Shared/OuijaStyle.swift
       - path: Shared/ApproveSignInIntent.swift
     settings:
       base:

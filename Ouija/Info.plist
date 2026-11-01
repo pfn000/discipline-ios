@@ -53,7 +53,9 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Ouija reads the magic rings on your computer's screen to sign you in.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Ouija finds your computer's ring page on this Wi-Fi to start a sign-in.</string>
+	<string>Ouija sniffs this Wi-Fi for NCOM devices and finds your computer's ring page to start a sign-in.</string>
+	<key>NSNearbyInteractionUsageDescription</key>
+	<string>Ouija checks whether this iPhone has an Ultra Wideband peer to connect to during a sniff.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

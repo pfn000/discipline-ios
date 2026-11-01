@@ -73,8 +73,8 @@ struct AccountPage: View {
             if let img = model.profileImage {
                 Image(uiImage: img).resizable().scaledToFill()
             } else if !OuijaAccount.initials(of: name).isEmpty {
-                LinearGradient(colors: [OuijaStyle.accent, OuijaStyle.accent.opacity(0.65)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                Text(OuijaAccount.initials(of: name)).font(.system(size: 34, weight: .semibold, design: .rounded)).foregroundStyle(.white)
+                OuijaStyle.accent
+                Text(OuijaAccount.initials(of: name)).font(.system(size: 34, weight: .semibold, design: .rounded)).foregroundStyle(OuijaStyle.onAccent)
             } else {
                 Image(systemName: "person.crop.circle.badge.plus").font(.system(size: 44)).foregroundStyle(.secondary)
             }
@@ -144,25 +144,26 @@ struct DevCardSheet: View {
     @ViewBuilder private var stage: some View {
         switch flow.phase {
         case .dancing:
-            // The rings drawn from BOTH halves of the magic QR (NCOM Dev + GlassVault).
-            RingDance(speeds: flow.dance?.speeds ?? [0.08, -0.11, 0.06, -0.09], bits: flow.dance?.bits ?? RingDance.demoBits)
+            // The sphere moves to a hash of BOTH halves of the magic QR (NCOM Dev + GlassVault).
+            MagicSphereView(state: MagicSphere.state(verdict: flow.result.qrl))
                 .accessibilityIdentifier("devcard.dance")
         case .granted:
             ZStack {
-                RingDance(tint: OuijaStyle.ok, speeds: flow.dance?.speeds ?? [0.08, -0.11, 0.06, -0.09], bits: flow.dance?.bits ?? RingDance.demoBits)
-                    .opacity(0.35)
-                Image(systemName: "checkmark.circle.fill").font(.system(size: 80, weight: .semibold)).foregroundStyle(.white, OuijaStyle.ok)
+                MagicSphereView(state: MagicSphere.state(verdict: flow.result.qrl), tint: OuijaStyle.ok).opacity(0.45)
+                Image(systemName: "checkmark.circle.fill").font(.system(size: 80, weight: .semibold)).foregroundStyle(OuijaStyle.onAccent, OuijaStyle.ok)
             }
         case .choice, .failed:
             ZStack {
-                RingDance(tint: OuijaStyle.bad).opacity(0.25)
-                Image(systemName: "exclamationmark.shield.fill").font(.system(size: 80, weight: .semibold)).foregroundStyle(.white, OuijaStyle.bad)
+                // Missing or wrong half: the sphere breaks (dots scatter, stall, turn red).
+                MagicSphereView(state: flow.result.qrl.map { MagicSphere.state(verdict: $0) }.flatMap { $0.isBroken ? $0 : nil }
+                                ?? .broken(parties: [], missing: false))
+                Image(systemName: "exclamationmark.shield.fill").font(.system(size: 64, weight: .semibold)).foregroundStyle(OuijaStyle.onAccent, OuijaStyle.bad)
             }
             .accessibilityIdentifier("devcard.stopped")
         case .talking, .waitingForCard:
-            ZStack { RingDance().opacity(0.5); ProgressView().controlSize(.large) }
+            ZStack { MagicSphereView(state: .idle).opacity(0.6); ProgressView().controlSize(.large) }
         case .idle:
-            Image(systemName: "wave.3.right.circle.fill").font(.system(size: 110)).foregroundStyle(OuijaStyle.accent)
+            MagicSphereView(state: .idle).opacity(0.85)
         }
     }
 
@@ -255,44 +256,68 @@ struct DevCardSheet: View {
 
 // MARK: - Real nearby devices (Bluetooth LE)
 
-/// Lists the Bluetooth LE devices actually advertising nearby. Nothing is listed that a scan didn't see.
+/// Scans for the Bluetooth LE devices actually advertising nearby and can connect to one. Nothing is
+/// reported that a scan didn't see.
 @MainActor
-final class NearbyScanner: NSObject, ObservableObject, CBCentralManagerDelegate {
-    @Published var found: [DiscoveredDevice] = []
-    @Published var state = "Not started"
+final class NearbyScanner: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate {
+    @Published var found: [SniffCandidate] = []
     private var central: CBCentralManager?
-    private var waiters: [CheckedContinuation<Void, Never>] = []
+    private var peripherals: [String: CBPeripheral] = [:]
+    private var connectWaiter: CheckedContinuation<String?, Never>?
 
-    func scan(seconds: Double) async -> (devices: [DiscoveredDevice], note: String) {
+    /// `unavailable` is a short honest reason when the radio couldn't run ("off", "permission off", "not on this device").
+    func scan(seconds: Double) async -> (devices: [SniffCandidate], unavailable: String?) {
         found = []
         if central == nil { central = CBCentralManager(delegate: self, queue: .main) }
-        // Wait for the radio state (first use asks for Bluetooth permission).
         for _ in 0..<30 where central?.state == .unknown || central?.state == .resetting { try? await Task.sleep(for: .milliseconds(100)) }
         switch central?.state {
         case .poweredOn: break
-        case .unsupported: return ([], "Bluetooth isn't available on this device (the simulator has none).")
-        case .unauthorized: return ([], "Bluetooth permission is off for Ouija (Settings > Ouija).")
-        case .poweredOff: return ([], "Bluetooth is turned off.")
-        default: return ([], "Bluetooth didn't start.")
+        case .unsupported: return ([], "not on this device")
+        case .unauthorized: return ([], "permission off")
+        case .poweredOff: return ([], "turned off")
+        default: return ([], "didn't start")
         }
-        state = "Scanning"
         central?.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
         try? await Task.sleep(for: .seconds(seconds))
         central?.stopScan()
-        state = "Done"
-        return (found, found.isEmpty ? "No Bluetooth devices found nearby." : "Found \(found.count) Bluetooth device\(found.count == 1 ? "" : "s").")
+        return (found, nil)
     }
+
+    /// nil = connected; otherwise the reason it wasn't.
+    func connect(id: String, timeout: Double = 8) async -> String? {
+        guard let p = peripherals[id], let central else { return "it's out of range now" }
+        return await withCheckedContinuation { cont in
+            connectWaiter = cont
+            central.connect(p)
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(timeout))
+                if let self, let w = self.connectWaiter { self.connectWaiter = nil; central.cancelPeripheralConnection(p); w.resume(returning: "timed out") }
+            }
+        }
+    }
+
+    func disconnect(id: String) { if let p = peripherals[id] { central?.cancelPeripheralConnection(p) } }
 
     nonisolated func centralManagerDidUpdateState(_ central: CBCentralManager) {}
 
     nonisolated func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
                                     advertisementData: [String: Any], rssi RSSI: NSNumber) {
-        let name = (advertisementData[CBAdvertisementDataLocalNameKey] as? String) ?? peripheral.name ?? DiscoveredDevice.unnamed
+        let name = (advertisementData[CBAdvertisementDataLocalNameKey] as? String) ?? peripheral.name ?? SniffCandidate.unnamed
         let id = peripheral.identifier.uuidString
         let rssi = RSSI.intValue
         Task { @MainActor in
+            self.peripherals[id] = peripheral
             if let i = self.found.firstIndex(where: { $0.id == id }) { self.found[i].rssi = rssi }
-            else { self.found.append(DiscoveredDevice(id: id, name: name, via: .bluetooth, rssi: rssi)) }
+            else { self.found.append(SniffCandidate(id: id, name: name, channel: .bluetooth, rssi: rssi)) }
         }
+    }
+
+    nonisolated func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        Task { @MainActor in if let w = self.connectWaiter { self.connectWaiter = nil; w.resume(returning: nil) } }
+    }
+
+    nonisolated func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        let why = error?.localizedDescription ?? "the device refused"
+        Task { @MainActor in if let w = self.connectWaiter { self.connectWaiter = nil; w.resume(returning: why) } }
     }
 }

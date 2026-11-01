@@ -52,6 +52,9 @@ jobs:
           mkdir -p "$OUT"
           { xcodebuild -version; xcodebuild -showsdks | grep -i ios; sw_vers; } | tee "$OUT/toolchain.txt"
 
+      - name: Ouija palette lint (no purple, no stray colours)
+        run: bash scripts/ouija-palette-lint.sh | tee "$OUT/palette-lint.txt"
+
       - name: Fetch NCOM's private Ouija Board content (never committed to this public repo)
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -157,6 +160,19 @@ jobs:
         if: ${{ inputs.build_only != 'true' && inputs.only == '' }}
         timeout-minutes: 50
         run: scripts/run_uitests.sh ouija Ouija "${{ steps.sim.outputs.udid }}" 2700
+
+      - name: "Sphere video (simctl recordVideo while the live-sphere test runs)"
+        if: ${{ inputs.build_only != 'true' && inputs.suite == 'ouija' && inputs.only == '' }}
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          UDID="${{ steps.sim.outputs.udid }}"
+          xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$OUT/sphere.mp4" > "$OUT/sphere-recorder.log" 2>&1 &
+          REC=$!
+          sleep 3
+          scripts/run_uitests.sh sphere Ouija "$UDID" 600 -only-testing:OuijaUITests/OuijaDevCardUITests/testSphereAnimatesLive || true
+          kill -INT $REC 2>/dev/null || true
+          sleep 4
 
       - name: UI tests on the simulator (app flows with fixtures)
         if: ${{ inputs.build_only != 'true' && inputs.suite != 'ouija' }}

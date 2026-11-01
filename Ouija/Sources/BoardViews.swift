@@ -12,6 +12,7 @@ import DisciplineCore
 
 struct OuijaBoardMain: View {
     @EnvironmentObject var model: OuijaModel
+    @EnvironmentObject var sniffer: Sniffer
     @State var shellInput = ""
     @State var shellOutput = "Type help for local commands. No system shell or hardware link."
     @State var importing = false
@@ -81,26 +82,12 @@ struct OuijaBoardMain: View {
         .sheet(isPresented: $showSettings) { OuijaSettingsSheet() }
     }
 
-    /// This iPhone (as the system reports it), what a real scan found nearby, and who is signed in. No stand-in device.
+    /// Testing devices: empty until the user sniffs and connects. This iPhone's own identity lives in Settings.
     private var header: some View {
-        HStack(spacing: 14) {
-            Image(systemName: model.thisDevice.model.lowercased().contains("ipad") ? "ipad" : "iphone").font(.system(size: 30))
-                .frame(width: 56, height: 56)
-                .glassEffect(.regular, in: Circle())
-                .accessibilityIdentifier("ouija.deviceModel")
-            VStack(alignment: .leading, spacing: 3) {
-                Text(model.thisDevice.title).font(.title3.bold()).lineLimit(1).accessibilityIdentifier("ouija.deviceName")
-                Text(model.thisDevice.detail).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-                    .accessibilityIdentifier("ouija.deviceDetail")
-                NavigationLink { PairingView() } label: {
-                    Label(DiscoveredDevice.summary(model.settings.lastScan, scanned: model.settings.lastScanAt != nil), systemImage: "circle.fill")
-                        .font(.caption).foregroundStyle(.secondary)
-                        .labelStyle(ConnectionDotStyle(found: !model.settings.lastScan.isEmpty))
-                }
-                .accessibilityIdentifier("ouija.connection")
-            }
-            Spacer(minLength: 4)
-            VStack(spacing: 6) {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                Text("Testing devices").font(.headline).accessibilityIdentifier("ouija.devices.title")
+                Spacer()
                 ProfileAvatar(size: 34)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(model.displayName)
@@ -108,9 +95,9 @@ struct OuijaBoardMain: View {
                 Button { showSettings = true } label: { Image(systemName: "gearshape.fill").font(.title3) }
                     .accessibilityIdentifier("ouija.settings")
             }
+            .padding(.horizontal, 4)
+            TestingDevicesCard()
         }
-        .padding()
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
     }
 
     @ViewBuilder private func tileFace(_ tile: OuijaContent.Tile) -> some View {
@@ -141,27 +128,19 @@ struct OuijaBoardMain: View {
         switch name {
         case "help": shellOutput = "Local commands: help, apps, device, whoami, status. No iOS shell commands."
         case "apps": shellOutput = "\(model.library.count) test apps picked in Ouija; Discipline keeps the IPA Library."
-        case "device": shellOutput = "\(model.thisDevice.title) · \(model.thisDevice.detail). Nearby: \(DiscoveredDevice.summary(model.settings.lastScan, scanned: model.settings.lastScanAt != nil))."
+        case "device": shellOutput = sniffer.devices.possessed.map { "Possessed: \($0.name) via \($0.channel.title)." } ?? "No device possessed. Tap Sniff above."
         case "whoami": shellOutput = model.account.map { "\($0.name) (\($0.kind == .developerCard ? "developer card" : "account on this iPhone"))" } ?? "Not signed in."
-        case "status": shellOutput = "Signed in as \(model.displayName). Nearby devices: \(model.settings.lastScan.count). Session: \(model.settings.ouijaSession.label)."
+        case "status": shellOutput = "Signed in as \(model.displayName). Possessed: \(sniffer.devices.possessed?.name ?? "none"). Session: \(model.settings.ouijaSession.label)."
         default: shellOutput = "Unknown local command. Type help."
         }
         shellInput = ""
     }
 }
 
-private struct ConnectionDotStyle: LabelStyle {
-    var found = false
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 5) {
-            configuration.icon.font(.system(size: 7)).foregroundStyle(found ? OuijaStyle.ok : .secondary)
-            configuration.title
-        }
-    }
-}
-
 struct OuijaSettingsSheet: View {
     @EnvironmentObject var model: OuijaModel
+    @EnvironmentObject var sniffer: Sniffer
+    @AppStorage("ouija.autoSniff") private var autoSniff = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -169,6 +148,30 @@ struct OuijaSettingsSheet: View {
             Form {
                 Picker("Session", selection: $model.settings.ouijaSession) {
                     ForEach(OuijaSessionKind.allCases) { Text($0.label).tag($0) }
+                }
+                Section("This iPhone") {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(model.thisDevice.title).font(.headline)
+                        Text(model.thisDevice.detail).font(.caption).foregroundStyle(.secondary)
+                        Text("Signed in as \(model.displayName)").font(.caption).foregroundStyle(.secondary)
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(model.thisDevice.title). \(model.thisDevice.detail). Signed in as \(model.displayName)")
+                    .accessibilityIdentifier("ouija.settings.thisDevice")
+                }
+                Section {
+                    Toggle("Auto-sniff", isOn: $autoSniff).tint(OuijaStyle.accent)
+                        .accessibilityIdentifier("ouija.settings.autosniff")
+                    HStack {
+                        Text("Possessed device")
+                        Spacer()
+                        Text(sniffer.devices.possessed?.name ?? "None").foregroundStyle(.secondary)
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Possessed device: \(sniffer.devices.possessed?.name ?? "None")")
+                    .accessibilityIdentifier("ouija.settings.possessed")
+                } header: { Text("Testing devices") } footer: {
+                    Text("The testing-devices list shows only a device you sniffed and connected to. This iPhone is never listed there.")
                 }
                 Section {
                     Button("Show the Attention page again") {
@@ -182,7 +185,7 @@ struct OuijaSettingsSheet: View {
                     }
                     .accessibilityIdentifier("ouija.signOut")
                 } footer: {
-                    Text("Signed in as \(model.displayName) on \(model.thisDevice.title). \(DiscoveredDevice.summary(model.settings.lastScan, scanned: model.settings.lastScanAt != nil)).")
+                    Text("Signed in as \(model.displayName) on \(model.thisDevice.title).")
                 }
             }
             .navigationTitle("Ouija Board settings")
@@ -190,138 +193,3 @@ struct OuijaSettingsSheet: View {
         }
     }
 }
-
-// MARK: Pairing
-
-struct PairingView: View {
-    @EnvironmentObject var model: OuijaModel
-    @StateObject var browser = NCOMBrowser()
-    @StateObject var scanner = NearbyScanner()
-    @State var selected: String?
-    @State var searching = false
-    @State var result = ""
-
-    /// A real Bluetooth LE scan first, then the pairing options from NCOM's content.
-    private var options: [OuijaContent.PairOption] {
-        [OuijaContent.PairOption(id: "ble", title: "Nearby Bluetooth devices", symbol: "dot.radiowaves.left.and.right", kind: "bluetooth")]
-            + OuijaContent.shared.pairOptions
-    }
-
-    var body: some View {
-        List {
-            Section {
-                HStack(spacing: 12) {
-                    Image(systemName: "person.crop.circle.fill").font(.system(size: 36))
-                    Text(model.settings.ouijaSession.label).font(.headline)
-                    Spacer()
-                }
-                Label(OuijaContent.shared.pairInstructions, systemImage: "info.circle")
-                    .font(.subheadline)
-                    .accessibilityIdentifier("pair.instructions")
-            }
-            Section {
-                ForEach(options) { o in
-                    Button { selected = o.id; result = "" } label: {
-                        HStack {
-                            Label(o.title, systemImage: o.symbol)
-                            Spacer()
-                            if selected == o.id { Image(systemName: "checkmark.circle.fill").foregroundStyle(.tint) }
-                        }
-                    }
-                    .accessibilityIdentifier("pair.option.\(o.id)")
-                }
-            }
-            Section {
-                // The result shares the button's row so it shows right under the button, never below the fold.
-                VStack(alignment: .leading, spacing: 10) {
-                    Button { Task { await start() } } label: {
-                        HStack {
-                            if searching { ProgressView() }
-                            Text(searching ? "Searching…" : OuijaContent.shared.pairTitle).font(.headline)
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.glassProminent)
-                    .disabled(searching)
-                    .accessibilityIdentifier("pair.start")
-                    if !result.isEmpty {
-                        Text(result).font(.callout)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .accessibilityIdentifier("pair.result")
-                    }
-                }
-            }
-            if !model.settings.lastScan.isEmpty {
-                Section("Found nearby") {
-                    ForEach(Array(model.settings.lastScan.enumerated()), id: \.element.id) { i, d in
-                        HStack {
-                            Label(d.name, systemImage: d.via == .bluetooth ? "dot.radiowaves.left.and.right" : "network")
-                            Spacer()
-                            if let r = d.rssi { Text("\(r) dBm").font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
-                        }
-                        .accessibilityIdentifier("pair.found.\(i)")
-                    }
-                }
-            }
-        }
-        .navigationTitle(OuijaContent.shared.pairTitle)
-    }
-
-    private func start() async {
-        guard let id = selected, let option = options.first(where: { $0.id == id }) else {
-            result = "Choose an option first."
-            return
-        }
-        switch option.kind {
-        case "bluetooth":
-            searching = true
-            model.ouijaStatus = "Scanning for Bluetooth devices…"
-            var found: [DiscoveredDevice] = []
-            var note = "Bluetooth scanning doesn't run in UI tests."
-            if !OuijaTest.active { (found, note) = await scanner.scan(seconds: 8) }
-            searching = false
-            model.recordScan(found)
-            result = note
-        case "localNetwork":
-            searching = true
-            model.ouijaStatus = "Loading: looking for NCOM devices on this network…"
-            let found = OuijaTest.active ? [] : await browser.browse(seconds: 8)
-            searching = false
-            model.recordScan(found.map { DiscoveredDevice(id: $0, name: $0, via: .localNetwork) })
-            result = found.isEmpty ? "No NCOM devices found on this network." : "Found: " + found.joined(separator: ", ") + " (pairing isn't built yet)."
-        case "uwb":
-            result = "\(option.title): UWB works only with an accessory that speaks Apple's Nearby Interaction. None is connected."
-        default:
-            result = "\(option.title): an iPhone app can't drive this radio itself; it needs an NCOM accessory. None is connected."
-        }
-        model.ouijaStatus = result
-    }
-}
-
-/// Looks for NCOM devices advertising `_ncom-ouija._tcp` over Bonjour on the local network.
-/// No NCOM device advertises this yet; the search is real, so it will say "none found" until one does.
-@MainActor
-final class NCOMBrowser: ObservableObject {
-    @Published var found: [String] = []
-    private var browser: NWBrowser?
-
-    func browse(seconds: Double) async -> [String] {
-        found = []
-        let b = NWBrowser(for: .bonjour(type: "_ncom-ouija._tcp", domain: nil), using: .tcp)
-        browser = b
-        b.browseResultsChangedHandler = { [weak self] results, _ in
-            let names = results.compactMap { r -> String? in
-                if case let .service(name, _, _, _) = r.endpoint { return name }
-                return nil
-            }
-            Task { @MainActor in self?.found = names }
-        }
-        b.start(queue: .main)
-        try? await Task.sleep(for: .seconds(seconds))
-        b.cancel()
-        browser = nil
-        return found
-    }
-}
-
-// MARK: The magic ring

@@ -56,7 +56,7 @@ final class OuijaAgreementUITests: DisciplineUITestCase {
         XCTAssertEqual(handle.value as? String, "agreed", "slide: \(labelIfAny("agreement.handle.trace")), handle \(handle.frame), screen \(app.frame)")
         XCTAssertTrue(el("agreement.status").label.hasPrefix("Agreed "), "the time is recorded: \(el("agreement.status").label)")
         snap("83-ouija-agreement-agreed")
-        XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 10), "board opens after agreeing")
+        XCTAssertTrue(el("ouija.devices.title").waitForExistence(timeout: 10), "board opens after agreeing")
         assertNoPlaceholders("the board")
 
         // The agreement time and where the account is kept (Keys tab).
@@ -73,10 +73,10 @@ final class OuijaAgreementUITests: DisciplineUITestCase {
         type("account.name", "Saidie Newara")
         hideKeyboard()
         tap("account.continue")
-        XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 10))
+        XCTAssertTrue(el("ouija.devices.title").waitForExistence(timeout: 10))
         app.terminate()
         launch(["-uiTestingAgreed"])   // no reset: the account must still be there
-        XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 10), "relaunch goes straight to the board")
+        XCTAssertTrue(el("ouija.devices.title").waitForExistence(timeout: 10), "relaunch goes straight to the board")
         XCTAssertFalse(el("ouija.account").exists)
         XCTAssertEqual(el("ouija.accountAvatar").label, "Saidie Newara")
         // Signing out removes it.
@@ -88,36 +88,108 @@ final class OuijaAgreementUITests: DisciplineUITestCase {
 
     func testBoardAndSettings() {
         launch(["-uiTestingResetState", "-uiTestingAgreed", "-uiTestingProfileName", "Saidie Newara"])
-        XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 10))
-        let device = el("ouija.deviceName").label
-        XCTAssertTrue(device.contains("iPhone"), "the real device: \(device)")
-        XCTAssertTrue(el("ouija.deviceDetail").label.contains("iOS"), el("ouija.deviceDetail").label)
-        XCTAssertTrue(el("ouija.connection").label.contains("No device connected"), el("ouija.connection").label)
+        XCTAssertTrue(el("ouija.devices.title").waitForExistence(timeout: 10))
+        // The testing-devices list starts empty: this iPhone is not listed, nothing is pre-listed.
+        XCTAssertTrue(el("ouija.devices.empty").exists)
+        XCTAssertEqual(el("ouija.devices.empty").label, "No device possessed")
+        XCTAssertFalse(el("ouija.possessed").exists)
+        XCTAssertFalse(el("ouija.candidate.0").exists)
+        XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'iOS '")).count, 0, "the phone's own identity isn't on the board")
         assertNoPlaceholders("the board")
-        note("84-board-device", device + " | " + el("ouija.deviceDetail").label + " | " + el("ouija.connection").label)
         snap("84-ouija-board")
         tap("ouija.tile.1")
         XCTAssertTrue(el("ouija.status").label.contains("isn't wired"), "tiles say plainly they do nothing yet")
-        tap("ouija.connection")
-        XCTAssertTrue(el("pair.instructions").waitForExistence(timeout: 5))
-        tap("pair.option.ble")
-        tap("pair.start")
-        XCTAssertTrue(el("pair.result").waitForExistence(timeout: 15))
-        snap("84b-ouija-pairing")
-        back()
-        XCTAssertTrue(el("ouija.connection").waitForExistence(timeout: 5))
-        XCTAssertTrue(el("ouija.connection").label.contains("No devices found"), "after a real scan that found nothing: \(el("ouija.connection").label)")
         tap("ouija.settings")
         XCTAssertTrue(el("ouija.settingsDone").waitForExistence(timeout: 5))
+        // This iPhone's identity lives in Settings, not in the testing-devices list.
+        XCTAssertTrue(el("ouija.settings.thisDevice").label.contains("iPhone"), el("ouija.settings.thisDevice").label)
+        XCTAssertEqual(el("ouija.settings.possessed").label, "Possessed device: None")
         snap("85-ouija-settings")
         tap("ouija.resetAgreement")
         XCTAssertTrue(el("ouija.attention").waitForExistence(timeout: 5), "the Attention page shows again")
     }
 }
 
+/// Possessed device only (Saidie, Nov 1 12:56 PM): empty until Sniff, then hail, then possessed; disconnect and it's gone.
+/// The simulator has no Bluetooth peers, so a launch flag injects clearly tagged test stand-ins for the candidates.
+final class OuijaSniffUITests: DisciplineUITestCase {
+    let base = ["-uiTestingResetState", "-uiTestingAgreed", "-uiTestingProfileName", "Saidie Newara"]
+
+    func testEmptyStartThenSniffThenHailThenDisconnect() {
+        launch(base + ["-uiTestingSniff", "ble=2,lan=1"])
+        XCTAssertTrue(el("ouija.devices.empty").waitForExistence(timeout: 10), "starts with no device")
+        XCTAssertFalse(el("ouija.candidate.0").exists); XCTAssertFalse(el("ouija.possessed").exists)
+        XCTAssertFalse(el("ouija.sniff.results").exists, "no sniff has run, so no channel results yet")
+        XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'iOS '")).count, 0, "this iPhone isn't a testing device")
+        snap("96-ouija-testing-devices-empty")
+
+        tap("ouija.sniff")
+        XCTAssertTrue(el("ouija.sniff.results").waitForExistence(timeout: 5))
+        sleep(1)   // local network + UWB are done, Bluetooth is still scanning
+        let mid = el("ouija.sniff.results").label
+        XCTAssertTrue(mid.contains("Bluetooth: scanning"), mid)
+        XCTAssertTrue(mid.contains("Local network: 1 found"), mid)
+        XCTAssertTrue(mid.contains("UWB: no peer"), mid)
+        XCTAssertFalse(el("ouija.possessed").exists, "found is not possessed")
+        snap("97-ouija-sniff-in-progress")
+
+        XCTAssertTrue(el("ouija.candidate.2").waitForExistence(timeout: 10), "three candidates after the scan")
+        XCTAssertEqual(el("ouija.sniff.results").label, "Bluetooth: 2 found · Local network: 1 found · UWB: no peer")
+        XCTAssertFalse(el("ouija.possessed").exists, "still nothing possessed until one is hailed")
+        snap("98-ouija-sniff-results")
+
+        tap("ouija.hail.0")
+        XCTAssertTrue(el("ouija.possessed.name").waitForExistence(timeout: 10), "connect makes it possessed")
+        XCTAssertEqual(el("ouija.possessed.name").label, "Test bench 1")
+        XCTAssertTrue(el("ouija.possessed.status").label.contains("Possessed · Bluetooth"), el("ouija.possessed.status").label)
+        XCTAssertFalse(el("ouija.devices.empty").exists)
+        XCTAssertFalse(el("ouija.sniff").exists, "while possessing one, no other device is offered")
+        snap("99-ouija-possessed-device")
+
+        tap("ouija.settings")
+        XCTAssertTrue(el("ouija.settingsDone").waitForExistence(timeout: 5))
+        XCTAssertEqual(el("ouija.settings.possessed").label, "Possessed device: Test bench 1")
+        snap("100-ouija-settings-possessed")
+        tap("ouija.settingsDone")
+
+        tap("ouija.disconnect")
+        XCTAssertTrue(el("ouija.devices.empty").waitForExistence(timeout: 5), "disconnect: the device is gone")
+        XCTAssertFalse(el("ouija.possessed").exists)
+        snap("101-ouija-disconnected-empty")
+    }
+
+    func testAutoSniffTriesWithoutTappingSniff() {
+        launch(base + ["-uiTestingSniff", "ble=1"])
+        XCTAssertTrue(el("ouija.devices.empty").waitForExistence(timeout: 10))
+        XCTAssertFalse(el("ouija.sniff.results").exists)
+        tap("ouija.autosniff")
+        XCTAssertTrue(el("ouija.sniff.results").waitForExistence(timeout: 8), "auto-sniff started a sniff by itself")
+        XCTAssertTrue(el("ouija.candidate.0").waitForExistence(timeout: 10))
+        XCTAssertTrue(el("ouija.sniff.results").label.contains("Bluetooth: 1 found"))
+        XCTAssertFalse(el("ouija.possessed").exists, "auto-sniff finds; only a connect possesses")
+        snap("102-ouija-auto-sniff")
+        tap("ouija.autosniff")   // leave it off
+    }
+
+    func testSniffOnTheSimulatorIsHonestAboutNoPeers() {
+        launch(base + ["-uiTestingSniff", "ble=0,lan=0"])
+        XCTAssertTrue(el("ouija.devices.empty").waitForExistence(timeout: 10))
+        tap("ouija.sniff")
+        XCTAssertTrue(el("ouija.sniff.results").waitForExistence(timeout: 5))
+        for _ in 0..<20 where !el("ouija.sniff.results").label.contains("Bluetooth: 0") { usleep(500_000) }
+        XCTAssertEqual(el("ouija.sniff.results").label, "Bluetooth: 0 found · Local network: 0 found · UWB: no peer")
+        XCTAssertTrue(el("ouija.devices.empty").exists, "nothing found, nothing listed")
+        XCTAssertFalse(el("ouija.candidate.0").exists)
+    }
+}
+
 /// Developer sign-in with the NCOM Magic ID card. The simulator has no NFC, so these run against the
 /// in-memory NCOM Dev + GlassVault (the same rules as the unit tests); the real tap is untested until an iPhone.
 final class OuijaDevCardUITests: DisciplineUITestCase {
+    func sphere(_ label: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", label)).firstMatch
+    }
+
     func openCardSheet(_ extra: [String]) {
         launch(["-uiTestingResetState", "-uiTestingMagicKeyMock", "-uiTestingMagicKeyOwner", "Saidie Newara"] + extra)
         tap("ouija.iAgree")
@@ -130,7 +202,8 @@ final class OuijaDevCardUITests: DisciplineUITestCase {
         openCardSheet([])
         snap("79c-ouija-devcard-idle")
         tap("devcard.start")
-        XCTAssertTrue(el("devcard.agree").waitForExistence(timeout: 15), "the rings dance when both halves agree")
+        XCTAssertTrue(el("devcard.agree").waitForExistence(timeout: 15), "the sphere moves when both halves agree")
+        XCTAssertTrue(sphere("Magic sphere, both halves agree").waitForExistence(timeout: 5), "an alive sphere while both halves agree")
         snap("79d-ouija-devcard-dance")
         XCTAssertTrue(el("devcard.result").waitForExistence(timeout: 15))
         XCTAssertEqual(el("devcard.result").label, "Signed in as Saidie Newara")
@@ -149,6 +222,7 @@ final class OuijaDevCardUITests: DisciplineUITestCase {
         XCTAssertTrue(el("devcard.report").exists)
         XCTAssertEqual(el("devcard.step.8").value as? String, "no")
         XCTAssertFalse(el("devcard.result").exists, "never signed in")
+        XCTAssertTrue(sphere("Magic sphere broken, ").waitForExistence(timeout: 5), "the sphere breaks on a mismatch")
         snap("79f-ouija-devcard-qrl-mismatch")
         tap("devcard.report")
         XCTAssertFalse(app.buttons["devcard.report"].isEnabled, "reported once")
@@ -159,6 +233,21 @@ final class OuijaDevCardUITests: DisciplineUITestCase {
         tap("devcard.start")
         XCTAssertTrue(el("devcard.choiceTitle").waitForExistence(timeout: 15))
         XCTAssertEqual(el("devcard.step.8").value as? String, "no")
+        XCTAssertTrue(sphere("Magic sphere broken, GlassVault missing").waitForExistence(timeout: 5), "the sphere breaks when a half is missing")
+        snap("79h-ouija-devcard-qrl-missing")
+    }
+
+    /// The sphere really animates: two grabs of it a moment apart differ (tests normally freeze it on one pose).
+    func testSphereAnimatesLive() {
+        openCardSheet(["-uiTestingSphereLive"])
+        tap("devcard.start")
+        let s = sphere("Magic sphere, both halves agree")
+        XCTAssertTrue(s.waitForExistence(timeout: 15))
+        let a = s.screenshot().pngRepresentation
+        usleep(700_000)
+        let b = s.screenshot().pngRepresentation
+        XCTAssertNotEqual(a, b, "the sphere should have moved")
+        snap("79i-ouija-sphere-live")
     }
 
     func testCardOnAnotherPhoneIsRefused() {
@@ -220,7 +309,7 @@ final class OuijaAuthorizeUITests: DisciplineUITestCase {
 
     func testBadLinkIsRefused() {
         launch(["-uiTestingResetState", "-uiTestingAgreed", "-uiTestingProfileName", "Saidie Newara", "-uiTestingOpenURL", "ouija://authorize?client=Evil&nonce=short&callback=https%3A%2F%2Fevil.example"])
-        XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 10))
+        XCTAssertTrue(el("ouija.devices.title").waitForExistence(timeout: 10))
         XCTAssertFalse(el("authorize.title").waitForExistence(timeout: 3), "an https callback must be refused")
     }
 }

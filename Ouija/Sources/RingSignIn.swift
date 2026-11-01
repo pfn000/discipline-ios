@@ -317,44 +317,6 @@ final class RingCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, 
     }
 }
 
-/// The magic rings, drawn live: four data rings spinning to the key's dance, a hub and a finder ring.
-struct RingDance: View {
-    var tint: Color = OuijaStyle.accent
-    var speeds: [Double] = [0.08, -0.11, 0.06, -0.09]
-    var bits: [[Bool]] = RingDance.demoBits
-
-    static let demoBits: [[Bool]] = RingCode.bits(of: RingCode.frames(for: Array("NCOM OUIJA RINGS".utf8))[0])
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: OuijaTest.active)) { tl in
-            let t = OuijaTest.active ? 1.3 : tl.date.timeIntervalSinceReferenceDate
-            Canvas { ctx, size in
-                let R = min(size.width, size.height) / 2 * 0.92
-                let c = CGPoint(x: size.width / 2, y: size.height / 2)
-                func circle(_ r: Double) -> Path { Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2)) }
-                ctx.fill(circle(R * RingCode.hubRadius), with: .color(tint))
-                ctx.stroke(circle(R * (RingCode.finderInner + RingCode.finderOuter) / 2), with: .color(tint.opacity(0.9)),
-                           lineWidth: R * (RingCode.finderOuter - RingCode.finderInner))
-                let cell = 2 * Double.pi / Double(RingCode.cellsPerRing)
-                for i in 0..<RingCode.rings {
-                    let rot = speeds[i] * 2 * Double.pi * t
-                    let r = R * RingCode.dataRadius[i]
-                    for k in 0..<RingCode.cellsPerRing where bits[i][k] {
-                        var p = Path()
-                        p.addArc(center: c, radius: r, startAngle: .radians(rot + (Double(k) - 0.4) * cell),
-                                 endAngle: .radians(rot + (Double(k) + 0.4) * cell), clockwise: false)
-                        ctx.stroke(p, with: .color(tint.opacity(0.55 + 0.45 * Double(i) / 3)), style: StrokeStyle(lineWidth: R * RingCode.dataHalfWidth * 2, lineCap: .butt))
-                    }
-                    var tick = Path()
-                    let tr = R * (RingCode.dataRadius[i] + RingCode.tickOffset)
-                    tick.addArc(center: c, radius: tr, startAngle: .radians(rot - 0.45 * cell), endAngle: .radians(rot + 0.45 * cell), clockwise: false)
-                    ctx.stroke(tick, with: .color(tint), style: StrokeStyle(lineWidth: R * RingCode.tickHalfWidth * 2))
-                }
-            }
-        }
-    }
-}
-
 struct RingSignInView: View {
     @EnvironmentObject var model: OuijaModel
     @StateObject private var flow = RingSignIn()
@@ -396,24 +358,24 @@ struct RingSignInView: View {
             .accessibilityIdentifier("rings.viewfinder")
         case .success:
             ZStack {
-                RingDance(tint: OuijaStyle.ok).opacity(0.35).scaleEffect(1.08)
+                MagicSphereView(state: .idle, tint: OuijaStyle.ok).opacity(0.45)
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 96, weight: .semibold))
-                    .foregroundStyle(.white, OuijaStyle.ok)
+                    .foregroundStyle(OuijaStyle.onAccent, OuijaStyle.ok)
                     .transition(.scale.combined(with: .opacity))
             }
             .accessibilityIdentifier("rings.success")
         case .failure:
             ZStack {
-                RingDance(tint: OuijaStyle.bad).opacity(0.3)
+                MagicSphereView(state: .broken(parties: [], missing: false)).opacity(0.8)
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 96, weight: .semibold))
-                    .foregroundStyle(.white, OuijaStyle.bad)
+                    .foregroundStyle(OuijaStyle.onAccent, OuijaStyle.bad)
                     .transition(.scale.combined(with: .opacity))
             }
             .accessibilityIdentifier("rings.failure")
         default:
-            RingDance().accessibilityIdentifier("rings.dance")
+            MagicSphereView(state: .idle).accessibilityIdentifier("rings.dance")
         }
     }
 
@@ -429,7 +391,7 @@ struct RingSignInView: View {
             .buttonStyle(.glass).controlSize(.large).accessibilityIdentifier("rings.devCard")
             if model.settings.enrolled.isEmpty && !OuijaTest.active {
                 Text("No computer keys are enrolled yet. Add one in Keys first.")
-                    .font(.footnote).foregroundStyle(.orange).multilineTextAlignment(.center)
+                    .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
             }
         case .searching:
             ProgressView().controlSize(.large)

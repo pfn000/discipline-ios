@@ -18,6 +18,9 @@ public struct QRLHalf: Codable, Equatable, Sendable {
 public struct QRLDance: Equatable, Sendable {
     public let speeds: [Double]
     public let payload: [UInt8]
+    /// The two signatures this dance was drawn from (they are public values); the magic sphere hashes both.
+    public let ncomDevSignature: String
+    public let glassVaultSignature: String
     public var bits: [[Bool]] { RingCode.bits(of: RingCode.frames(for: payload)[0]) }
 }
 
@@ -60,7 +63,7 @@ public enum MagicQRL {
             let mag = 0.05 + Double(bytes[16 + i]) / 255 * 0.08
             return i % 2 == 0 ? mag : -mag
         }
-        return QRLDance(speeds: speeds, payload: Array(bytes.prefix(16)))
+        return QRLDance(speeds: speeds, payload: Array(bytes.prefix(16)), ncomDevSignature: a, glassVaultSignature: b)
     }
 }
 
