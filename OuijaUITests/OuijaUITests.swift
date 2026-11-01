@@ -125,14 +125,6 @@ final class OuijaSniffUITests: DisciplineUITestCase {
 
         tap("ouija.sniff")
         XCTAssertTrue(el("ouija.sniff.results").waitForExistence(timeout: 5))
-        // Local network + UWB answer within a second; the (simulated) Bluetooth scan runs ~7 s.
-        for _ in 0..<20 where !el("ouija.sniff.results").label.contains("Local network: 1 found") { usleep(200_000) }
-        let mid = el("ouija.sniff.results").label
-        XCTAssertTrue(mid.contains("Bluetooth: scanning"), mid)
-        XCTAssertTrue(mid.contains("Local network: 1 found"), mid)
-        XCTAssertTrue(mid.contains("UWB: no peer"), mid)
-        XCTAssertFalse(el("ouija.possessed").exists, "found is not possessed")
-        snap("97-ouija-sniff-in-progress")
 
         XCTAssertTrue(el("ouija.candidate.2").waitForExistence(timeout: 20), "three candidates after the scan")
         XCTAssertEqual(el("ouija.sniff.results").label, "Bluetooth: 2 found · Local network: 1 found · UWB: no peer")
@@ -157,6 +149,22 @@ final class OuijaSniffUITests: DisciplineUITestCase {
         XCTAssertTrue(el("ouija.devices.empty").waitForExistence(timeout: 5), "disconnect: the device is gone")
         XCTAssertFalse(el("ouija.possessed").exists)
         snap("101-ouija-disconnected-empty")
+    }
+
+    /// Mid-sniff: each channel reports as soon as it's done (local network + UWB first, Bluetooth still scanning).
+    /// The simulated Bluetooth scan is held open here so the screenshot can't race it.
+    func testSniffInProgressShowsEachChannel() {
+        launch(base + ["-uiTestingSniff", "ble=2,lan=1", "-uiTestingSniffHold"])
+        XCTAssertTrue(el("ouija.devices.empty").waitForExistence(timeout: 10))
+        tap("ouija.sniff")
+        XCTAssertTrue(el("ouija.sniff.results").waitForExistence(timeout: 10))
+        for _ in 0..<40 where !el("ouija.sniff.results").label.contains("Local network: 1 found") { usleep(250_000) }
+        let mid = el("ouija.sniff.results").label
+        XCTAssertTrue(mid.contains("Bluetooth: scanning"), mid)
+        XCTAssertTrue(mid.contains("Local network: 1 found"), mid)
+        XCTAssertTrue(mid.contains("UWB: no peer"), mid)
+        XCTAssertFalse(el("ouija.possessed").exists, "found is not possessed")
+        snap("97-ouija-sniff-in-progress")
     }
 
     func testAutoSniffTriesWithoutTappingSniff() {
