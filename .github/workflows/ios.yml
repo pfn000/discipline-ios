@@ -170,7 +170,7 @@ jobs:
           xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$OUT/sphere.mp4" > "$OUT/sphere-recorder.log" 2>&1 &
           REC=$!
           sleep 3
-          scripts/run_uitests.sh sphere Ouija "$UDID" 600 -only-testing:OuijaUITests/OuijaDevCardUITests/testSphereAnimatesLive || true
+          scripts/run_uitests.sh sphere Ouija "$UDID" 600 -only-testing:OuijaUITests/OuijaDevCardUITests/testSphereShowcaseVideo || true
           kill -INT $REC 2>/dev/null || true
           sleep 4
 

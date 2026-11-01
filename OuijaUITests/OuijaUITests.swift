@@ -262,6 +262,20 @@ final class OuijaDevCardUITests: DisciplineUITestCase {
         sleep(4)   // keep it on screen for the recorded video
     }
 
+    /// v0.4: the sphere alone, live, held on screen for the recorded comparison video (CI "Sphere video" step).
+    func testSphereShowcaseVideo() {
+        launch(["-uiTestingSphereShowcase", "-uiTestingSphereLive"])
+        let s = sphere("Magic sphere, both halves agree")
+        XCTAssertTrue(s.waitForExistence(timeout: 20), "the showcase sphere is up")
+        XCTAssertEqual(s.value as? String, "alive")
+        snap("79j-ouija-sphere-showcase")
+        let a = s.screenshot().pngRepresentation
+        usleep(450_000)
+        let b = s.screenshot().pngRepresentation
+        XCTAssertNotEqual(a, b, "the dots should have moved")
+        sleep(14)   // keep it on screen for the recorded video
+    }
+
     func testCardOnAnotherPhoneIsRefused() {
         openCardSheet(["-uiTestingMagicKeyOtherPhone"])
         tap("devcard.start")

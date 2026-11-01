@@ -31,7 +31,9 @@ struct OuijaRoot: View {
 
     var body: some View {
         Group {
-            if !model.settings.attentionAccepted {
+            if OuijaTest.has("-uiTestingSphereShowcase") {
+                SphereShowcase()
+            } else if !model.settings.attentionAccepted {
                 AttentionPage { withAnimation(.smooth) { model.acceptAttention() } }
             } else if model.account == nil {
                 AccountPage()
