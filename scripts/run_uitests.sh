@@ -10,6 +10,18 @@ TEST_RUNNER_SCREENSHOT_DIR="$OUT/screenshots" xcodebuild test -project Disciplin
   -destination "id=$UDID" "$@" -retry-tests-on-failure -test-iterations 3 \
   -resultBundlePath "$OUT/$NAME.xcresult" CODE_SIGN_IDENTITY="-" > "$LOG" 2>&1 &
 XB=$!
+# Host screenshots on request: a UI test writes SIMCTL-NOW.req (holding a name) into the screenshot
+# folder and waits; this loop takes `simctl io screenshot` of the simulator's display under that name.
+(
+  while kill -0 $XB 2>/dev/null; do
+    REQ="$OUT/screenshots/SIMCTL-NOW.req"
+    if [ -f "$REQ" ]; then
+      SHOT=$(tr -cd 'A-Za-z0-9._-' < "$REQ"); rm -f "$REQ"
+      perl -e 'alarm shift; exec @ARGV' 20 xcrun simctl io "$UDID" screenshot "$OUT/screenshots/${SHOT:-host}.png" >/dev/null 2>&1 || true
+    fi
+    sleep 1
+  done
+) &
 START=$(date +%s); LAST=0; QUIET=0; WHY=""
 while kill -0 $XB 2>/dev/null; do
   SIZE=$(wc -c < "$LOG")

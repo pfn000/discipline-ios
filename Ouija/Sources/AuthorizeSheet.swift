@@ -44,6 +44,12 @@ struct AuthorizeSheet: View {
             Button("Decline", role: .cancel) { model.decline(request) }
                 .padding(.top, 14)
                 .accessibilityIdentifier("authorize.decline")
+            if OuijaTest.active {
+                // Test-only readout of what ActivityKit answered (the UI test saves it beside screenshot 87).
+                Text(model.liveActivityState)
+                    .font(.system(size: 2)).opacity(0.02)
+                    .accessibilityIdentifier("authorize.liveActivity")
+            }
         }
         .padding(.horizontal, 22)
         .padding(.bottom, 16)
