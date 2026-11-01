@@ -348,9 +348,9 @@ extension MagicSphere {
         }
         let cycle = t
         let stagger = (0..<n).map { _ in rng.range(0, 0.05) }
-        var weights = (0..<n).map { _ in rng.range(0.72, 0.95) }
+        var weights = (0..<n).map { _ in rng.range(0.80, 0.97) }
         var heavy = Array(0..<n); rng.shuffle(&heavy)
-        for i in heavy.prefix(7) { weights[i] = rng.range(1.18, 1.38) }
+        for i in heavy.prefix(7) { weights[i] = rng.range(1.14, 1.24) }
 
         // "The front" of the sphere in the body frame at a step (so clusters swell toward the viewer).
         func toBody(_ v: Vec3, at k: Int) -> Vec3 {
