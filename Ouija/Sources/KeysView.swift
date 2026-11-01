@@ -9,6 +9,9 @@ struct KeysView: View {
     @State private var newName = ""
     @State private var newKey = ""
     @State private var message = ""
+    @State private var nameDraft = ""
+    @State private var nameProblem = ""
+    @State private var showCard = false
 
     var body: some View {
         NavigationStack {
@@ -17,9 +20,15 @@ struct KeysView: View {
                     HStack(spacing: 16) {
                         ProfileAvatar(size: 64)
                         VStack(alignment: .leading, spacing: 6) {
-                            TextField("Your name", text: $model.settings.profileName)
+                            TextField("Your name", text: $nameDraft)
                                 .font(.headline)
                                 .textContentType(.name)
+                                .submitLabel(.done)
+                                .onSubmit {
+                                    nameProblem = model.createAccount(name: nameDraft, kind: model.account?.kind ?? .local) ?? ""
+                                    if !nameProblem.isEmpty { nameDraft = model.displayName }
+                                }
+                                .onAppear { nameDraft = model.displayName }
                                 .accessibilityIdentifier("keys.name")
                             let photoLabel = model.profileImage == nil ? "Add photo" : "Change photo"
                             PhotosPicker(selection: $photo, matching: .images) {
@@ -29,8 +38,43 @@ struct KeysView: View {
                         }
                     }
                     .padding(.vertical, 4)
-                } header: { Text("Developer profile") } footer: {
+                    LabeledContent("Account kept in", value: model.accountStore)
+                        .font(.footnote)
+                        .accessibilityIdentifier("keys.accountStore")
+                    if !nameProblem.isEmpty { Text(nameProblem).font(.footnote).foregroundStyle(OuijaStyle.bad) }
+                } header: { Text("Your account") } footer: {
                     Text("Shown on the Agreement slider, in sign-in requests and in the Dynamic Island. Without a photo, your initials are used.")
+                }
+
+                Section {
+                    if let dev = model.settings.developer {
+                        LabeledContent("Developer", value: "\(dev.ownerName) · card \(dev.cardID)")
+                            .accessibilityIdentifier("keys.developer")
+                    } else {
+                        Text("Not signed in with an NCOM ID card.").foregroundStyle(.secondary).accessibilityIdentifier("keys.developer")
+                    }
+                    Button("Tap NCOM ID card") { showCard = true }.accessibilityIdentifier("keys.devCard")
+                    TextField("NCOM verifier address (https://…)", text: $model.settings.verifierURL)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                        .font(.footnote.monospaced())
+                        .accessibilityIdentifier("keys.verifierURL")
+                    TextField("NCOM Dev public key", text: $model.settings.ncomDevKey)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled().font(.footnote.monospaced())
+                    TextField("GlassVault public key", text: $model.settings.glassVaultKey)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled().font(.footnote.monospaced())
+                    LabeledContent("This iPhone's card key", value: "\(model.magicKey.fingerprint) · \(model.magicKey.kind)")
+                        .font(.footnote)
+                    if !model.settings.securityReports.isEmpty {
+                        ForEach(model.settings.securityReports.prefix(5)) { r in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(r.detail).font(.footnote)
+                                Text("\(r.at.formatted(date: .abbreviated, time: .shortened)) · \(r.kind)\(r.reportedToIT ? " · reported to IT" : "")")
+                                    .font(.caption2).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                } header: { Text("Developer card") } footer: {
+                    Text("The NCOM ID card signs you in as a developer only when NCOM Dev, GlassVault and this iPhone all agree. Give NCOM this iPhone's card key to register it.")
                 }
 
                 Section {
@@ -85,6 +129,7 @@ struct KeysView: View {
                 }
             }
             .navigationTitle("Keys")
+            .sheet(isPresented: $showCard) { DevCardSheet().presentationDetents([.large]) }
             .onChange(of: photo) { _, item in
                 Task {
                     let data = try? await item?.loadTransferable(type: Data.self)

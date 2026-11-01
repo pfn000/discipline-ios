@@ -41,6 +41,22 @@ struct OuijaSettings: Codable {
     var profileName = ""
     var enrolled: [EnrolledKey] = []
     var approvals: [Approval] = []
+    /// Only used when the Keychain refuses to keep the account (the Keys tab says so).
+    var accountFallback: Data?
+    /// Set after a Magic ID card tap the NCOM verifier granted.
+    var developer: DeveloperSession?
+    /// The NCOM verifier for Magic ID card sign-in (empty = not set up; nothing is assumed).
+    var verifierURL = ""
+    /// NCOM Dev's and GlassVault's public keys (P-256, base64url) for checking the two halves of the magic QR.
+    var ncomDevKey = ""
+    var glassVaultKey = ""
+    /// What this iPhone wrote onto the card last (step 4 of the handshake).
+    var cardRecord: OuijaKeyRecord?
+    /// Every "no" from a card tap, newest first.
+    var securityReports: [SecurityReport] = []
+    /// The last real device scan (Bluetooth LE / local network). Empty until a scan ran.
+    var lastScan: [DiscoveredDevice] = []
+    var lastScanAt: Date?
 
     /// The board's settings sheet sets this to false to show the Attention page again.
     var ouijaAgreed: Bool {
@@ -57,7 +73,22 @@ struct OuijaSettings: Codable {
         profileName = (try? c.decodeIfPresent(String.self, forKey: .profileName)) ?? ""
         enrolled = (try? c.decodeIfPresent([EnrolledKey].self, forKey: .enrolled)) ?? []
         approvals = (try? c.decodeIfPresent([Approval].self, forKey: .approvals)) ?? []
+        accountFallback = try? c.decodeIfPresent(Data.self, forKey: .accountFallback)
+        developer = try? c.decodeIfPresent(DeveloperSession.self, forKey: .developer)
+        verifierURL = (try? c.decodeIfPresent(String.self, forKey: .verifierURL)) ?? ""
+        lastScan = (try? c.decodeIfPresent([DiscoveredDevice].self, forKey: .lastScan)) ?? []
+        lastScanAt = try? c.decodeIfPresent(Date.self, forKey: .lastScanAt)
+        ncomDevKey = (try? c.decodeIfPresent(String.self, forKey: .ncomDevKey)) ?? ""
+        glassVaultKey = (try? c.decodeIfPresent(String.self, forKey: .glassVaultKey)) ?? ""
+        cardRecord = try? c.decodeIfPresent(OuijaKeyRecord.self, forKey: .cardRecord)
+        securityReports = (try? c.decodeIfPresent([SecurityReport].self, forKey: .securityReports)) ?? []
     }
+}
+
+struct DeveloperSession: Codable, Equatable {
+    var cardID: String
+    var ownerName: String
+    var grantedAt: Date
 }
 
 /// An incoming "Sign in with Ouija" request (ouija://authorize?client=…&nonce=…&callback=…).
@@ -90,6 +121,12 @@ final class OuijaModel: ObservableObject {
     @Published var profileImage: UIImage?
     @Published var lastCallbackResult = ""
     @Published var library: [ImportedIPA] = []
+    /// The signed-in person. nil = nobody yet: Ouija shows the account page, never a stand-in name.
+    @Published private(set) var account: OuijaAccount?
+    /// Where the account is kept, in words for the Keys tab ("Keychain on this iPhone" or why not).
+    @Published private(set) var accountStore = ""
+    /// The phone Ouija runs on, as the system reports it.
+    let thisDevice = OuijaModel.readDeviceIdentity()
 
     private let dir: URL
     private var stateURL: URL { dir.appendingPathComponent("ouija-state.json") }
@@ -98,7 +135,11 @@ final class OuijaModel: ObservableObject {
     init() {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         dir = base.appendingPathComponent(OuijaTest.active ? "ouija-uitest" : "ouija", isDirectory: true)
-        if OuijaTest.has("-uiTestingResetState") { try? FileManager.default.removeItem(at: dir) }
+        if OuijaTest.has("-uiTestingResetState") {
+            try? FileManager.default.removeItem(at: dir)
+            AccountStore.delete()   // test-mode service only (AccountStore.service)
+            Keychain.delete(service: Self.magicKeyService)
+        }
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         if let d = try? Data(contentsOf: dir.appendingPathComponent("ouija-state.json")),
            let s = try? JSONDecoder().decode(OuijaSettings.self, from: d) {
@@ -111,7 +152,16 @@ final class OuijaModel: ObservableObject {
             settings.attentionAccepted = true
             if settings.agreedAt == nil { settings.agreedAt = Date() }
         }
-        if let name = OuijaTest.value("-uiTestingProfileName") { settings.profileName = name }
+        // The account: Keychain first, then the fallback file, then an older install's typed Keys-tab name.
+        if let a = AccountStore.load() {
+            account = a; accountStore = "Keychain on this iPhone"
+        } else if let a = OuijaAccount.decode(settings.accountFallback) {
+            account = a; accountStore = "Ouija's own file on this iPhone (the Keychain refused it)"
+        } else if case .success(let n) = OuijaAccount.validName(settings.profileName) {
+            _ = createAccount(name: n)
+        }
+        // Test-only: some tests start already signed in. The sign-in test itself types the name.
+        if let name = OuijaTest.value("-uiTestingProfileName") { _ = createAccount(name: name) }
         if let tab = OuijaTest.value("-uiTestingTab") {
             self.tab = tab == "rings" ? .rings : (tab == "keys" ? .keys : .board)
         }
@@ -125,15 +175,71 @@ final class OuijaModel: ObservableObject {
 
     // MARK: Profile
 
-    var displayName: String {
-        let n = settings.profileName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return n.isEmpty ? "NCOM Developer" : n
-    }
+    /// The account's name, or "" when nobody has signed in (no made-up name, ever).
+    var displayName: String { account?.name ?? "" }
 
     var initials: String {
-        let parts = displayName.split(separator: " ").prefix(2)
-        let s = parts.compactMap { $0.first.map(String.init) }.joined().uppercased()
+        let s = OuijaAccount.initials(of: displayName)
         return s.isEmpty ? "?" : s
+    }
+
+    /// Creates (or replaces) the account from a typed name. Returns the problem in words, or nil when saved.
+    @discardableResult
+    func createAccount(name: String, kind: OuijaAccount.Kind = .local) -> String? {
+        switch OuijaAccount.validName(name) {
+        case .failure(.empty): return "Type your name to continue."
+        case .failure(.tooLong): return "That name is longer than \(OuijaAccount.maxNameLength) characters."
+        case .success(let n):
+            var a = account ?? OuijaAccount(name: n, kind: kind)
+            a.name = n; a.kind = kind
+            store(a)
+            return nil
+        }
+    }
+
+    private func store(_ a: OuijaAccount) {
+        let status = AccountStore.save(a)
+        if status == errSecSuccess {
+            settings.accountFallback = nil
+            accountStore = "Keychain on this iPhone"
+        } else {
+            settings.accountFallback = a.encoded()
+            accountStore = "Ouija's own file on this iPhone (the Keychain said \(status))"
+        }
+        settings.profileName = a.name
+        account = a
+    }
+
+    /// Signs out: removes the account from this iPhone (Keychain and file). The agreement must be accepted again.
+    func signOut() {
+        AccountStore.delete()
+        settings.accountFallback = nil
+        settings.profileName = ""
+        settings.developer = nil
+        settings.agreedAt = nil
+        account = nil
+        accountStore = ""
+    }
+
+    /// A Magic ID card tap the verifier granted: the account becomes the name NCOM's verifier holds for the card.
+    func grantDeveloper(ownerName: String, cardID: String) {
+        _ = createAccount(name: ownerName, kind: .developerCard)
+        settings.developer = DeveloperSession(cardID: cardID, ownerName: ownerName, grantedAt: Date())
+    }
+
+    static func readDeviceIdentity() -> DeviceIdentity {
+        var u = utsname(); uname(&u)
+        let machine = withUnsafeBytes(of: &u.machine) { raw in
+            String(decoding: raw.prefix(while: { $0 != 0 }), as: UTF8.self)
+        }
+        let d = UIDevice.current
+        return DeviceIdentity(name: d.name, model: d.model, systemName: d.systemName, systemVersion: d.systemVersion,
+                              utsMachine: machine, environment: ProcessInfo.processInfo.environment)
+    }
+
+    func recordScan(_ found: [DiscoveredDevice]) {
+        settings.lastScan = DiscoveredDevice.sorted(found)
+        settings.lastScanAt = Date()
     }
 
     func setProfilePhoto(_ data: Data?) {
@@ -200,6 +306,10 @@ final class OuijaModel: ObservableObject {
     }
 
     func approve(_ req: AuthRequest, how: String) {
+        guard account != nil else {
+            lastCallbackResult = "Sign in to Ouija first; nothing was sent."
+            return
+        }
         let a = OuijaAssertion(client: req.client, nonce: req.request.nonce, name: displayName,
                                iat: Int(Date().timeIntervalSince1970), pk: devicePublicKeyText)
         guard let text = try? OuijaAssertion.sign(a, with: deviceKey) else {
@@ -285,20 +395,35 @@ final class OuijaModel: ObservableObject {
     }
 }
 
+/// The account lives in the Keychain (kept across app reinstalls on the same iPhone, never synced).
+enum AccountStore {
+    static var service: String { OuijaTest.active ? "com.ncom.ouija.account.uitest" : "com.ncom.ouija.account" }
+    static func load() -> OuijaAccount? { OuijaAccount.decode(Keychain.read(service: service)) }
+    @discardableResult static func save(_ a: OuijaAccount) -> OSStatus { Keychain.writeStatus(a.encoded(), service: service) }
+    static func delete() { Keychain.delete(service: service) }
+}
+
 enum Keychain {
+    static func delete(service: String) {
+        let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service]
+        SecItemDelete(q as CFDictionary)
+    }
     static func read(service: String) -> Data? {
         let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
                                 kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne]
         var out: CFTypeRef?
         return SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess ? out as? Data : nil
     }
-    static func write(_ data: Data, service: String) {
+    static func write(_ data: Data, service: String) { _ = writeStatus(data, service: service) }
+
+    @discardableResult
+    static func writeStatus(_ data: Data, service: String) -> OSStatus {
         let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service]
         SecItemDelete(q as CFDictionary)
         var add = q
         add[kSecValueData as String] = data
         add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        SecItemAdd(add as CFDictionary, nil)
+        return SecItemAdd(add as CFDictionary, nil)
     }
 }
 

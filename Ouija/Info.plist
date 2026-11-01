@@ -48,6 +48,8 @@
 	<array>
 		<string>_ncom-ouija._tcp</string>
 	</array>
+	<key>NFCReaderUsageDescription</key>
+	<string>Ouija reads and rewrites your NCOM ID card's one-time key to sign you in as a developer.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Ouija reads the magic rings on your computer's screen to sign you in.</string>
 	<key>NSLocalNetworkUsageDescription</key>

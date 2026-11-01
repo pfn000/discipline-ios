@@ -81,8 +81,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ncom.ouija
         PRODUCT_NAME: Ouija
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "0.2.0"
+        CURRENT_PROJECT_VERSION: "2"
+        CODE_SIGN_ENTITLEMENTS: Ouija/Ouija.entitlements
         INFOPLIST_FILE: Ouija/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         TARGETED_DEVICE_FAMILY: "1"

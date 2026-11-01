@@ -22,6 +22,10 @@ on:
         description: "light or dark: the simulator's appearance for every UI test (dark screenshots get a -dark suffix)"
         required: false
         default: "light"
+      suite:
+        description: "all = every UI test; ouija = only the Ouija app's UI tests (core tests and both IPAs still run)"
+        required: false
+        default: "all"
 run-name: "ios ${{ github.ref_name }} ${{ inputs.req }} ${{ inputs.appearance }}"
 # Read-only: this workflow never creates a GitHub Release (the repo is public; publishing a Release is
 # Saidie's call). The IPA goes only to her private Hugging Face dataset.
@@ -142,7 +146,7 @@ jobs:
           echo "appearance: $(xcrun simctl ui "$UDID" appearance)" | tee -a "$OUT/toolchain.txt"
 
       - name: "UI tests: Discipline before Ouija is installed (Install Ouija to pair)"
-        if: ${{ inputs.build_only != 'true' && inputs.only == '' }}
+        if: ${{ inputs.build_only != 'true' && inputs.only == '' && inputs.suite != 'ouija' }}
         timeout-minutes: 30
         run: |
           xcrun simctl uninstall "${{ steps.sim.outputs.udid }}" com.ncom.ouija || true
@@ -155,7 +159,7 @@ jobs:
         run: scripts/run_uitests.sh ouija Ouija "${{ steps.sim.outputs.udid }}" 2700
 
       - name: UI tests on the simulator (app flows with fixtures)
-        if: ${{ inputs.build_only != 'true' }}
+        if: ${{ inputs.build_only != 'true' && inputs.suite != 'ouija' }}
         timeout-minutes: 80
         run: |
           mkdir -p "$OUT/screenshots"

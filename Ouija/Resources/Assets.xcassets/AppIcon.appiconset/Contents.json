@@ -1,7 +1,19 @@
 {
   "images": [
     {
-      "filename": "ouija-icon-1024.png",
+      "filename": "ouija-icon-light-1024.png",
+      "idiom": "universal",
+      "platform": "ios",
+      "size": "1024x1024"
+    },
+    {
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ],
+      "filename": "ouija-icon-dark-1024.png",
       "idiom": "universal",
       "platform": "ios",
       "size": "1024x1024"

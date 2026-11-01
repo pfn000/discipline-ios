@@ -31,6 +31,8 @@ struct OuijaRoot: View {
         Group {
             if !model.settings.attentionAccepted {
                 AttentionPage { withAnimation(.smooth) { model.acceptAttention() } }
+            } else if model.account == nil {
+                AccountPage()
             } else if model.settings.agreedAt == nil {
                 AgreementPage()
             } else {
@@ -55,7 +57,7 @@ struct OuijaRoot: View {
                     .accessibilityIdentifier("ouija.urlTrace")
             }
         }
-        .sheet(item: Binding(get: { model.settings.agreedAt == nil ? nil : model.pendingRequest },
+        .sheet(item: Binding(get: { model.settings.agreedAt == nil || model.account == nil ? nil : model.pendingRequest },
                              set: { model.pendingRequest = $0 })) { req in
             AuthorizeSheet(request: req)
                 .presentationDetents([.large])

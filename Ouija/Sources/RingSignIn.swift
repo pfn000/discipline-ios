@@ -358,6 +358,7 @@ struct RingDance: View {
 struct RingSignInView: View {
     @EnvironmentObject var model: OuijaModel
     @StateObject private var flow = RingSignIn()
+    @State private var showCard = false
 
     var body: some View {
         NavigationStack {
@@ -375,6 +376,7 @@ struct RingSignInView: View {
             .navigationTitle("Sign in on a computer")
             .navigationBarTitleDisplayMode(.inline)
             .onDisappear { flow.stop() }
+            .sheet(isPresented: $showCard) { DevCardSheet().presentationDetents([.large]) }
         }
     }
 
@@ -421,6 +423,10 @@ struct RingSignInView: View {
             Text("Open the ring page on your computer, then let your iPhone find it.")
                 .font(.body).foregroundStyle(.secondary).multilineTextAlignment(.center)
             primary("Find my computer", id: "rings.find") { flow.start(enrolled: model.settings.enrolled) }
+            Button { showCard = true } label: {
+                Label("Tap NCOM ID card (developers)", systemImage: "wave.3.right.circle").frame(maxWidth: .infinity).padding(.vertical, 4)
+            }
+            .buttonStyle(.glass).controlSize(.large).accessibilityIdentifier("rings.devCard")
             if model.settings.enrolled.isEmpty && !OuijaTest.active {
                 Text("No computer keys are enrolled yet. Add one in Keys first.")
                     .font(.footnote).foregroundStyle(.orange).multilineTextAlignment(.center)

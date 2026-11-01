@@ -90,7 +90,7 @@ final class SignInWithOuijaUITests: DisciplineUITestCase {
         // Start Ouija once in test mode (fresh state, no pulsing animation holding XCTest's idle wait),
         // then let Discipline's button bring it forward with the real ouija://authorize link.
         let ouija = XCUIApplication(bundleIdentifier: "com.ncom.ouija")
-        ouija.launchArguments = ["-uiTesting", "-uiTestingResetState"]
+        ouija.launchArguments = ["-uiTesting", "-uiTestingResetState", "-uiTestingProfileName", "Saidie Newara"]
         ouija.launch()
         app.activate()
         XCTAssertTrue(button.waitForExistence(timeout: 10))

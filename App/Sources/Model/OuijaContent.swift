@@ -21,8 +21,10 @@ struct OuijaContent: Codable {
     }
 
     var source: String          // "private" for NCOM's file, "fallback" for the built-in one
-    var deviceName: String
-    var deviceSymbol: String
+    // Kept only so older content files still decode. Ouija never shows these as a device any more:
+    // the board shows this iPhone and the devices a real scan found (no stand-in device like "Focals").
+    var deviceName: String?
+    var deviceSymbol: String?
     var attentionSlide: String
     var agreementText: String
     var agreeButton: String
@@ -47,8 +49,8 @@ struct OuijaContent: Codable {
 
     static let fallback = OuijaContent(
         source: "fallback",
-        deviceName: "Prototype device",
-        deviceSymbol: "cpu",
+        deviceName: nil,
+        deviceSymbol: nil,
         attentionSlide: "Slide to confirm",
         agreementText: "Ouija Board features are NCOM developer prototypes.",
         agreeButton: "I agree",

@@ -1,19 +1,45 @@
 import XCTest
 
-/// The Ouija app: Attention (single "I agree"), the Agreement (slider locked until the terms are scrolled
+/// The Ouija app: Attention (single "I agree"), the account (typed, never pre-filled), the Agreement (slider locked until the terms are scrolled
 /// to the end, then the profile slide), the board, the authorize sheet + Live Activity, and the ring sign-in.
 final class OuijaAgreementUITests: DisciplineUITestCase {
-    func testAttentionThenAgreementLockedUntilScrolled() {
-        launch(["-uiTestingResetState", "-uiTestingProfileName", "Saidie Newara"])
+    /// No made-up user or device anywhere on the way in.
+    func assertNoPlaceholders(_ where_: String) {
+        for fake in ["Focals", "NCOM Developer", "Prototype device"] {
+            let hit = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] %@", fake)).firstMatch
+            XCTAssertFalse(hit.exists, "placeholder '\(fake)' shown on \(where_)")
+        }
+    }
+
+    func testAttentionThenAccountThenAgreementLockedUntilScrolled() {
+        launch(["-uiTestingResetState"])
         XCTAssertTrue(el("ouija.attention").waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["ouija.iAgree"].exists, "Attention has one I agree button")
         XCTAssertEqual(app.sliders.count, 0, "no slider on Attention any more")
         snap("80-ouija-attention-after")
         tap("ouija.iAgree")
 
+        // The account page: empty name, nothing pre-filled, Continue disabled until a name is typed.
+        XCTAssertTrue(el("ouija.account").waitForExistence(timeout: 10), "account page after Attention")
+        let field = app.textFields["account.name"]
+        XCTAssertTrue(field.exists)
+        let v = field.value as? String ?? ""
+        XCTAssertTrue(v.isEmpty || v == (field.placeholderValue ?? ""), "name field must start empty, had '\(v)'")
+        XCTAssertFalse(app.buttons["account.continue"].isEnabled, "Continue needs a typed name")
+        XCTAssertTrue(el("account.thisDevice").label.contains("iPhone"), "real device: \(el("account.thisDevice").label)")
+        note("79-this-device", el("account.thisDevice").label)
+        assertNoPlaceholders("the account page")
+        snap("79a-ouija-account-empty")
+        type("account.name", "Saidie Newara")
+        hideKeyboard()
+        XCTAssertTrue(app.buttons["account.continue"].isEnabled)
+        snap("79b-ouija-account-filled")
+        tap("account.continue")
+
         let handle = el("agreement.handle")
         XCTAssertTrue(handle.waitForExistence(timeout: 10))
         XCTAssertEqual(handle.value as? String, "locked", "slider must start locked")
+        XCTAssertTrue(el("agreement.status").label.contains("Saidie Newara"), "the typed name: \(el("agreement.status").label)")
         // Dragging while locked does nothing.
         handle.slide(by: 320)
         XCTAssertEqual(handle.value as? String, "locked", "a drag before scrolling must not agree")
@@ -30,26 +56,124 @@ final class OuijaAgreementUITests: DisciplineUITestCase {
         XCTAssertTrue(el("agreement.status").label.hasPrefix("Agreed "), "the time is recorded: \(el("agreement.status").label)")
         snap("83-ouija-agreement-agreed")
         XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 10), "board opens after agreeing")
+        assertNoPlaceholders("the board")
 
-        // The agreement time is kept (Keys tab).
+        // The agreement time and where the account is kept (Keys tab).
         tab("Keys")
         XCTAssertTrue(el("keys.agreedAt").waitForExistence(timeout: 5))
+        note("79-account-store", labelIfAny("keys.accountStore"))
+    }
+
+    func testAccountIsKeptAcrossRelaunch() {
+        launch(["-uiTestingResetState", "-uiTestingAgreed"])
+        XCTAssertTrue(el("ouija.account").waitForExistence(timeout: 10), "agreed but no account yet: the account page shows")
+        type("account.name", "Saidie Newara")
+        hideKeyboard()
+        tap("account.continue")
+        XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 10))
+        app.terminate()
+        launch(["-uiTestingAgreed"])   // no reset: the account must still be there
+        XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 10), "relaunch goes straight to the board")
+        XCTAssertFalse(el("ouija.account").exists)
+        XCTAssertEqual(el("ouija.accountAvatar").label, "Saidie Newara")
+        // Signing out removes it.
+        tap("ouija.settings")
+        tap("ouija.signOut")
+        XCTAssertTrue(el("ouija.account").waitForExistence(timeout: 10), "signed out: back to the account page")
+        XCTAssertEqual((app.textFields["account.name"].value as? String).map { $0 == app.textFields["account.name"].placeholderValue || $0.isEmpty }, true)
     }
 
     func testBoardAndSettings() {
-        launch(["-uiTestingResetState", "-uiTestingAgreed"])
+        launch(["-uiTestingResetState", "-uiTestingAgreed", "-uiTestingProfileName", "Saidie Newara"])
         XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 10))
+        let device = el("ouija.deviceName").label
+        XCTAssertTrue(device.contains("iPhone"), "the real device: \(device)")
+        XCTAssertTrue(el("ouija.deviceDetail").label.contains("iOS"), el("ouija.deviceDetail").label)
+        XCTAssertTrue(el("ouija.connection").label.contains("No device connected"), el("ouija.connection").label)
+        assertNoPlaceholders("the board")
+        note("84-board-device", device + " | " + el("ouija.deviceDetail").label + " | " + el("ouija.connection").label)
         snap("84-ouija-board")
+        tap("ouija.tile.1")
+        XCTAssertTrue(el("ouija.status").label.contains("isn't wired"), "tiles say plainly they do nothing yet")
         tap("ouija.connection")
         XCTAssertTrue(el("pair.instructions").waitForExistence(timeout: 5))
+        tap("pair.option.ble")
         tap("pair.start")
-        XCTAssertTrue(el("pair.result").waitForExistence(timeout: 5))
+        XCTAssertTrue(el("pair.result").waitForExistence(timeout: 15))
+        snap("84b-ouija-pairing")
         back()
+        XCTAssertTrue(el("ouija.connection").waitForExistence(timeout: 5))
+        XCTAssertTrue(el("ouija.connection").label.contains("No devices found"), "after a real scan that found nothing: \(el("ouija.connection").label)")
         tap("ouija.settings")
         XCTAssertTrue(el("ouija.settingsDone").waitForExistence(timeout: 5))
         snap("85-ouija-settings")
         tap("ouija.resetAgreement")
         XCTAssertTrue(el("ouija.attention").waitForExistence(timeout: 5), "the Attention page shows again")
+    }
+}
+
+/// Developer sign-in with the NCOM Magic ID card. The simulator has no NFC, so these run against the
+/// in-memory NCOM Dev + GlassVault (the same rules as the unit tests); the real tap is untested until an iPhone.
+final class OuijaDevCardUITests: DisciplineUITestCase {
+    func openCardSheet(_ extra: [String]) {
+        launch(["-uiTestingResetState", "-uiTestingMagicKeyMock", "-uiTestingMagicKeyOwner", "Saidie Newara"] + extra)
+        tap("ouija.iAgree")
+        XCTAssertTrue(el("ouija.account").waitForExistence(timeout: 10))
+        tap("account.devCard")
+        XCTAssertTrue(el("devcard.start").waitForExistence(timeout: 10))
+    }
+
+    func testCardTapAllThreeSayYes() {
+        openCardSheet([])
+        snap("79c-ouija-devcard-idle")
+        tap("devcard.start")
+        XCTAssertTrue(el("devcard.agree").waitForExistence(timeout: 15), "the rings dance when both halves agree")
+        snap("79d-ouija-devcard-dance")
+        XCTAssertTrue(el("devcard.result").waitForExistence(timeout: 15))
+        XCTAssertEqual(el("devcard.result").label, "Signed in as Saidie Newara")
+        for n in 1...8 { XCTAssertEqual(el("devcard.step.\(n)").value as? String, "yes", "step \(n)") }
+        snap("79e-ouija-devcard-granted")
+        tap("devcard.continue")
+        XCTAssertTrue(el("agreement.handle").waitForExistence(timeout: 10), "signed in by card: on to the agreement")
+        XCTAssertTrue(el("agreement.status").label.contains("Saidie Newara"))
+    }
+
+    func testCardQRLMismatchShowsTheChoice() {
+        openCardSheet(["-uiTestingMagicKeyQRL", "mismatch"])
+        tap("devcard.start")
+        XCTAssertTrue(el("devcard.choiceTitle").waitForExistence(timeout: 15), "a mismatched magic QR asks what to do")
+        XCTAssertTrue(el("devcard.replace").exists)
+        XCTAssertTrue(el("devcard.report").exists)
+        XCTAssertEqual(el("devcard.step.8").value as? String, "no")
+        XCTAssertFalse(el("devcard.result").exists, "never signed in")
+        snap("79f-ouija-devcard-qrl-mismatch")
+        tap("devcard.report")
+        XCTAssertFalse(app.buttons["devcard.report"].isEnabled, "reported once")
+    }
+
+    func testCardQRLHalfMissingShowsTheChoice() {
+        openCardSheet(["-uiTestingMagicKeyQRL", "missing"])
+        tap("devcard.start")
+        XCTAssertTrue(el("devcard.choiceTitle").waitForExistence(timeout: 15))
+        XCTAssertEqual(el("devcard.step.8").value as? String, "no")
+    }
+
+    func testCardOnAnotherPhoneIsRefused() {
+        openCardSheet(["-uiTestingMagicKeyOtherPhone"])
+        tap("devcard.start")
+        XCTAssertTrue(el("devcard.result").waitForExistence(timeout: 15))
+        XCTAssertEqual(el("devcard.result").label, "Not signed in")
+        XCTAssertEqual(el("devcard.step.3").value as? String, "no")
+        snap("79g-ouija-devcard-other-phone")
+    }
+
+    func testNoVerifierSetUpIsSaidPlainly() {
+        launch(["-uiTestingResetState"])
+        tap("ouija.iAgree")
+        tap("account.devCard")
+        tap("devcard.start")
+        XCTAssertTrue(el("devcard.why").waitForExistence(timeout: 10))
+        XCTAssertTrue(el("devcard.why").label.contains("isn't set up"), el("devcard.why").label)
     }
 }
 
@@ -92,7 +216,7 @@ final class OuijaAuthorizeUITests: DisciplineUITestCase {
     }
 
     func testBadLinkIsRefused() {
-        launch(["-uiTestingResetState", "-uiTestingAgreed", "-uiTestingOpenURL", "ouija://authorize?client=Evil&nonce=short&callback=https%3A%2F%2Fevil.example"])
+        launch(["-uiTestingResetState", "-uiTestingAgreed", "-uiTestingProfileName", "Saidie Newara", "-uiTestingOpenURL", "ouija://authorize?client=Evil&nonce=short&callback=https%3A%2F%2Fevil.example"])
         XCTAssertTrue(el("ouija.deviceName").waitForExistence(timeout: 10))
         XCTAssertFalse(el("authorize.title").waitForExistence(timeout: 3), "an https callback must be refused")
     }
@@ -100,7 +224,7 @@ final class OuijaAuthorizeUITests: DisciplineUITestCase {
 
 final class OuijaRingUITests: DisciplineUITestCase {
     func testRingSignInAcceptsEnrolledKey() {
-        launch(["-uiTestingResetState", "-uiTestingAgreed", "-uiTestingTab", "rings", "-uiTestingRingFrames"])
+        launch(["-uiTestingResetState", "-uiTestingAgreed", "-uiTestingProfileName", "Saidie Newara", "-uiTestingTab", "rings", "-uiTestingRingFrames"])
         XCTAssertTrue(el("rings.dance").waitForExistence(timeout: 10))
         snap("90-rings-idle")
         tap("rings.find")
@@ -116,7 +240,7 @@ final class OuijaRingUITests: DisciplineUITestCase {
     }
 
     func testRingSignInRefusesUnknownKey() {
-        launch(["-uiTestingResetState", "-uiTestingAgreed", "-uiTestingTab", "rings", "-uiTestingRingForeign"])
+        launch(["-uiTestingResetState", "-uiTestingAgreed", "-uiTestingProfileName", "Saidie Newara", "-uiTestingTab", "rings", "-uiTestingRingForeign"])
         tap("rings.find")
         tap("rings.scan", timeout: 15)
         XCTAssertTrue(el("rings.failure").waitForExistence(timeout: 40), "a key that isn't enrolled must fail")

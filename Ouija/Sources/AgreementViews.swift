@@ -23,7 +23,7 @@ struct AttentionPage: View {
                 .multilineTextAlignment(.center)
                 .padding(.top, 10)
                 .accessibilityIdentifier("ouija.warning")
-            Text("Prototype hardware control isn't connected in this build. You'll read and accept the full agreement next.")
+            Text("Next you'll set up your account on this iPhone, then read and accept the full agreement.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

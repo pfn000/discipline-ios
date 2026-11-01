@@ -81,24 +81,33 @@ struct OuijaBoardMain: View {
         .sheet(isPresented: $showSettings) { OuijaSettingsSheet() }
     }
 
+    /// This iPhone (as the system reports it), what a real scan found nearby, and who is signed in. No stand-in device.
     private var header: some View {
         HStack(spacing: 14) {
-            Image(systemName: OuijaContent.shared.deviceSymbol).font(.system(size: 34))
-                .frame(width: 60, height: 60)
+            Image(systemName: model.thisDevice.model.lowercased().contains("ipad") ? "ipad" : "iphone").font(.system(size: 30))
+                .frame(width: 56, height: 56)
                 .glassEffect(.regular, in: Circle())
                 .accessibilityIdentifier("ouija.deviceModel")
-            VStack(alignment: .leading, spacing: 4) {
-                Text(OuijaContent.shared.deviceName).font(.title2.bold()).accessibilityIdentifier("ouija.deviceName")
+            VStack(alignment: .leading, spacing: 3) {
+                Text(model.thisDevice.title).font(.title3.bold()).lineLimit(1).accessibilityIdentifier("ouija.deviceName")
+                Text(model.thisDevice.detail).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                    .accessibilityIdentifier("ouija.deviceDetail")
                 NavigationLink { PairingView() } label: {
-                    Label("Not connected · pair", systemImage: "circle.fill")
+                    Label(DiscoveredDevice.summary(model.settings.lastScan, scanned: model.settings.lastScanAt != nil), systemImage: "circle.fill")
                         .font(.caption).foregroundStyle(.secondary)
-                        .labelStyle(ConnectionDotStyle())
+                        .labelStyle(ConnectionDotStyle(found: !model.settings.lastScan.isEmpty))
                 }
                 .accessibilityIdentifier("ouija.connection")
             }
-            Spacer()
-            Button { showSettings = true } label: { Image(systemName: "gearshape.fill").font(.title2) }
-                .accessibilityIdentifier("ouija.settings")
+            Spacer(minLength: 4)
+            VStack(spacing: 6) {
+                ProfileAvatar(size: 34)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(model.displayName)
+                    .accessibilityIdentifier("ouija.accountAvatar")
+                Button { showSettings = true } label: { Image(systemName: "gearshape.fill").font(.title3) }
+                    .accessibilityIdentifier("ouija.settings")
+            }
         }
         .padding()
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
@@ -123,17 +132,18 @@ struct OuijaBoardMain: View {
             importing = true
             model.ouijaStatus = "Loading: choose a test app (.ipa)…"
         } else {
-            model.ouijaStatus = "Tile \(tile.id): prototype feature. Pair a \(OuijaContent.shared.deviceName) first (\(OuijaContent.shared.pairTitle)). Not connected."
+            model.ouijaStatus = "Tile \(tile.id) isn't wired to a feature yet. Nothing ran."
         }
     }
 
     private func runLocalCommand() {
         let name = shellInput.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         switch name {
-        case "help": shellOutput = "Local commands: help, apps, device, status. No iOS shell commands."
+        case "help": shellOutput = "Local commands: help, apps, device, whoami, status. No iOS shell commands."
         case "apps": shellOutput = "\(model.library.count) test apps picked in Ouija; Discipline keeps the IPA Library."
-        case "device": shellOutput = "iOS \(UIDevice.current.systemVersion); \(OuijaContent.shared.deviceName): not paired."
-        case "status": shellOutput = "Prototype connection: not connected. Session: \(model.settings.ouijaSession.label)."
+        case "device": shellOutput = "\(model.thisDevice.title) · \(model.thisDevice.detail). Nearby: \(DiscoveredDevice.summary(model.settings.lastScan, scanned: model.settings.lastScanAt != nil))."
+        case "whoami": shellOutput = model.account.map { "\($0.name) (\($0.kind == .developerCard ? "developer card" : "account on this iPhone"))" } ?? "Not signed in."
+        case "status": shellOutput = "Signed in as \(model.displayName). Nearby devices: \(model.settings.lastScan.count). Session: \(model.settings.ouijaSession.label)."
         default: shellOutput = "Unknown local command. Type help."
         }
         shellInput = ""
@@ -141,9 +151,10 @@ struct OuijaBoardMain: View {
 }
 
 private struct ConnectionDotStyle: LabelStyle {
+    var found = false
     func makeBody(configuration: Configuration) -> some View {
         HStack(spacing: 5) {
-            configuration.icon.font(.system(size: 7)).foregroundStyle(.red)
+            configuration.icon.font(.system(size: 7)).foregroundStyle(found ? OuijaStyle.ok : .secondary)
             configuration.title
         }
     }
@@ -165,8 +176,13 @@ struct OuijaSettingsSheet: View {
                         dismiss()
                     }
                     .accessibilityIdentifier("ouija.resetAgreement")
+                    Button("Sign out of Ouija", role: .destructive) {
+                        model.signOut()
+                        dismiss()
+                    }
+                    .accessibilityIdentifier("ouija.signOut")
                 } footer: {
-                    Text("No prototype device is connected. Pairing options are under the connection status.")
+                    Text("Signed in as \(model.displayName) on \(model.thisDevice.title). \(DiscoveredDevice.summary(model.settings.lastScan, scanned: model.settings.lastScanAt != nil)).")
                 }
             }
             .navigationTitle("Ouija Board settings")
@@ -180,11 +196,16 @@ struct OuijaSettingsSheet: View {
 struct PairingView: View {
     @EnvironmentObject var model: OuijaModel
     @StateObject var browser = NCOMBrowser()
+    @StateObject var scanner = NearbyScanner()
     @State var selected: String?
     @State var searching = false
     @State var result = ""
 
-    private var options: [OuijaContent.PairOption] { OuijaContent.shared.pairOptions }
+    /// A real Bluetooth LE scan first, then the pairing options from NCOM's content.
+    private var options: [OuijaContent.PairOption] {
+        [OuijaContent.PairOption(id: "ble", title: "Nearby Bluetooth devices", symbol: "dot.radiowaves.left.and.right", kind: "bluetooth")]
+            + OuijaContent.shared.pairOptions
+    }
 
     var body: some View {
         List {
@@ -230,6 +251,18 @@ struct PairingView: View {
                     }
                 }
             }
+            if !model.settings.lastScan.isEmpty {
+                Section("Found nearby") {
+                    ForEach(Array(model.settings.lastScan.enumerated()), id: \.element.id) { i, d in
+                        HStack {
+                            Label(d.name, systemImage: d.via == .bluetooth ? "dot.radiowaves.left.and.right" : "network")
+                            Spacer()
+                            if let r = d.rssi { Text("\(r) dBm").font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
+                        }
+                        .accessibilityIdentifier("pair.found.\(i)")
+                    }
+                }
+            }
         }
         .navigationTitle(OuijaContent.shared.pairTitle)
     }
@@ -240,16 +273,25 @@ struct PairingView: View {
             return
         }
         switch option.kind {
-        case "localNetwork":
+        case "bluetooth":
+            searching = true
+            model.ouijaStatus = "Scanning for Bluetooth devices…"
+            var found: [DiscoveredDevice] = []
+            var note = "Bluetooth scanning doesn't run in UI tests."
+            if !OuijaTest.active { (found, note) = await scanner.scan(seconds: 8) }
+            searching = false
+            model.recordScan(found)
+            result = note
             searching = true
             model.ouijaStatus = "Loading: looking for NCOM devices on this network…"
             let found = OuijaTest.active ? [] : await browser.browse(seconds: 8)
             searching = false
+            model.recordScan(found.map { DiscoveredDevice(id: $0, name: $0, via: .localNetwork) })
             result = found.isEmpty ? "No NCOM devices found on this network." : "Found: " + found.joined(separator: ", ") + " (pairing isn't built yet)."
         case "uwb":
-            result = "\(option.title): UWB needs a paired NCOM accessory that speaks Apple's Nearby Interaction. None is paired."
+            result = "\(option.title): UWB works only with an accessory that speaks Apple's Nearby Interaction. None is connected."
         default:
-            result = "\(option.title): needs NCOM prototype hardware. Nothing is paired."
+            result = "\(option.title): an iPhone app can't drive this radio itself; it needs an NCOM accessory. None is connected."
         }
         model.ouijaStatus = result
     }
