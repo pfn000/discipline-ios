@@ -158,8 +158,9 @@ jobs:
 
       - name: "UI tests: Ouija app"
         if: ${{ inputs.build_only != 'true' && inputs.only == '' }}
-        timeout-minutes: 50
-        run: scripts/run_uitests.sh ouija Ouija "${{ steps.sim.outputs.udid }}" 2700
+        # A slow runner took 45 min for the suite with retries (v0.4 round 8 dark), so the budget is 60 min.
+        timeout-minutes: 62
+        run: scripts/run_uitests.sh ouija Ouija "${{ steps.sim.outputs.udid }}" 3600
 
       - name: "Sphere video (simctl recordVideo while the live-sphere test runs)"
         if: ${{ inputs.build_only != 'true' && inputs.suite == 'ouija' && inputs.only == '' }}
