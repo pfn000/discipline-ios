@@ -204,7 +204,7 @@ extension Data {
 
 @MainActor
 final class MagicCardFlow: ObservableObject {
-    enum Phase: Equatable { case idle, waitingForCard, talking, dancing, granted(String), choice, failed(String) }
+    enum Phase: Equatable { case idle, waitingForCard, talking, cardOK, scanning, dancing, granted(String), choice, failed(String) }
     @Published var phase: Phase = .idle
     @Published var result = CardTapResult()
     @Published var reported = false
@@ -222,6 +222,11 @@ final class MagicCardFlow: ObservableObject {
     }
 
     var dance: QRLDance? { if case .agree(let d)? = result.qrl { return d }; return nil }
+    var isFailed: Bool { if case .failed = phase { return true }; return false }
+    /// The eight checks are shown only once there is an outcome.
+    var showsSteps: Bool {
+        switch phase { case .failed, .choice, .granted: return true; default: return false }
+    }
 
     func setUpTestCard(model: OuijaModel) {
         guard OuijaTest.has("-uiTestingMagicKeyMock"), mockVerifier == nil else { return }
@@ -277,10 +282,20 @@ final class MagicCardFlow: ObservableObject {
     private func finish(_ r: CardTapResult, model: OuijaModel) async {
         result = r
         if let report = r.report { model.settings.securityReports.insert(report, at: 0) }
+        let test = OuijaTest.active
+        // v0.4 order (Saidie, Nov 1 3:55 PM): the ID turns green, then the phone scans the sphere the NCOM Dev
+        // website shows. The website and the camera decoder are stand-ins in this build (SphereBeacon is the decoder).
+        let cardPassed = r.grantedOwner != nil || (r.qrl.map { !$0.agrees } ?? false)
+        if cardPassed {
+            phase = .cardOK
+            try? await Task.sleep(for: .seconds(test ? 1.4 : 1.0))
+            phase = .scanning
+            try? await Task.sleep(for: .seconds(OuijaTest.has("-uiTestingScanHold") ? 30 : (test ? 2.5 : 2.0)))
+        }
         if let owner = r.grantedOwner, let card = r.cardID {
             // The sphere moves to a hash of both halves of the magic QR before the sign-in lands.
             phase = .dancing
-            try? await Task.sleep(for: .seconds(OuijaTest.has("-uiTestingSphereLive") ? 30 : (OuijaTest.active ? 6 : 1.6)))
+            try? await Task.sleep(for: .seconds(OuijaTest.has("-uiTestingSphereLive") ? 30 : (test ? 6 : 1.6)))
             model.settings.cardRecord = r.newRecord    // the card now holds this; keep it whatever happens next
             pendingGrant = (owner, card)
             phase = .granted(owner)

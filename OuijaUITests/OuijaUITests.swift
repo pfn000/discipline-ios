@@ -209,8 +209,17 @@ final class OuijaDevCardUITests: DisciplineUITestCase {
 
     func testCardTapAllThreeSayYes() {
         openCardSheet([])
+        XCTAssertTrue(el("devcard.prompt").waitForExistence(timeout: 10), "only asks for the tap")
+        XCTAssertEqual(el("devcard.prompt").label, "Tap your ID")
+        XCTAssertFalse(el("devcard.step.1").exists, "no checklist before the tap")
+        sleep(1)   // the glass ID has floated in
         snap("79c-ouija-devcard-idle")
         tap("devcard.start")
+        XCTAssertTrue(el("devcard.cardOK").waitForExistence(timeout: 10), "the ID turns green")
+        XCTAssertEqual(el("devcard.start").value as? String, "green")
+        snap("79c2-ouija-devcard-card-green")
+        XCTAssertTrue(el("devcard.scanPrompt").waitForExistence(timeout: 10), "then the phone scans the website's sphere")
+        snap("79c3-ouija-devcard-scan")
         XCTAssertTrue(el("devcard.agree").waitForExistence(timeout: 15), "the sphere moves when both halves agree")
         XCTAssertTrue(sphere("Magic sphere, both halves agree").waitForExistence(timeout: 5), "an alive sphere while both halves agree")
         XCTAssertTrue(el("devcard.dance").exists, "still mid-dance (before the sign-in lands)")
@@ -276,11 +285,51 @@ final class OuijaDevCardUITests: DisciplineUITestCase {
         sleep(14)   // keep it on screen for the recorded video
     }
 
+    /// v0.4: the glass ID on its own, each look (landscape first, portrait too), for light and dark screenshots.
+    func testIDCardLooks() {
+        for (mode, shot) in [("float", "79k-ouija-idcard-float"), ("fail", "79l-ouija-idcard-fail-jiggle"), ("ok", "79m-ouija-idcard-green"),
+                             ("portrait", "79n-ouija-idcard-portrait"), ("scan", "79o-ouija-idcard-scan")] {
+            launch(["-uiTestingIDCardShowcase", mode])
+            if mode == "scan" {
+                XCTAssertTrue(el("devcard.scanPrompt").waitForExistence(timeout: 15), "scan view")
+            } else {
+                XCTAssertTrue(el("idcard.card").waitForExistence(timeout: 15), mode)
+                sleep(1)
+                if mode == "fail" { XCTAssertEqual(el("idcard.card").value as? String, "red") }
+                if mode == "ok" { XCTAssertEqual(el("idcard.card").value as? String, "green") }
+            }
+            snap(shot)
+            app.terminate()
+        }
+    }
+
+    /// v0.4: float in, fail (shake, red), succeed (green), then the scan view, held for the recorded video.
+    func testIDCardShowcaseVideo() {
+        launch(["-uiTestingIDCardShowcase", "loop"])
+        XCTAssertTrue(el("idcard.card").waitForExistence(timeout: 15))
+        sleep(10)
+        XCTAssertTrue(el("devcard.scanPrompt").exists, "ends on the scan view")
+    }
+
+    /// v0.4 mode (b): the phone shows the sphere for smart glasses or another device to scan.
+    func testShowSphereForAnotherDevice() {
+        openCardSheet(["-uiTestingScanHold"])
+        tap("devcard.start")
+        tap("devcard.showSphere", timeout: 15)
+        XCTAssertTrue(el("showsphere.title").waitForExistence(timeout: 10))
+        XCTAssertTrue(sphere("Magic sphere, both halves agree").waitForExistence(timeout: 5), "the same both-halves sphere")
+        snap("79p-ouija-show-sphere")
+        tap("showsphere.done")
+        XCTAssertTrue(el("devcard.scanPrompt").waitForExistence(timeout: 10))
+    }
+
     func testCardOnAnotherPhoneIsRefused() {
         openCardSheet(["-uiTestingMagicKeyOtherPhone"])
         tap("devcard.start")
         XCTAssertTrue(el("devcard.result").waitForExistence(timeout: 15))
         XCTAssertEqual(el("devcard.result").label, "Not signed in")
+        XCTAssertEqual(el("devcard.start").value as? String, "red", "the glass ID flashes red")
+        XCTAssertTrue(el("devcard.retry").exists, "offers to try again")
         XCTAssertEqual(el("devcard.step.3").value as? String, "no")
         snap("79g-ouija-devcard-other-phone")
     }

@@ -33,6 +33,8 @@ struct OuijaRoot: View {
         Group {
             if OuijaTest.has("-uiTestingSphereShowcase") {
                 SphereShowcase()
+            } else if let mode = OuijaTest.value("-uiTestingIDCardShowcase") {
+                IDCardShowcase(mode: mode)
             } else if !model.settings.attentionAccepted {
                 AttentionPage { withAnimation(.smooth) { model.acceptAttention() } }
             } else if model.account == nil {

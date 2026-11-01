@@ -174,6 +174,19 @@ jobs:
           kill -INT $REC 2>/dev/null || true
           sleep 4
 
+      - name: "ID card video (simctl recordVideo while the glass-ID showcase runs)"
+        if: ${{ inputs.build_only != 'true' && inputs.suite == 'ouija' && inputs.only == '' }}
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          UDID="${{ steps.sim.outputs.udid }}"
+          xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$OUT/idcard.mp4" > "$OUT/idcard-recorder.log" 2>&1 &
+          REC=$!
+          sleep 3
+          scripts/run_uitests.sh idcard Ouija "$UDID" 600 -only-testing:OuijaUITests/OuijaDevCardUITests/testIDCardShowcaseVideo || true
+          kill -INT $REC 2>/dev/null || true
+          sleep 4
+
       - name: UI tests on the simulator (app flows with fixtures)
         if: ${{ inputs.build_only != 'true' && inputs.suite != 'ouija' }}
         timeout-minutes: 80

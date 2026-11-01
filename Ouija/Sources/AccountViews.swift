@@ -121,12 +121,13 @@ struct DevCardSheet: View {
     @EnvironmentObject var model: OuijaModel
     @Environment(\.dismiss) private var dismiss
     @StateObject private var flow = MagicCardFlow()
+    @State private var showSphere = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
-                    stage.frame(width: 220, height: 220).padding(.top, 8)
+                    stage.padding(.top, 8)
                     status
                     buttons      // above the steps so the choice is always on screen
                     steps
@@ -138,43 +139,74 @@ struct DevCardSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() }.accessibilityIdentifier("devcard.close") } }
             .onAppear { flow.setUpTestCard(model: model) }
+            .task {
+                // On an iPhone the reader opens by itself once the card has floated in: the screen only asks for the tap.
+                guard !OuijaTest.active, flow.phase == .idle else { return }
+                try? await Task.sleep(for: .seconds(1.1))
+                if flow.phase == .idle { flow.start(model: model) }
+            }
+            .fullScreenCover(isPresented: $showSphere) { ShowSphereView(sphere: sphereState) }
         }
     }
 
+    private var sphereState: SphereState { flow.result.qrl.map { MagicSphere.state(verdict: $0) } ?? .idle }
+
+    private var cardLook: IDCardLook {
+        switch flow.phase {
+        case .idle: return .floating
+        case .waitingForCard, .talking: return .reading
+        case .failed: return .failed
+        default: return .ok
+        }
+    }
+
+    private var cardOwner: String? { if case .granted(let n) = flow.phase { return n }; return flow.result.grantedOwner }
+
     @ViewBuilder private var stage: some View {
         switch flow.phase {
+        case .idle, .waitingForCard, .talking, .failed, .cardOK:
+            // The virtual glass ID floats down and hovers; tapping it (or the real card) starts the read.
+            Button { if flow.phase == .idle || flow.isFailed { flow.start(model: model) } } label: {
+                GlassIDCard(look: cardLook, landscape: true, photo: model.profileImage, owner: cardLook == .ok ? cardOwner : nil)
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: 360)
+            .accessibilityLabel(cardLook == .ok ? "ID card accepted" : cardLook == .failed ? "ID card refused" : "Tap your ID")
+            .accessibilityValue(cardLook == .ok ? "green" : cardLook == .failed ? "red" : "glass")
+            .accessibilityIdentifier("devcard.start")
+        case .scanning:
+            // Green card, then the camera: scan the sphere the NCOM Dev website shows.
+            SphereScanView(sphere: .idle, reading: true)
         case .dancing:
             // The sphere moves to a hash of BOTH halves of the magic QR (NCOM Dev + GlassVault).
-            MagicSphereView(state: MagicSphere.state(verdict: flow.result.qrl))
+            MagicSphereView(state: sphereState)
+                .frame(width: 240, height: 240)
                 .accessibilityIdentifier("devcard.dance")
         case .granted:
             ZStack {
-                MagicSphereView(state: MagicSphere.state(verdict: flow.result.qrl), tint: OuijaStyle.ok).opacity(0.45)
+                MagicSphereView(state: sphereState, tint: OuijaStyle.ok).opacity(0.45)
                 Image(systemName: "checkmark.circle.fill").font(.system(size: 80, weight: .semibold)).foregroundStyle(OuijaStyle.onAccent, OuijaStyle.ok)
             }
-        case .choice, .failed:
+            .frame(width: 220, height: 220)
+        case .choice:
             ZStack {
                 // Missing or wrong half: the sphere breaks (dots scatter, stall, turn red).
-                MagicSphereView(state: flow.result.qrl.map { MagicSphere.state(verdict: $0) }.flatMap { $0.isBroken ? $0 : nil }
-                                ?? .broken(parties: [], missing: false))
+                MagicSphereView(state: sphereState.isBroken ? sphereState : .broken(parties: [], missing: false))
                 Image(systemName: "exclamationmark.shield.fill").font(.system(size: 64, weight: .semibold)).foregroundStyle(OuijaStyle.onAccent, OuijaStyle.bad)
             }
+            .frame(width: 220, height: 220)
             .accessibilityIdentifier("devcard.stopped")
-        case .talking, .waitingForCard:
-            ZStack { MagicSphereView(state: .idle).opacity(0.6); ProgressView().controlSize(.large) }
-        case .idle:
-            MagicSphereView(state: .idle).opacity(0.85)
         }
     }
 
     @ViewBuilder private var status: some View {
         switch flow.phase {
-        case .idle:
-            Text("Tap your NCOM ID card").font(.title2.bold())
-            Text("Hold the card to the top of your iPhone. NCOM Dev, GlassVault and this iPhone must all say yes. The card's key works once; a new one is written every tap.")
-                .font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
-        case .waitingForCard: Text("Hold your card to the top of your iPhone…").font(.headline)
-        case .talking: Text("Checking with NCOM Dev and GlassVault…").font(.headline)
+        case .idle, .waitingForCard, .talking:
+            Text("Tap your ID").font(.title2.bold()).accessibilityIdentifier("devcard.prompt")
+        case .cardOK:
+            Text("ID accepted").font(.title2.bold()).accessibilityIdentifier("devcard.cardOK")
+        case .scanning:
+            EmptyView()
         case .dancing:
             Text("Both halves agree").font(.title2.bold()).accessibilityIdentifier("devcard.agree")
             Text("The sphere moves to NCOM Dev's and GlassVault's signatures together.").font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
@@ -193,7 +225,8 @@ struct DevCardSheet: View {
     }
 
     @ViewBuilder private var steps: some View {
-        if !flow.result.steps.isEmpty {
+        // The eight checks show only once there is an outcome (the tap itself asks for nothing else).
+        if flow.showsSteps && !flow.result.steps.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(flow.result.steps, id: \.step) { s in
                     HStack(alignment: .top, spacing: 10) {
@@ -217,11 +250,17 @@ struct DevCardSheet: View {
 
     @ViewBuilder private var buttons: some View {
         switch flow.phase {
-        case .idle, .failed:
+        case .failed:
             Button { flow.start(model: model) } label: {
-                Text(flow.phase == .idle ? "Tap card" : "Try again").font(.headline).foregroundStyle(OuijaStyle.onAccent).frame(maxWidth: .infinity).padding(.vertical, 6)
+                Text("Try again").font(.headline).foregroundStyle(OuijaStyle.onAccent).frame(maxWidth: .infinity).padding(.vertical, 6)
             }
-            .buttonStyle(.glassProminent).controlSize(.large).accessibilityIdentifier("devcard.start")
+            .buttonStyle(.glassProminent).controlSize(.large).accessibilityIdentifier("devcard.retry")
+        case .scanning, .dancing:
+            // Mode (b): the phone shows the sphere instead, for smart glasses or another device to scan.
+            Button { showSphere = true } label: {
+                Label("Show sphere for another device", systemImage: "eyeglasses").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity).padding(.vertical, 4)
+            }
+            .buttonStyle(.glass).accessibilityIdentifier("devcard.showSphere")
         case .granted:
             Button { flow.commit(model: model); dismiss() } label: { Text("Continue").font(.headline).foregroundStyle(OuijaStyle.onAccent).frame(maxWidth: .infinity).padding(.vertical, 6) }
                 .buttonStyle(.glassProminent).controlSize(.large).accessibilityIdentifier("devcard.continue")
