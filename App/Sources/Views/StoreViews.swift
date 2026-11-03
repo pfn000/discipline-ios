@@ -130,7 +130,6 @@ struct StoreBrowseView: View {
                     .accessibilityIdentifier("store.updateRow.\(app.name)")
             }
         }
-        .accessibilityIdentifier("store.updates")
     }
 
     private var categoryChips: some View {
@@ -287,12 +286,12 @@ struct StoreRow: View {
         HStack(spacing: 14) {
             StoreIcon(url: app.iconURL, size: 58)
             VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(app.name).font(.headline).lineLimit(1)
-                    if let tag = app.statusTag { StoreStatusTag(text: tag) }
-                }
+                Text(app.name).font(.headline).lineLimit(1)
                 Text(app.subtitle.isEmpty ? app.developer : app.subtitle).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
-                Text(byline).font(.caption).foregroundStyle(.tertiary).lineLimit(1)
+                HStack(spacing: 6) {
+                    if let tag = app.statusTag { StoreStatusTag(text: tag) }
+                    Text(byline).font(.caption).foregroundStyle(.tertiary).lineLimit(1)
+                }
             }
             Spacer(minLength: 8)
             Text(hasUpdate ? "Update" : "Get").font(.subheadline.bold()).padding(.horizontal, 16).padding(.vertical, 6)
