@@ -14,8 +14,12 @@ struct DisciplineApp: App {
                 .onOpenURL { model.handleIncoming($0) }
                 .onChange(of: scenePhase) { _, phase in
                     switch phase {
-                    case .active: Task { await model.becameActive() }
-                    case .background: DisciplineApp.scheduleBackgroundCheck()
+                    case .active:
+                        Task { await model.becameActive() }
+                        StoreModel.shared.appBecameActive()   // re-read the store's sources; auto-update
+                    case .background:
+                        StoreModel.shared.appWentBackground()
+                        DisciplineApp.scheduleBackgroundCheck()
                     default: break
                     }
                 }

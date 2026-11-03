@@ -237,6 +237,16 @@ final class AppModel: ObservableObject {
             tab = .more
             let (line, ok) = OuijaLink.shared.receive(url)
             show(line, error: !ok)
+        case "source":
+            // discipline://source?url=https://… adds a store source (how a private source link is added in one tap).
+            tab = .github
+            storeMode = .apps
+            if let link = DeepLinks.queryValue("url", in: url) {
+                Task {
+                    let err = await StoreModel.shared.addSource(link)
+                    show(err ?? "Source added to the store.", error: err != nil && !(err ?? "").hasPrefix("That source is already"))
+                }
+            }
         case "github":
             tab = .github
             storeMode = .github

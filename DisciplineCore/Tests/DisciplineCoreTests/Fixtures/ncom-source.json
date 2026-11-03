@@ -1,0 +1,33 @@
+{
+  "name": "NCOM",
+  "identifier": "com.ncom.source",
+  "subtitle": "Apps by NCOM",
+  "description": "NCOM's own apps for Discipline's store. Apps tagged In Development are works in progress.",
+  "iconURL": "https://raw.githubusercontent.com/pfn000/ncom-source/main/icons/ncom-music.png",
+  "tintColor": "#E85002",
+  "apps": [
+    {
+      "name": "NCOM Music",
+      "bundleIdentifier": "com.ncom.music",
+      "developerName": "NCOM",
+      "subtitle": "Save songs into Sessions. Stream them with no ads.",
+      "localizedDescription": "A music player. Share a YouTube or song link into NCOM Music and it saves it into a Session, then streams it with no ads. Play your own lossless files (FLAC, ALAC, WAV). Songs with a music video get a full-screen video canvas behind the player.",
+      "iconURL": "https://raw.githubusercontent.com/pfn000/ncom-source/main/icons/ncom-music.png",
+      "tintColor": "#E85002",
+      "category": "entertainment",
+      "ncomStatus": "in-development",
+      "beta": true,
+      "versions": [
+        {
+          "version": "0.2.0",
+          "date": "2026-11-03",
+          "localizedDescription": "In development build.",
+          "downloadURL": "https://raw.githubusercontent.com/pfn000/ncom-source/main/ipa/NCOM-Music-unsigned.ipa",
+          "minOSVersion": "26.0"
+        }
+      ],
+      "appPermissions": {}
+    }
+  ],
+  "news": []
+}

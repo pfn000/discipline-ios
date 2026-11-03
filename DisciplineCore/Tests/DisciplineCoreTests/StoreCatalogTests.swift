@@ -67,6 +67,6 @@ final class StoreCatalogTests: XCTestCase {
         XCTAssertNotNil(StoreCatalog.validateSourceURL(" https://example.com/apps.json "))
         XCTAssertNil(StoreCatalog.validateSourceURL("http://example.com/apps.json"))
         XCTAssertNil(StoreCatalog.validateSourceURL("not a url"))
-        XCTAssertEqual(StoreSource.defaults.count, 10)
+        XCTAssertEqual(StoreSource.defaults.count, 11)   // NCOM + the 10 checked on Oct 28
     }
 }

@@ -19,7 +19,7 @@ on:
         required: false
         default: "false"
       appearance:
-        description: "light or dark: the simulator's appearance for every UI test (dark screenshots get a -dark suffix)"
+        description: "light or dark: the simulator's appearance for every UI test (light and dark run side by side)"
         required: false
         default: "light"
 run-name: "ios ${{ github.ref_name }} ${{ inputs.req }} ${{ inputs.appearance }}"
@@ -28,7 +28,7 @@ run-name: "ios ${{ github.ref_name }} ${{ inputs.req }} ${{ inputs.appearance }}
 permissions:
   contents: read
 concurrency:
-  group: ios-${{ github.ref }}
+  group: ios-${{ github.ref }}-${{ inputs.appearance }}
   cancel-in-progress: true
 jobs:
   build-test-package:
