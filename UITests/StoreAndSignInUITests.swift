@@ -117,5 +117,15 @@ final class SignInWithOuijaUITests: DisciplineUITestCase {
         let account = el("ouijaSignIn.account")
         XCTAssertTrue(account.waitForExistence(timeout: 10), "not signed in after Ouija's answer")
         snap("73-signed-in-with-ouija")
+        // Sign out goes back to the Sign in with Ouija button (Saidie, Nov 3: every button must work).
+        tap("ouijaSignIn.signOut")
+        XCTAssertTrue(el("ouijaSignIn.button").waitForExistence(timeout: 10), "Sign out did not return to the sign-in button")
+        // The Ouija hand-off page's Open Ouija button really opens Ouija.
+        app.terminate()
+        launch(["-uiTestingOuijaUnlocked"])
+        openMore("more.ouija")
+        tap("ouija.openApp")
+        XCTAssertTrue(ouija.wait(for: .runningForeground, timeout: 20), "Open Ouija did not open it")
+        app.activate()
     }
 }
