@@ -288,10 +288,8 @@ struct StoreRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(app.name).font(.headline).lineLimit(1)
                 Text(app.subtitle.isEmpty ? app.developer : app.subtitle).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
-                HStack(spacing: 6) {
-                    if let tag = app.statusTag { StoreStatusTag(text: tag) }
-                    Text(byline).font(.caption).foregroundStyle(.tertiary).lineLimit(1)
-                }
+                Text(byline).font(.caption).foregroundStyle(.tertiary).lineLimit(1)
+                if let tag = app.statusTag { StoreStatusTag(text: tag).padding(.top, 2) }
             }
             Spacer(minLength: 8)
             Text(hasUpdate ? "Update" : "Get").font(.subheadline.bold()).padding(.horizontal, 16).padding(.vertical, 6)
@@ -406,7 +404,6 @@ struct StoreAppDetail: View {
         }
         .padding(16)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
-        .accessibilityIdentifier("store.updatesBox")
     }
 
     private func fact(_ title: String, _ value: String) -> some View {
