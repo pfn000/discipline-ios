@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import UIKit
 import Combine
 import CryptoKit
 import DisciplineCore
@@ -24,10 +25,22 @@ final class StoreModel: ObservableObject {
     @Published var stars: [String: Int] = [:]
     @Published var loading = false
     @Published var lastLoad: Date?
+    /// Apps Discipline handed to a sideload tool from the store, by bundle ID (the version it knows is installed).
+    @Published var installs: [String: StoreInstallRecord] = [:]
+    /// Per-app Auto-update switch, by bundle ID. Missing = on.
+    @Published var autoUpdate: [String: Bool] = [:]
+    /// The last thing the update check did, shown on the store ("Handed NCOM Music 0.2.1 to SideStore").
+    @Published var updateNote: String?
 
     private let dir: URL
     private let defaultsKey = "store.sources.v1"
+    private let seenDefaultsKey = "store.defaultsSeen.v1"
+    private let installsKey = "store.installs.v1"
+    private let autoUpdateKey = "store.autoUpdate.v1"
     private var urlSession: URLSession
+    private var poller: Task<Void, Never>?
+    /// While Discipline is open, the sources are re-read this often (and on every return to the front).
+    static let pollInterval: TimeInterval = 15 * 60
 
     private init() {
         let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
@@ -35,7 +48,7 @@ final class StoreModel: ObservableObject {
         let args = ProcessInfo.processInfo.arguments
         if args.contains("-uiTestingResetStore") {
             try? FileManager.default.removeItem(at: dir)
-            UserDefaults.standard.removeObject(forKey: defaultsKey)
+            for k in [defaultsKey, seenDefaultsKey, installsKey, autoUpdateKey] { UserDefaults.standard.removeObject(forKey: k) }
         }
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let cfg = URLSessionConfiguration.default
@@ -43,7 +56,22 @@ final class StoreModel: ObservableObject {
         cfg.requestCachePolicy = .reloadIgnoringLocalCacheData
         urlSession = URLSession(configuration: cfg)
         let saved = (UserDefaults.standard.data(forKey: defaultsKey)).flatMap { try? JSONDecoder().decode([StoreSource].self, from: $0) }
-        sources = (saved ?? StoreSource.defaults).map { SourceState(source: $0) }
+        // A list saved before NCOM's source existed gains it once (first); a built-in source removed stays removed.
+        let merged = StoreSource.merging(saved: saved, seenDefaults: UserDefaults.standard.stringArray(forKey: seenDefaultsKey))
+        sources = merged.sources.map { SourceState(source: $0) }
+        UserDefaults.standard.set(merged.seen, forKey: seenDefaultsKey)
+        installs = (UserDefaults.standard.data(forKey: installsKey))
+            .flatMap { try? JSONDecoder().decode([String: StoreInstallRecord].self, from: $0) } ?? [:]
+        autoUpdate = (UserDefaults.standard.dictionary(forKey: autoUpdateKey) as? [String: Bool]) ?? [:]
+        // UI tests: "-uiTestingStoreInstalled com.ncom.music=0.1.0" stands in for an earlier hand-off.
+        if let seed = TestHooks.value(after: "-uiTestingStoreInstalled") {
+            for pair in seed.split(separator: ",") {
+                let kv = pair.split(separator: "=", maxSplits: 1).map(String.init)
+                guard kv.count == 2 else { continue }
+                installs[kv[0]] = StoreInstallRecord(bundleID: kv[0], name: kv[0], version: kv[1], tool: "SideStore",
+                                                     sourceURL: StoreSource.ncomURL, handedOffAt: Date())
+            }
+        }
         stars = (try? Data(contentsOf: dir.appendingPathComponent("stars.json")))
             .flatMap { try? JSONDecoder().decode([String: Int].self, from: $0) } ?? [:]
         loadFromCache()
@@ -124,7 +152,90 @@ final class StoreModel: ObservableObject {
         apps = all.sorted { (order[$0.sourceURL] ?? 99, $0.sourceRank) < (order[$1.sourceURL] ?? 99, $1.sourceRank) }
         lastLoad = Date()
         persistSources()
+        runAutoUpdates()
         await refreshStars()
+    }
+
+    // MARK: Updates
+
+    /// Installed apps (handed off from here) whose source now lists a newer version.
+    var updates: [StoreApp] { StoreUpdates.available(apps, installed: installs) }
+
+    func update(for app: StoreApp) -> StoreApp? { updates.first { $0.bundleID == app.bundleID && !app.bundleID.isEmpty } }
+
+    func isAutoUpdateOn(_ bundleID: String) -> Bool { autoUpdate[bundleID] ?? true }
+
+    func setAutoUpdate(_ bundleID: String, _ on: Bool) {
+        autoUpdate[bundleID] = on
+        UserDefaults.standard.set(autoUpdate, forKey: autoUpdateKey)
+        if on { runAutoUpdates() }
+    }
+
+    private func persistInstalls() {
+        if let d = try? JSONEncoder().encode(installs) { UserDefaults.standard.set(d, forKey: installsKey) }
+    }
+
+    /// Get / Update: hands the source's own link to SideStore, else LiveContainer, and remembers the version
+    /// handed off (iOS doesn't let Discipline read another app's version). Returns the line to show.
+    @discardableResult
+    func handOff(_ app: StoreApp, automatic: Bool = false) -> String {
+        let links = StoreModel.installLinks(for: app)
+        let preferred = installs[app.bundleID]?.tool
+        let ordered = links.filter { $0.0 == preferred } + links.filter { $0.0 != preferred }
+        for (name, url) in ordered where UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+            if !app.bundleID.isEmpty {
+                var r = installs[app.bundleID] ?? StoreInstallRecord(bundleID: app.bundleID, name: app.name, version: app.version,
+                                                                     tool: name, sourceURL: app.sourceURL, handedOffAt: Date())
+                r.version = app.version; r.tool = name; r.name = app.name; r.sourceURL = app.sourceURL; r.handedOffAt = Date()
+                if automatic { r.autoHandedOffVersion = app.version }
+                installs[app.bundleID] = r
+                persistInstalls()
+            }
+            return "Handed to \(name). It downloads \(app.name) \(app.version) from \(app.sourceName)'s link and signs it."
+        }
+        if automatic, !app.bundleID.isEmpty {   // don't retry the same version on every check
+            installs[app.bundleID]?.autoHandedOffVersion = app.version
+            persistInstalls()
+            return "\(app.name) \(app.version) is out. SideStore or LiveContainer isn't installed, so it wasn't started."
+        }
+        UIPasteboard.general.string = app.downloadURL
+        return "SideStore or LiveContainer isn't installed, so nothing was opened. The download link was copied."
+    }
+
+    /// Auto-update: when a source lists a newer version of an app Discipline handed off, and that app's
+    /// Auto-update is on, Discipline starts the update itself (once per version) while it's on screen.
+    /// The sideload tool still downloads, re-signs and installs it; iOS can ask to confirm.
+    func runAutoUpdates() {
+        let pending = StoreUpdates.autoHandoffs(apps, installed: installs, autoUpdate: autoUpdate)
+        guard let next = pending.first else { return }
+        guard UIApplication.shared.applicationState == .active, !TestHooks.isUITesting || TestHooks.autoCheck else {
+            updateNote = "\(next.name) \(next.version) is ready to update"
+            return
+        }
+        updateNote = handOff(next, automatic: true)
+    }
+
+    /// Discipline came to the front: re-read the sources now (if the last read is over a minute old),
+    /// then every `pollInterval` while it stays open.
+    func appBecameActive() {
+        poller?.cancel()
+        // UI tests never touch the network unasked (the store tests ask with -uiTestingResetStore).
+        if TestHooks.isUITesting && !ProcessInfo.processInfo.arguments.contains("-uiTestingResetStore") { return }
+        poller = Task { [weak self] in
+            let fresh = self?.lastLoad.map { Date().timeIntervalSince($0) < 60 } ?? false
+            if !fresh { await self?.refresh() }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(StoreModel.pollInterval * 1_000_000_000))
+                if Task.isCancelled { break }
+                await self?.refresh()
+            }
+        }
+    }
+
+    func appWentBackground() {
+        poller?.cancel()
+        poller = nil
     }
 
     private func cachedApps(_ s: StoreSource, index i: Int) -> [StoreApp] {

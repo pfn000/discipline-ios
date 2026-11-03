@@ -45,6 +45,7 @@ struct StoreBrowseView: View {
                     if store.apps.isEmpty {
                         emptyState
                     } else {
+                        if query.isEmpty && category == nil && !store.updates.isEmpty { updatesSection }
                         if query.isEmpty && category == nil { trendingCarousel }
                         categoryChips
                         appList
@@ -114,6 +115,24 @@ struct StoreBrowseView: View {
         }
     }
 
+    /// Apps handed off from here whose source now lists a newer version.
+    private var updatesSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Updates").font(.title3.bold()).padding(.horizontal, 20)
+            if let note = store.updateNote {
+                Text(note).font(.footnote).foregroundStyle(.secondary).padding(.horizontal, 20)
+                    .accessibilityIdentifier("store.updateNote")
+            }
+            ForEach(store.updates) { app in
+                NavigationLink(value: app) { StoreRow(app: app, hasUpdate: true) }
+                    // glass-ok: a list row; its Update pill is native .glassEffect
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("store.updateRow.\(app.name)")
+            }
+        }
+        .accessibilityIdentifier("store.updates")
+    }
+
     private var categoryChips: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 8) {
@@ -149,7 +168,7 @@ struct StoreBrowseView: View {
                 Text("No apps match.").foregroundStyle(.secondary).padding(20).accessibilityIdentifier("store.noResults")
             }
             ForEach(filtered) { app in
-                NavigationLink(value: app) { StoreRow(app: app) }
+                NavigationLink(value: app) { StoreRow(app: app, hasUpdate: store.update(for: app) != nil) }
                     // glass-ok: a list row; its Get pill is native .glassEffect
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("store.app.\(app.name)")
@@ -213,6 +232,7 @@ struct TrendingCard: View {
             HStack(alignment: .top) {
                 StoreIcon(url: app.iconURL, size: 64)
                 Spacer()
+                if let tag = app.statusTag { StoreStatusTag(text: tag, onArtwork: true) }
                 if app.featured {
                     Text("FEATURED").font(.caption2.weight(.bold)).tracking(0.8)
                         .padding(.horizontal, 8).padding(.vertical, 4)
@@ -236,19 +256,46 @@ struct TrendingCard: View {
     }
 }
 
+/// A source's work-in-progress tag ("In Development"), read from the source's own `ncomStatus` key.
+struct StoreStatusTag: View {
+    let text: String
+    var onArtwork = false
+    var body: some View {
+        Label(text, systemImage: "hammer.fill")
+            .font(.caption2.weight(.bold))
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, 8).padding(.vertical, 4)
+            .foregroundStyle(onArtwork ? Color.white : Color.accentColor)
+            .glassEffect(.regular.tint(Color.accentColor.opacity(onArtwork ? 0.35 : 0.15)), in: Capsule())
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("store.tag")
+    }
+}
+
 struct StoreRow: View {
     let app: StoreApp
+    var hasUpdate = false
+    /// Publisher, category, and the source when it isn't the publisher ("NCOM · Entertainment").
+    private var byline: String {
+        let parts: [String?] = [app.developer.isEmpty ? nil : app.developer,
+         app.category + (app.categoryGuessed ? " (guessed)" : ""),
+         app.sourceName == app.developer ? nil : app.sourceName]
+        return parts.compactMap { $0 }.joined(separator: " · ")
+    }
     var body: some View {
         HStack(spacing: 14) {
             StoreIcon(url: app.iconURL, size: 58)
             VStack(alignment: .leading, spacing: 3) {
-                Text(app.name).font(.headline).lineLimit(1)
+                HStack(spacing: 6) {
+                    Text(app.name).font(.headline).lineLimit(1)
+                    if let tag = app.statusTag { StoreStatusTag(text: tag) }
+                }
                 Text(app.subtitle.isEmpty ? app.developer : app.subtitle).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
-                Text("\(app.category)\(app.categoryGuessed ? " (guessed)" : "") · \(app.sourceName)")
-                    .font(.caption).foregroundStyle(.tertiary).lineLimit(1)
+                Text(byline).font(.caption).foregroundStyle(.tertiary).lineLimit(1)
             }
             Spacer(minLength: 8)
-            Text("Get").font(.subheadline.bold()).padding(.horizontal, 16).padding(.vertical, 6)
+            Text(hasUpdate ? "Update" : "Get").font(.subheadline.bold()).padding(.horizontal, 16).padding(.vertical, 6)
                 .glassEffect(.regular.tint(.accentColor.opacity(0.25)), in: Capsule())
         }
         .padding(.horizontal, 20)
@@ -270,6 +317,8 @@ struct StoreAppDetail: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(app.name).font(.title2.bold()).accessibilityIdentifier("store.detail.name")
                         Text(app.developer).font(.subheadline).foregroundStyle(.secondary)
+                            .accessibilityIdentifier("store.detail.developer")
+                        if let tag = app.statusTag { StoreStatusTag(text: tag) }
                         Spacer(minLength: 6)
                         Button { get() } label: {
                             Text("Get").font(.headline).padding(.horizontal, 26).padding(.vertical, 4)
@@ -282,6 +331,7 @@ struct StoreAppDetail: View {
                     Text(message).font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("store.getResult")
                 }
                 facts
+                if !app.bundleID.isEmpty { updatesBox }
                 if !store.reasons(app).isEmpty {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Why it's here").font(.headline)
@@ -328,6 +378,38 @@ struct StoreAppDetail: View {
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
     }
 
+    /// Auto-update for this app (on unless switched off), what Discipline knows is installed, and Update.
+    private var updatesBox: some View {
+        let rec = store.installs[app.bundleID]
+        let newer = store.update(for: app)
+        let line: String = {
+            guard let rec else { return "Not installed from Discipline yet. Updates start after your first Get." }
+            return "Installed from here: \(rec.version) via \(rec.tool)" + (newer.map { ". \($0.version) is available." } ?? ". Up to date.")
+        }()
+        return VStack(alignment: .leading, spacing: 12) {
+            Toggle(isOn: Binding(get: { store.isAutoUpdateOn(app.bundleID) }, set: { store.setAutoUpdate(app.bundleID, $0) })) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Auto-update").font(.headline)
+                    Text(line).font(.footnote).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("store.installedLine")
+                }
+            }
+            .accessibilityIdentifier("store.autoUpdate")
+            if let newer, rec != nil {
+                Button { message = store.handOff(newer) } label: {
+                    Text("Update to \(newer.version)").font(.headline).padding(.horizontal, 12)
+                }
+                .buttonStyle(.glassProminent)
+                .accessibilityIdentifier("store.update")
+            }
+            Text("Discipline re-reads \(app.sourceName)'s list when it opens and every 15 minutes while it's open. When a newer version is listed and Auto-update is on, it starts the update in SideStore or LiveContainer, which downloads, re-signs and installs it. iOS or the tool may still ask you to confirm.")
+                .font(.footnote).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
+        .accessibilityIdentifier("store.updatesBox")
+    }
+
     private func fact(_ title: String, _ value: String) -> some View {
         VStack(spacing: 3) {
             Text(title.uppercased()).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
@@ -338,13 +420,7 @@ struct StoreAppDetail: View {
 
     /// Get = hand the source's own download link to SideStore, else LiveContainer. Discipline downloads nothing.
     private func get() {
-        for (name, url) in StoreModel.installLinks(for: app) where UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url)
-            message = "Handed to \(name). It downloads \(app.name) from \(app.sourceName)'s link and signs it."
-            return
-        }
-        UIPasteboard.general.string = app.downloadURL
-        message = "SideStore or LiveContainer isn't installed, so nothing was opened. The download link was copied."
+        message = store.handOff(app)
     }
 }
 
@@ -394,7 +470,7 @@ struct StoreSourcesSheet: View {
                     }
                     .onDelete { store.removeSources(at: $0) }
                 } header: { Text("Sources") } footer: {
-                    Text("The 10 verified sources were checked live on Oct 28, 2026. Swipe to remove any source.")
+                    Text("NCOM is your own source. The other 10 verified sources were checked live on Oct 28, 2026. Swipe to remove any source.")
                 }
                 Section {
                     Button("Restore verified sources") { Task { await store.restoreDefaults() } }

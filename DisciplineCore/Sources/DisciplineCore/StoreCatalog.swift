@@ -12,8 +12,13 @@ public struct StoreSource: Codable, Equatable, Hashable, Sendable, Identifiable 
         self.url = url; self.name = name; self.builtIn = builtIn
     }
 
-    /// Public sources that answered with a valid list on Oct 28, 2026 (checked live).
+    /// NCOM's own public source (NCOM Music). Listed first so NCOM's apps are there out of the box.
+    /// Private NCOM apps are never listed here: their sources are added by hand through Edit sources.
+    public static let ncomURL = "https://raw.githubusercontent.com/pfn000/ncom-source/main/apps.json"
+
+    /// NCOM's source, then the public sources that answered with a valid list on Oct 28, 2026 (checked live).
     public static let defaults: [StoreSource] = [
+        StoreSource(url: ncomURL, name: "NCOM", builtIn: true),
         StoreSource(url: "https://cdn.altstore.io/file/altstore/apps.json", name: "AltStore", builtIn: true),
         StoreSource(url: "https://apps.sidestore.io", name: "SideStore", builtIn: true),
         StoreSource(url: "https://community-apps.sidestore.io/sidecommunity.json", name: "SideStore Team Picks", builtIn: true),
@@ -49,6 +54,9 @@ public struct StoreApp: Codable, Equatable, Hashable, Sendable, Identifiable {
     public var sourceName: String
     /// Position of the app in its source's list (the maintainer's own order).
     public var sourceRank: Int
+    /// The source's own work-in-progress mark, as a tag to show ("In Development", "In Progress", "Beta"), or nil.
+    /// Read from the custom `ncomStatus` key (the AltStore format has no standard field), else `beta: true`.
+    public var statusTag: String? = nil
 
     /// owner/repo when the download is a GitHub release asset.
     public var gitHubRepo: String? { StoreCatalog.gitHubRepo(from: downloadURL) }
@@ -117,7 +125,8 @@ public struct StoreCatalog: Sendable {
                     downloadURL: dl, size: int(v0["size"]) ?? int(a["size"]),
                     minOS: str(v0["minOSVersion"]) ?? str(a["minOSVersion"]),
                     category: cat, categoryGuessed: given == nil,
-                    featured: featured.contains(bundle), sourceURL: sourceURL, sourceName: name, sourceRank: rank))
+                    featured: featured.contains(bundle), sourceURL: sourceURL, sourceName: name, sourceRank: rank,
+                    statusTag: statusTag(app: a, version: v0)))
             }
             guard !apps.isEmpty else { throw ParseError.noApps }
             return (name, apps)
@@ -144,6 +153,23 @@ public struct StoreCatalog: Sendable {
             return (name, apps)
         }
         throw ParseError.noApps
+    }
+
+    /// The work-in-progress tag for one app entry: `ncomStatus` (on the app or its newest version) wins,
+    /// then a plain `beta: true`. Unknown status words show as written, capitalised.
+    public static func statusTag(app a: [String: Any], version v: [String: Any] = [:]) -> String? {
+        if let raw = str(a["ncomStatus"]) ?? str(v["ncomStatus"]) {
+            let k = raw.lowercased().replacingOccurrences(of: "_", with: "-").replacingOccurrences(of: " ", with: "-")
+            switch k {
+            case "in-development", "development", "dev", "indevelopment": return "In Development"
+            case "in-progress", "progress", "inprogress", "wip": return "In Progress"
+            case "beta": return "Beta"
+            case "", "released", "stable", "none": return nil
+            default: return raw.prefix(1).uppercased() + raw.dropFirst()
+            }
+        }
+        if let b = a["beta"] as? Bool, b { return "Beta" }
+        return nil
     }
 
     static func prettyCategory(_ c: String) -> String {
