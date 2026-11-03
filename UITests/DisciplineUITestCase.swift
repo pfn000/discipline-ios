@@ -111,7 +111,11 @@ class DisciplineUITestCase: XCTestCase {
         _ = t.waitForNonExistence(timeout: 3)
     }
 
+    /// "-dark" when CI runs the suite with the simulator in dark appearance (TEST_RUNNER_SCREENSHOT_SUFFIX).
+    var shotSuffix: String { ProcessInfo.processInfo.environment["SCREENSHOT_SUFFIX"] ?? "" }
+
     func snap(_ name: String) {
+        let name = name + shotSuffix
         let shot = XCUIScreen.main.screenshot()
         let a = XCTAttachment(screenshot: shot)
         a.name = name
@@ -121,6 +125,27 @@ class DisciplineUITestCase: XCTestCase {
             try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
             try? shot.pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent("\(name).png"))
         }
+    }
+
+    /// Saves a text note next to the screenshots (diagnostics a reviewer can read without the result bundle).
+    func note(_ name: String, _ text: String) {
+        let a = XCTAttachment(string: text)
+        a.name = name + shotSuffix
+        a.lifetime = .keepAlways
+        add(a)
+        if let dir = ProcessInfo.processInfo.environment["SCREENSHOT_DIR"], !dir.isEmpty {
+            try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+            try? text.write(to: URL(fileURLWithPath: dir).appendingPathComponent("\(name + shotSuffix).txt"), atomically: true, encoding: .utf8)
+        }
+    }
+
+    /// Asks the CI host (scripts/run_uitests.sh) to take a `simctl io screenshot` right now: the host's
+    /// capture comes from the simulator's display itself, a second witness beside XCUIScreen's screenshot.
+    func hostShot(_ name: String, wait: UInt32 = 4) {
+        guard let dir = ProcessInfo.processInfo.environment["SCREENSHOT_DIR"], !dir.isEmpty else { return }
+        let marker = URL(fileURLWithPath: dir).appendingPathComponent("SIMCTL-NOW.req")
+        try? (name + shotSuffix).write(to: marker, atomically: true, encoding: .utf8)
+        sleep(wait)
     }
 
     /// Asserts another app (Safari, Settings) came to the front, optionally showing `text`, then returns.

@@ -39,6 +39,18 @@ struct RootView: View {
     @EnvironmentObject var model: AppModel
 
     var body: some View {
+        #if DEBUG
+        if TestHooks.elementGallery {
+            ElementGalleryView()
+        } else {
+            tabs
+        }
+        #else
+        tabs
+        #endif
+    }
+
+    private var tabs: some View {
         TabView(selection: $model.tab) {
             Tab("Home", systemImage: "shield.lefthalf.filled", value: AppTab.home) { HomeView() }
             Tab("Library", systemImage: "shippingbox", value: AppTab.library) { LibraryView() }

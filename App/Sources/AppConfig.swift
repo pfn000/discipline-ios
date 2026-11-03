@@ -33,6 +33,8 @@ enum TestHooks {
     static let args = ProcessInfo.processInfo.arguments
     /// Fresh, in-memory-backed store on every launch.
     static var isUITesting: Bool { args.contains("-uiTesting") }
+    /// Debug builds: open the numbered Element Gallery instead of the tabs (Saidie's Liquid Glass markup, Nov 3 2026).
+    static var elementGallery: Bool { args.contains("-elementGallery") }
     /// Pretend LocalDevVPN/SideStore/LiveContainer are installed and record the URL we would
     /// open instead of opening it (the simulator has none of them installed).
     static var fakeCompanions: Bool { args.contains("-uiTestingFakeCompanions") }

@@ -18,7 +18,11 @@ on:
         description: "true = skip the UI tests (compile check + IPAs only)"
         required: false
         default: "false"
-run-name: "ios ${{ github.ref_name }} ${{ inputs.req }}"
+      appearance:
+        description: "light or dark: the simulator's appearance for every UI test (dark screenshots get a -dark suffix)"
+        required: false
+        default: "light"
+run-name: "ios ${{ github.ref_name }} ${{ inputs.req }} ${{ inputs.appearance }}"
 # Read-only: this workflow never creates a GitHub Release (the repo is public; publishing a Release is
 # Saidie's call). The IPA goes only to her private Hugging Face dataset.
 permissions:
@@ -126,6 +130,16 @@ jobs:
             perl -e 'alarm shift; exec @ARGV' 420 xcrun simctl bootstatus "$UDID" -b
           fi
           xcrun simctl list devices | grep "$UDID" | tee -a "$OUT/toolchain.txt"
+          # Appearance for every UI test in this run. The apps follow the system setting (Discipline's
+          # Settings > Appearance defaults to System), so dark here = the whole app in dark mode.
+          if [ "${{ inputs.appearance }}" = "dark" ]; then
+            xcrun simctl ui "$UDID" appearance dark
+            # TEST_RUNNER_-prefixed variables reach the UI test runner; snap() appends the suffix.
+            echo "TEST_RUNNER_SCREENSHOT_SUFFIX=-dark" >> "$GITHUB_ENV"
+          else
+            xcrun simctl ui "$UDID" appearance light || true
+          fi
+          echo "appearance: $(xcrun simctl ui "$UDID" appearance)" | tee -a "$OUT/toolchain.txt"
 
       - name: "UI tests: Discipline before Ouija is installed (Install Ouija to pair)"
         if: ${{ inputs.build_only != 'true' && inputs.only == '' }}

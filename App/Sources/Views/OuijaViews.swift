@@ -18,15 +18,30 @@ struct MagicRingView: View {
     let onFinish: () -> Void
     @State var start = Date()
     @State var showResult = false
+    /// Element Gallery only: draw one still frame at this time instead of animating (nil in the app).
+    var frozenAt: Double? = nil
+    /// Element Gallery only: a tinted Liquid Glass panel instead of the black dim (false in the app).
+    var glassPanel = false
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.93).ignoresSafeArea()
+            if glassPanel {
+                Color.clear.glassEffect(.regular.tint(Color.black.opacity(0.55)),
+                                        in: .rect(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
+            } else {
+                Color.black.opacity(0.93).ignoresSafeArea()
+            }
             VStack(spacing: 28) {
-                TimelineView(.animation) { timeline in
-                    let t = timeline.date.timeIntervalSince(start)
-                    Canvas { ctx, size in
-                        draw(&ctx, size: size, t: t)
+                Group {
+                    if let frozenAt {
+                        Canvas { ctx, size in draw(&ctx, size: size, t: frozenAt) }
+                    } else {
+                        TimelineView(.animation) { timeline in
+                            let t = timeline.date.timeIntervalSince(start)
+                            Canvas { ctx, size in
+                                draw(&ctx, size: size, t: t)
+                            }
+                        }
                     }
                 }
                 .frame(width: 300, height: 300)
@@ -48,6 +63,7 @@ struct MagicRingView: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ouija.magicRing")
         .task {
+            if frozenAt != nil { return }
             try? await Task.sleep(for: .seconds(2.6))
             withAnimation(.spring) { showResult = true }
             // Long enough to read the result (and for UI tests on a slow simulator to see it).
