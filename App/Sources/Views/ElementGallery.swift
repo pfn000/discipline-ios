@@ -361,6 +361,7 @@ struct ElementGalleryView: View {
                     VStack(spacing: 0) {
                         ForEach(galleryItems) { item in
                             GalleryRow(item: item, a: element(item.key, .a), b: item.hasB ? element(item.key, .b) : nil)
+                                .containerRelativeFrame(.horizontal)   // never wider than the screen (a wide control would shift every row)
                                 .id(item.id)
                                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .named("galleryContent")) } action: { frames[item.id] = $0 }
                         }
@@ -1164,8 +1165,8 @@ struct GalleryRow: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
         .overlay(alignment: .bottom) { Rectangle().fill(.secondary.opacity(0.35)).frame(height: 1) }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("gallery.item.\(item.id)")
@@ -1175,9 +1176,10 @@ struct GalleryRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.caption.weight(.heavy)).foregroundStyle(.secondary)
             content()
-                .padding(14)
+                .padding(12)
                 .frame(maxWidth: .infinity)
-                .background { GalleryPad().clipShape(.rect(cornerRadius: 20, style: .continuous)) }
+                .background { GalleryPad() }
+                .clipShape(.rect(cornerRadius: 20, style: .continuous))   // anything too wide shows as cut here, not off-screen
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
