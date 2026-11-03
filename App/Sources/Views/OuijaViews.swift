@@ -66,8 +66,8 @@ struct MagicRingView: View {
             if frozenAt != nil { return }
             try? await Task.sleep(for: .seconds(2.6))
             withAnimation(.spring) { showResult = true }
-            // Long enough to read the result (and for UI tests on a slow simulator to see it).
-            try? await Task.sleep(for: .seconds(2.6))
+            // Long enough to read the result (and, under UI tests, for a slow simulator to read it before it closes).
+            try? await Task.sleep(for: .seconds(TestHooks.isUITesting ? 7 : 2.6))
             onFinish()
         }
     }

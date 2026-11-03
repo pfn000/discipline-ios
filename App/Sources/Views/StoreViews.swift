@@ -148,11 +148,12 @@ struct StoreBrowseView: View {
 
     private func chip(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title).font(.subheadline.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
+            Text(title).font(.subheadline.weight(.semibold))
+                .foregroundStyle(selected ? Ember.onAccent : Color.primary)
+                .padding(.horizontal, 14).padding(.vertical, 8)
         }
         // glass-ok: the chip's capsule is native .glassEffect (applied just below)
         .buttonStyle(.plain)
-        .foregroundStyle(selected ? Ember.onAccent : Color.primary)
         .glassEffect(selected ? .regular.tint(Ember.accent).interactive() : .regular.interactive(), in: Capsule())
         .accessibilityIdentifier("store.category.\(title)")
     }

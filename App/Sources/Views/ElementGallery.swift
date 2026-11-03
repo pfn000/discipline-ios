@@ -268,9 +268,8 @@ struct GalleryChip: View {
     var body: some View {
         let label = Text(title).font(.subheadline.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
             .foregroundStyle(selected ? Ember.onAccent : Color.primary)
-            .background(selected ? AnyShapeStyle(Ember.accent) : AnyShapeStyle(Color.clear), in: Capsule())
-        if glass { label.glassEffect(selected ? .regular.tint(Ember.accent) : .regular, in: Capsule()) }
-        else { label.background(GalleryColors.flat, in: Capsule()) }
+        if glass { label.glassEffect(selected ? .regular.tint(Ember.accent).interactive() : .regular.interactive(), in: Capsule()) }
+        else { label.background(selected ? Ember.accent : GalleryColors.flat, in: Capsule()) }
     }
 }
 

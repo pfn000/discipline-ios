@@ -102,10 +102,9 @@ final class OuijaUITests: DisciplineUITestCase {
         launch(["-uiTestingOuijaCode", Self.testCode])
         XCTAssertTrue(el("ouija.magicRing").waitForExistence(timeout: 10))
         snap("35-magic-ring")
-        let msg = el("ouija.ringMessage")
-        let deadline = Date().addingTimeInterval(8)
-        while Date() < deadline, !(msg.exists && msg.label.contains("Signed")) { usleep(150_000) }
-        XCTAssertTrue(msg.exists && msg.label.hasPrefix("Signed"), "ring did not sign off")
+        // Signed-label matching runs as one predicate query, so the check never reads a label off an overlay that just closed.
+        let signed = app.descendants(matching: .any).matching(NSPredicate(format: "identifier == 'ouija.ringMessage' AND label BEGINSWITH 'Signed'")).firstMatch
+        XCTAssertTrue(signed.waitForExistence(timeout: 12), "ring did not sign off")
         snap("36-magic-ring-signed")
         XCTAssertTrue(el("ouija.handoff").waitForExistence(timeout: 10), "the Ouija page opens after the ring")
         back()

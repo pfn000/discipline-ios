@@ -64,19 +64,29 @@ extension Color {
     init(emberHex v: UInt32) { self.init(uiColor: UIColor(emberHex: v)) }
 }
 
-/// The primary button: Apple's own `.glassProminent` Liquid Glass button, tinted Ember orange,
-/// with a black label (the contrast rule above). It wraps the system style rather than imitating it.
-struct EmberProminentButtonStyle: PrimitiveButtonStyle {
+/// The primary button: Apple's official Liquid Glass (`glassEffect`, interactive, tinted Ember orange) in a
+/// capsule, with a black label (white on #E85002 fails contrast). The system `.glassProminent` style forces a
+/// white label (seen on the Nov 3 simulator run), so this style applies the same official glass itself.
+struct EmberProminentButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.controlSize) private var controlSize
+
     func makeBody(configuration: Configuration) -> some View {
-        Button(role: configuration.role, action: configuration.trigger) {
-            configuration.label.foregroundStyle(Ember.onAccent)
-        }
-        .buttonStyle(.glassProminent)
-        .tint(Ember.accent)
+        let small = controlSize == .small || controlSize == .mini
+        configuration.label
+            .font(small ? .subheadline.weight(.semibold) : .body.weight(.semibold))
+            .foregroundStyle(Ember.onAccent)
+            .padding(.horizontal, small ? 12 : 16)
+            .padding(.vertical, small ? 6 : 10)
+            .contentShape(Capsule())
+            .glassEffect(.regular.tint(Ember.accent).interactive(), in: .capsule)
+            .opacity(isEnabled ? 1 : 0.45)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.snappy(duration: 0.15), value: configuration.isPressed)
     }
 }
 
-extension PrimitiveButtonStyle where Self == EmberProminentButtonStyle {
+extension ButtonStyle where Self == EmberProminentButtonStyle {
     static var emberProminent: EmberProminentButtonStyle { EmberProminentButtonStyle() }
 }
 
