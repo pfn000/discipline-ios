@@ -99,7 +99,7 @@ struct SetupView: View {
                 ForEach(plan.steps) { step in
                     HStack(alignment: .top, spacing: 12) {
                         Image(systemName: step.state == .done ? "checkmark.circle.fill" : (step.state == .blocked ? "lock.circle" : "circle"))
-                            .foregroundStyle(step.state == .done ? .green : .secondary)
+                            .foregroundStyle(step.state == .done ? Ember.ok : .secondary)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(step.title).font(.subheadline.weight(.semibold))
                             Text(step.detail).font(.caption).foregroundStyle(.secondary)
@@ -237,7 +237,7 @@ struct SupportView: View {
                     Button { Task { await model.openWeb(AppConfig.tipURL) } } label: {
                         Label("Leave a tip", systemImage: "heart.fill").frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.emberProminent)
                     .accessibilityIdentifier("support.tip")
                     Text("Opens in Safari. There's no in-app purchase in a sideloaded app.").font(.caption).foregroundStyle(.secondary)
                 }

@@ -7,11 +7,11 @@ import DisciplineCore
 extension TintChoice {
     var color: Color {
         switch self {
-        case .ocean: return .blue
-        case .violet: return .purple
-        case .rose: return .pink
-        case .mint: return .mint
-        case .amber: return .orange
+        case .ember: return Ember.orange
+        case .flame: return Ember.flame
+        case .red: return Ember.red
+        case .sand: return Ember.sand
+        case .steel: return Ember.steel
         }
     }
 }
@@ -26,15 +26,32 @@ struct GlassCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 10) { content }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(tinted ? .regular.tint(model.settings.tint.color.opacity(0.35)) : .regular,
-                         in: .rect(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
+            .modifier(GlassCardSurface(hero: tinted))
+    }
+}
+
+/// A plain card is official Liquid Glass over the Ember mesh. The hero card is the same official glass
+/// laid over her black → red → flame → sand gradient (read as dark, so its text stays white).
+struct GlassCardSurface: ViewModifier {
+    var hero: Bool
+    @ViewBuilder func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous)
+        if hero {
+            content
+                .foregroundStyle(.white)
+                .glassEffect(.regular.tint(Ember.black.opacity(0.18)), in: shape)
+                .background(Ember.heroGradient, in: shape)
+                .environment(\.colorScheme, .dark)
+        } else {
+            content.glassEffect(.regular, in: shape)
+        }
     }
 }
 
 struct StatusDot: View {
     let ok: Bool
     var body: some View {
-        Circle().fill(ok ? Color.green : Color.orange).frame(width: 10, height: 10)
+        Circle().fill(ok ? Ember.ok : Ember.warn).frame(width: 10, height: 10)
             .accessibilityHidden(true)
     }
 }
@@ -46,7 +63,7 @@ struct ToastBanner: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: toast.isError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                .foregroundStyle(toast.isError ? .orange : .green)
+                .foregroundStyle(toast.isError ? Ember.warnText : Ember.ok)
             Text(toast.text).font(.subheadline.weight(.semibold)).multilineTextAlignment(.leading)
         }
         .padding(.horizontal, 16).padding(.vertical, 12)

@@ -19,11 +19,11 @@ struct LibraryView: View {
                     Section {
                         StatStrip {
                             StatTile(value: "\(model.library.count)", label: "Apps", systemImage: "shippingbox.fill",
-                                     tint: model.settings.tint.color, id: "library.stat.apps")
+                                     tint: Ember.accentText, id: "library.stat.apps")
                             StatTile(value: byteText(model.library.reduce(0) { $0 + $1.fileSize }), label: "On device",
-                                     systemImage: "internaldrive", tint: .purple, id: "library.stat.size")
+                                     systemImage: "internaldrive", tint: Ember.muted, id: "library.stat.size")
                             StatTile(value: "\(model.library.reduce(0) { $0 + $1.appIDCost })", label: "App IDs to sign",
-                                     systemImage: "signature", tint: .orange, id: "library.stat.appIDs")
+                                     systemImage: "signature", tint: Ember.accentText, id: "library.stat.appIDs")
                         }
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
@@ -33,7 +33,7 @@ struct LibraryView: View {
                     GlassEffectContainer(spacing: 12) {
                         HStack(spacing: 12) {
                             Button { importing = true } label: { Label("Import .ipa", systemImage: "square.and.arrow.down").frame(maxWidth: .infinity) }
-                                .buttonStyle(.glassProminent)
+                                .buttonStyle(.emberProminent)
                                 .accessibilityIdentifier("library.import")
                             Button { showURLSheet = true } label: { Label("From link", systemImage: "link").frame(maxWidth: .infinity) }
                                 .buttonStyle(.glass)
@@ -116,7 +116,7 @@ struct IPADetailView: View {
                                 Button { Task { await model.installRemote(remote, with: .liveContainer, appIDCost: item.appIDCost) } } label: {
                                     Label("Install via LiveContainer", systemImage: "square.stack.3d.up").frame(maxWidth: .infinity)
                                 }
-                                .buttonStyle(.glassProminent)
+                                .buttonStyle(.emberProminent)
                                 .accessibilityIdentifier("ipa.installLiveContainer")
                                 Button { Task { await model.installRemote(remote, with: .sideStore, appIDCost: item.appIDCost) } } label: {
                                     Label("Install via SideStore", systemImage: "arrow.down.app").frame(maxWidth: .infinity)
@@ -129,7 +129,7 @@ struct IPADetailView: View {
                         ShareLink(item: model.fileURL(for: item)) {
                             Label("Install via LiveContainer or SideStore", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.glassProminent)
+                        .buttonStyle(.emberProminent)
                         .accessibilityIdentifier("ipa.share")
                         Text("Pick LiveContainer or SideStore in the share sheet. Both accept .ipa files.")
                             .font(.caption).foregroundStyle(.secondary)
@@ -187,7 +187,7 @@ struct InstallFromLinkSheet: View {
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier("link.target")
                 }
-                if let error { Text(error).foregroundStyle(.red).accessibilityIdentifier("link.error") }
+                if let error { Text(error).foregroundStyle(Ember.warnText).accessibilityIdentifier("link.error") }
                 Section {
                     Button("Install app") { go(source: false) }.accessibilityIdentifier("link.install")
                     Button("Add as source (repo)") { go(source: true) }.accessibilityIdentifier("link.addSource")

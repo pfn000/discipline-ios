@@ -19,7 +19,7 @@ struct GitHubView: View {
                             Button { focused = false; Task { await model.findReleases() } } label: {
                                 Label("Find releases", systemImage: "magnifyingglass").frame(maxWidth: .infinity)
                             }
-                            .buttonStyle(.glassProminent)
+                            .buttonStyle(.emberProminent)
                             .accessibilityIdentifier("github.find")
                             Button { model.toggleSaveCurrentRepo() } label: {
                                 Label(model.isCurrentRepoSaved ? "Saved" : "Save repo", systemImage: model.isCurrentRepoSaved ? "star.fill" : "star")
@@ -37,7 +37,7 @@ struct GitHubView: View {
 
                 if model.gitHubLoading { ProgressView().accessibilityIdentifier("github.loading") }
                 if let err = model.gitHubError {
-                    Text(err).foregroundStyle(.orange).accessibilityIdentifier("github.error")
+                    Text(err).foregroundStyle(Ember.warnText).accessibilityIdentifier("github.error")
                 }
 
                 ForEach(model.releases) { release in
@@ -56,7 +56,7 @@ struct GitHubView: View {
                                     ProgressView()
                                 } else {
                                     Button("Get") { Task { await model.download(asset, from: release) } }
-                                        .buttonStyle(.glassProminent)
+                                        .buttonStyle(.emberProminent)
                                         .accessibilityIdentifier("github.get.\(asset.name)")
                                 }
                             }
@@ -64,7 +64,7 @@ struct GitHubView: View {
                     } header: {
                         HStack {
                             Text(release.title)
-                            if release.prerelease { Text("PRE").font(.caption2.bold()).padding(.horizontal, 6).glassEffect(.regular.tint(.orange), in: .capsule) }
+                            if release.prerelease { Text("PRE").font(.caption2.bold()).foregroundStyle(Ember.onAccent).padding(.horizontal, 6).glassEffect(.regular.tint(Ember.orange), in: .capsule) }
                         }
                     }
                 }
@@ -73,9 +73,9 @@ struct GitHubView: View {
                     Section {
                         StatStrip {
                             StatTile(value: "\(model.savedRepos.count)", label: "Saved repos", systemImage: "star.fill",
-                                     tint: .yellow, id: "github.stat.saved")
+                                     tint: Ember.accentText, id: "github.stat.saved")
                             StatTile(value: "\(model.savedRepos.filter(\.hasUpdate).count)", label: "Updates", systemImage: "arrow.down.app.fill",
-                                     tint: .green, id: "github.stat.updates")
+                                     tint: Ember.ok, id: "github.stat.updates")
                         }
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
@@ -86,8 +86,8 @@ struct GitHubView: View {
                                     Text(repo.ref.fullName)
                                     Spacer()
                                     if repo.hasUpdate {
-                                        Text("Update").font(.caption.bold()).padding(.horizontal, 8).padding(.vertical, 2)
-                                            .glassEffect(.regular.tint(.green), in: .capsule)
+                                        Text("Update").font(.caption.bold()).foregroundStyle(Ember.onAccent).padding(.horizontal, 8).padding(.vertical, 2)
+                                            .glassEffect(.regular.tint(Ember.orange), in: .capsule)
                                             .accessibilityIdentifier("github.updateBadge.\(repo.ref.repo)")
                                     } else if let tag = repo.lastSeenTag {
                                         Text(tag).font(.caption).foregroundStyle(.secondary)

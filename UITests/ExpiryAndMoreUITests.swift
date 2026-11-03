@@ -65,7 +65,7 @@ final class MoreUITests: DisciplineUITestCase {
         snap("16-settings-dark")
         app.segmentedControls["settings.appearance"].buttons["System"].tap()
         tap("settings.tint")
-        app.buttons["Rose"].firstMatch.tap()
+        app.buttons["Flame"].firstMatch.tap()
         type("settings.tunnelIP", "10.7.1.1")
         flip("settings.prereleases")
         type("settings.token", "ghp_test_token")

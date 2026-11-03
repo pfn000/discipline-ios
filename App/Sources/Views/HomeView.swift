@@ -33,11 +33,11 @@ struct HomeView: View {
     private var statStrip: some View {
         StatStrip {
             StatTile(value: "\(model.trackedApps.count)", label: "Tracked", systemImage: "timer",
-                     tint: model.settings.tint.color, id: "home.stat.tracked")
+                     tint: Ember.accentText, id: "home.stat.tracked")
             StatTile(value: "\(model.library.count)", label: "In Library", systemImage: "shippingbox",
-                     tint: .purple, id: "home.stat.library")
+                     tint: Ember.muted, id: "home.stat.library")
             StatTile(value: "\(model.savedRepos.filter(\.hasUpdate).count)", label: "Updates", systemImage: "arrow.down.app",
-                     tint: .green, id: "home.stat.updates")
+                     tint: Ember.ok, id: "home.stat.updates")
         }
     }
 
@@ -54,8 +54,8 @@ struct HomeView: View {
             if let app = model.soonest {
                 let status = model.tracker.status(of: app, now: model.now)
                 HStack(spacing: 16) {
-                    RingGauge(progress: status.fractionLeft(of: app.tier), tint: status.tintColor) {
-                        Image(systemName: "timer").font(.title.weight(.semibold)).foregroundStyle(status.tintColor)
+                    RingGauge(progress: status.fractionLeft(of: app.tier), tint: status.tintColor, glass: false) {
+                        Image(systemName: "timer").font(.title.weight(.semibold)).foregroundStyle(Ember.sand)
                     }
                     .accessibilityIdentifier("home.ring")
                     VStack(alignment: .leading, spacing: 2) {
@@ -66,6 +66,10 @@ struct HomeView: View {
                         Text("left on \(app.name)").foregroundStyle(.secondary)
                     }
                 }
+                EmberProgressBar(progress: status.fractionLeft(of: app.tier))
+                    .accessibilityLabel("Signature time left")
+                    .accessibilityValue("\(Int((status.fractionLeft(of: app.tier) * 100).rounded())) percent")
+                    .accessibilityIdentifier("home.progress")
             } else {
                 Text("Track your sideloaded apps in Expiry and Discipline counts down their signatures.")
                     .font(.subheadline).foregroundStyle(.secondary)
@@ -76,7 +80,7 @@ struct HomeView: View {
                     Button { Task { await model.refreshAll() } } label: {
                         Label("Refresh All", systemImage: "arrow.triangle.2.circlepath").frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.emberProminent)
                     .accessibilityIdentifier("home.refreshAll")
 
                     Button { model.markAllRefreshed() } label: {
@@ -103,7 +107,7 @@ struct HomeView: View {
                     Text("\(model.installed.count)/\(Companion.allCases.count)").font(.caption2.bold())
                 }
                 .gaugeStyle(.accessoryCircularCapacity)
-                .tint(model.settings.tint.color)
+                .tint(Ember.glow)
                 .scaleEffect(0.8)
                 .accessibilityIdentifier("home.kitGauge")
             }
@@ -111,9 +115,9 @@ struct HomeView: View {
                 HStack(spacing: 12) {
                     Image(systemName: model.installed.contains(c) ? "checkmark" : "arrow.down")
                         .font(.subheadline.weight(.bold))
-                        .foregroundStyle(model.installed.contains(c) ? Color.green : Color.orange)
+                        .foregroundStyle(model.installed.contains(c) ? Ember.ok : Ember.accentText)
                         .frame(width: 34, height: 34)
-                        .glassEffect(.regular.tint((model.installed.contains(c) ? Color.green : Color.orange).opacity(0.22)), in: .circle)
+                        .background((model.installed.contains(c) ? Ember.ok : Ember.orange).opacity(0.16), in: .circle)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(c.displayName).font(.subheadline.weight(.semibold))
@@ -145,7 +149,7 @@ struct HomeView: View {
             GlassEffectContainer(spacing: 12) {
                 HStack(spacing: 12) {
                     Button { Task { await model.vpnOn() } } label: { Label("Turn on", systemImage: "bolt.horizontal.circle").frame(maxWidth: .infinity) }
-                        .buttonStyle(.glassProminent)
+                        .buttonStyle(.emberProminent)
                         .accessibilityIdentifier("home.vpnOn")
                     Button { Task { await model.vpnOff() } } label: { Label("Turn off", systemImage: "bolt.slash").frame(maxWidth: .infinity) }
                         .buttonStyle(.glass)

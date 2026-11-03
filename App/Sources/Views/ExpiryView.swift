@@ -61,11 +61,17 @@ struct ExpiryView: View {
                 Section {
                     let used = model.budget.used(now: model.now)
                     if let cap = model.settings.tier.appIDsPerWeek {
-                        Gauge(value: Double(min(used, cap)), in: 0...Double(cap)) {
-                            Text("App IDs this week")
-                        } currentValueLabel: {
-                            Text("\(used)/\(cap)")
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("App IDs this week")
+                                Spacer()
+                                Text("\(used)/\(cap)").font(.subheadline.monospacedDigit().bold())
+                            }
+                            EmberProgressBar(progress: Double(min(used, cap)) / Double(max(1, cap)))
                         }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("App IDs this week")
+                        .accessibilityValue("\(used)/\(cap)")
                         .accessibilityIdentifier("expiry.budgetGauge")
                         if let next = model.budget.nextAvailable(now: model.now), next > model.now {
                             Text("Next free slot: \(next.formatted(date: .abbreviated, time: .shortened))").font(.caption)
@@ -111,9 +117,9 @@ struct ExpiryView: View {
 
     private func color(_ s: ExpiryStatus) -> Color {
         switch s {
-        case .healthy: return .green
-        case .refreshSoon: return .orange
-        case .expired: return .red
+        case .healthy: return Ember.ok
+        case .refreshSoon: return Ember.warnText
+        case .expired: return Ember.warnText
         }
     }
 }

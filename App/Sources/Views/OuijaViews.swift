@@ -48,7 +48,7 @@ struct MagicRingView: View {
                 .overlay {
                     Image(systemName: showResult ? (state.accepted ? "checkmark.seal.fill" : "xmark.octagon.fill") : "qrcode")
                         .font(.system(size: 54, weight: .semibold))
-                        .foregroundStyle(state.accepted ? Color.white : Color.red)
+                        .foregroundStyle(state.accepted ? Ember.studio : Ember.flame)
                         .contentTransition(.symbolEffect(.replace))
                 }
                 VStack(spacing: 6) {
@@ -75,7 +75,7 @@ struct MagicRingView: View {
     private func draw(_ ctx: inout GraphicsContext, size: CGSize, t: Double) {
         let c = CGPoint(x: size.width / 2, y: size.height / 2)
         let maxR = Double(min(size.width, size.height)) / 2 - 10
-        let palette: [Color] = state.accepted ? [.cyan, .purple, .mint, .indigo, .white] : [.red, .orange, .red, .pink, .orange]
+        let palette: [Color] = state.accepted ? [Ember.sand, Ember.flame, Ember.orange, Ember.red, Ember.studio] : [Ember.red, Ember.orange, Ember.red, Ember.charcoal, Ember.orange]
         let settle = showResult ? 1.0 : 0.0
         for i in 0..<5 {
             let k = Double(i)
@@ -132,7 +132,7 @@ struct OuijaScannerSheet: View {
                 .buttonStyle(.glass)
                 .accessibilityIdentifier("scan.photo")
                 if !message.isEmpty {
-                    Text(message).foregroundStyle(.orange).accessibilityIdentifier("scan.message")
+                    Text(message).foregroundStyle(Ember.warnText).accessibilityIdentifier("scan.message")
                 }
                 Spacer()
             }

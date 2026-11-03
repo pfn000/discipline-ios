@@ -27,7 +27,7 @@ enum AppearanceChoice: String, Codable, CaseIterable, Identifiable {
 }
 
 enum TintChoice: String, Codable, CaseIterable, Identifiable {
-    case ocean, violet, rose, mint, amber
+    case ember, flame, red, sand, steel
     var id: String { rawValue }
     var label: String { rawValue.capitalized }
 }
@@ -44,7 +44,7 @@ struct AppSettings: Codable, Equatable {
     var remindersEnabled: Bool = false
     var expectedTunnelIP: String = ""
     var appearance: AppearanceChoice = .system
-    var tint: TintChoice = .ocean
+    var tint: TintChoice = .ember
     var includePrereleases: Bool = false
     // v0.3
     var autoRefresh: Bool = true

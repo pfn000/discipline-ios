@@ -51,7 +51,7 @@ struct LabView: View {
                         .buttonStyle(.glass)
                         .accessibilityIdentifier("lab.inspect")
                 }
-                if let inspectError { Text(inspectError).foregroundStyle(.orange).font(.caption) }
+                if let inspectError { Text(inspectError).foregroundStyle(Ember.warnText).font(.caption) }
                 if let ins = inspection {
                     Text("\(ins.entitlementKeys.count) entitlements").font(.headline).accessibilityIdentifier("lab.entitlementCount")
                     ForEach(ins.entitlementSummary, id: \.key) { e in
@@ -62,11 +62,11 @@ struct LabView: View {
                     }
                     let blocked = ins.unsignable(for: model.settings.tier)
                     if blocked.isEmpty {
-                        Label("Your account can sign all of these", systemImage: "checkmark.seal").foregroundStyle(.green)
+                        Label("Your account can sign all of these", systemImage: "checkmark.seal").foregroundStyle(Ember.ok)
                             .accessibilityIdentifier("lab.allSignable")
                     } else {
                         Label("Can't sign on this account: \(blocked.joined(separator: ", "))", systemImage: "xmark.seal")
-                            .foregroundStyle(.orange).font(.caption)
+                            .foregroundStyle(Ember.warnText).font(.caption)
                             .accessibilityIdentifier("lab.unsignable")
                     }
                     if !ins.usageDescriptions.isEmpty {
@@ -96,7 +96,7 @@ struct LabView: View {
                 let blocked = preset.blocked(for: model.settings.tier)
                 Text(blocked.isEmpty ? "Everything selected is signable on your account."
                                      : "Left out for your account: " + blocked.map(\.name).joined(separator: ", "))
-                    .font(.caption).foregroundStyle(blocked.isEmpty ? .green : .orange)
+                    .font(.caption).foregroundStyle(blocked.isEmpty ? Ember.ok : Ember.warnText)
                     .accessibilityIdentifier("lab.presetStatus")
                 Button { copyEntitlements() } label: { Label("Copy entitlements plist", systemImage: "doc.on.doc") }
                     .buttonStyle(.glass)
@@ -116,7 +116,7 @@ struct LabView: View {
             }
             Section("Ouija Board") {
                 Text("Ouija Board is only meant for NCOM developers. It has its own screen now, laid out from the concept sketches: More → Ouija Board.")
-                    .font(.caption).foregroundStyle(.orange)
+                    .font(.caption).foregroundStyle(Ember.warnText)
                     .accessibilityIdentifier("lab.prototypeWarning")
             }
 

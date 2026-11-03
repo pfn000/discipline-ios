@@ -9,6 +9,11 @@ iOS 26 Liquid Glass (`.glassEffect` / `GlassEffectContainer` / `.buttonStyle(.gl
 already use official glass, with the glass **removed** (opaque system fill), so either way B shows the other choice.
 System UI (tab bar, nav bars, search, sheets, dialogs) is drawn by iOS 26 as Liquid Glass automatically; it is shown once, as it is.
 
+Ember palette pass (Nov 3 2026, branch `discipline-ember-glass`): every colour now comes from `App/Sources/Theme/EmberTheme.swift`,
+Saidie's own nine values (orange #E85002; gradient #000000 → #C10801 → #F16001 → #D9C3AB; #333333, #646464, #A7A7A7, #F9F9F9).
+No purple, blue, green or gold remains in Discipline's screens. Status colours stay inside the palette: fine = sand (dark) / steel (light),
+soon = orange, expired = red.
+
 Status key: glass = official Liquid Glass today · none = no glass today · system = Apple system UI/control · background = the colour glass refracts.
 
 | # | Element | Status today | Source |
@@ -30,12 +35,12 @@ Status key: glass = official Liquid Glass today · none = no glass today · syst
 | 15 | Tinted glass card | official Liquid Glass now | Components.swift (GlassCard tinted): Home hero, IPA header, Support |
 | 16 | Stat tile | official Liquid Glass now | Visuals.swift (StatTile) |
 | 17 | Stat strip (3 tiles that merge) | official Liquid Glass now | Visuals.swift (StatStrip): Home, Library, GitHub |
-| 18 | Stat tile icon disc | official Liquid Glass now | Visuals.swift (StatTile) |
-| 19 | Ring gauge (signature time left) | official Liquid Glass now | Visuals.swift (RingGauge): Home hero |
+| 18 | Stat tile icon disc | no glass now (flat Ember disc: it sits inside a glass tile, no glass on glass) | Visuals.swift (StatTile) |
+| 19 | Ring gauge (signature time left, glowing gradient ring) | no glass now in the Home hero (inside a glass card); the component keeps an official glass disc option | Visuals.swift (RingGauge): Home hero |
 | 20 | Big countdown (“2d 4h left on Delta”) | no glass now | HomeView.swift (expiryHero) |
 | 21 | Signatures bar chart | no glass now | Visuals.swift (ExpiryChart): Home, Expiry |
 | 22 | Kit gauge (circular 2/3) | no glass now | HomeView.swift (companionsCard) |
-| 23 | Companion status disc (✓ / ↓) | official Liquid Glass now | HomeView.swift (companionsCard) |
+| 23 | Companion status disc (✓ / ↓) | no glass now (flat Ember disc inside a glass card) | HomeView.swift (companionsCard) |
 | 24 | Companion row (disc, name, role, Open) | no glass now | HomeView.swift (companionsCard) |
 | 25 | VPN status line (Loopback VPN ● On + interface) | no glass now | HomeView.swift (vpnCard) |
 | 26 | Status dots (green / orange) | no glass now | Components.swift (StatusDot) |
@@ -56,7 +61,7 @@ Status key: glass = official Liquid Glass today · none = no glass today · syst
 | 41 | Update badge | official Liquid Glass now | GitHubView.swift |
 | 42 | FEATURED badge (on trending card) | no glass now | StoreViews.swift (TrendingCard) |
 | 43 | Capability verdict text (✅ / ⚠️ / ❌) | no glass now | LabView.swift (Capability map) |
-| 44 | Trending card (artwork gradient) | no glass now | StoreViews.swift (TrendingCard) |
+| 44 | Trending card (official glass over her black → red → flame → sand gradient) | official Liquid Glass now | StoreViews.swift (TrendingCard) |
 | 45 | Store app row | no glass now | StoreViews.swift (StoreRow) |
 | 46 | Store app icon (with hairline) | no glass now | StoreViews.swift (StoreIcon) |
 | 47 | Library app icon | no glass now | Components.swift (AppIconView) |
@@ -79,7 +84,7 @@ Status key: glass = official Liquid Glass today · none = no glass today · syst
 | 64 | Signed-in account row | no glass now | OuijaSignInViews.swift (SignInWithOuijaSection) |
 | 65 | “Install Ouija to pair” block | no glass now | OuijaSignInViews.swift (SignInWithOuijaSection) |
 | 66 | Toggle row (Auto refresh, Check automatically) | Apple system UI | ExpiryView, UpdatesView, MoreView (Settings), LabView |
-| 67 | App ID budget gauge (3/10) | no glass now | ExpiryView.swift |
+| 67 | Glowing gradient progress bar (App IDs 3/10; also the Home hero) | official Liquid Glass now (capsule) | Theme/EmberTheme.swift (EmberProgressBar): ExpiryView.swift, HomeView.swift |
 | 68 | Menu picker (Appearance, Glass tint, Apple account, Send to) | Apple system UI | MoreView.swift (Settings), LibraryView.swift, LabView.swift |
 | 69 | Text field (App name, repo, source URL) | Apple system UI | ExpiryView, GitHubView, StoreViews, LibraryView, LabView, MoreView |
 | 70 | Secure field (GitHub token) | Apple system UI | MoreView.swift (Settings) |

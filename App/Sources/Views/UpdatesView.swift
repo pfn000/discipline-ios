@@ -21,7 +21,7 @@ struct UpdatesView: View {
                     Button { Task { await model.downloadSelfUpdate() } } label: {
                         Label("Download \(u.tagName)", systemImage: "arrow.down.circle.fill")
                     }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.emberProminent)
                     .accessibilityIdentifier("updates.download")
                 }
                 Button { Task { await model.checkSelfUpdate() } } label: {

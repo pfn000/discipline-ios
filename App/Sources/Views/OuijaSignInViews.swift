@@ -94,7 +94,7 @@ struct SignInWithOuijaSection: View {
             if let name = link.accountName {
                 HStack(spacing: 14) {
                     Image(systemName: "person.crop.circle.badge.checkmark")
-                        .font(.system(size: 30)).foregroundStyle(.green)
+                        .font(.system(size: 30)).foregroundStyle(Ember.ok)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(name).font(.headline).accessibilityIdentifier("ouijaSignIn.account")
                         Text("Signed in with Ouija · key \(link.keyFingerprint ?? "?")")
@@ -110,7 +110,7 @@ struct SignInWithOuijaSection: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 4)
                 }
-                .buttonStyle(.glassProminent)
+                .buttonStyle(.emberProminent)
                 .accessibilityIdentifier("ouijaSignIn.button")
             } else {
                 VStack(alignment: .leading, spacing: 6) {

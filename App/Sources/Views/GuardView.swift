@@ -28,7 +28,7 @@ struct GuardView: View {
                 if let scanned {
                     if scanned.findings.isEmpty {
                         Label("No known trackers found in \(scanned.name)", systemImage: "checkmark.shield")
-                            .foregroundStyle(.green).accessibilityIdentifier("guard.clean")
+                            .foregroundStyle(Ember.ok).accessibilityIdentifier("guard.clean")
                     } else {
                         Text("\(scanned.findings.count) tracker SDK\(scanned.findings.count == 1 ? "" : "s") in \(scanned.name)")
                             .font(.headline).accessibilityIdentifier("guard.findingsCount")
@@ -59,7 +59,7 @@ struct GuardView: View {
                             }
                             if !app.trackerDomains.isEmpty {
                                 Text("Trackers: " + app.trackerDomains.sorted { $0.key < $1.key }.map { "\($0.value) (\($0.key))" }.joined(separator: ", "))
-                                    .font(.caption).foregroundStyle(.orange)
+                                    .font(.caption).foregroundStyle(Ember.warnText)
                             }
                             Text("\(app.domains.count) domains").font(.caption2).foregroundStyle(.secondary)
                         }

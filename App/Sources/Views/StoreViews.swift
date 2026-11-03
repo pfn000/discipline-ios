@@ -134,9 +134,8 @@ struct StoreBrowseView: View {
         }
         // glass-ok: the chip's capsule is native .glassEffect (applied just below)
         .buttonStyle(.plain)
-        .foregroundStyle(selected ? Color.white : Color.primary)
-        .background(selected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.clear), in: Capsule())
-        .glassEffect(selected ? .regular.tint(.accentColor) : .regular, in: Capsule())
+        .foregroundStyle(selected ? Ember.onAccent : Color.primary)
+        .glassEffect(selected ? .regular.tint(Ember.accent).interactive() : .regular.interactive(), in: Capsule())
         .accessibilityIdentifier("store.category.\(title)")
     }
 
@@ -196,12 +195,8 @@ struct StoreIcon: View {
 }
 
 extension StoreApp {
-    var tintColor: Color {
-        guard var t = tint?.trimmingCharacters(in: .whitespaces) else { return .accentColor }
-        if t.hasPrefix("#") { t.removeFirst() }
-        guard t.count == 6, let v = UInt32(t, radix: 16) else { return .accentColor }
-        return Color(red: Double((v >> 16) & 0xFF) / 255, green: Double((v >> 8) & 0xFF) / 255, blue: Double(v & 0xFF) / 255)
-    }
+    /// The catalog's own hex tint is no longer drawn: every card uses the Ember palette (no off-palette colours).
+    var tintColor: Color { Ember.accent }
 }
 
 struct TrendingCard: View {
@@ -216,7 +211,7 @@ struct TrendingCard: View {
                 if app.featured {
                     Text("FEATURED").font(.caption2.weight(.bold)).tracking(0.8)
                         .padding(.horizontal, 8).padding(.vertical, 4)
-                        .background(.white.opacity(0.22), in: Capsule())
+                        .background(Ember.black.opacity(0.45), in: Capsule())
                 }
             }
             Spacer(minLength: 0)
@@ -227,10 +222,11 @@ struct TrendingCard: View {
         .foregroundStyle(.white)
         .padding(18)
         .frame(width: 290, height: 220, alignment: .topLeading)
-        .background {
-            LinearGradient(colors: [app.tintColor, app.tintColor.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                .overlay(LinearGradient(colors: [.clear, .black.opacity(0.35)], startPoint: .top, endPoint: .bottom))
-        }
+        // Official Liquid Glass over her gradient (black → red → flame → sand), read as dark so text stays white.
+        .glassEffect(.regular.tint(Ember.black.opacity(0.18)),
+                     in: .rect(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
+        .background(Ember.heroGradient, in: RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
+        .environment(\.colorScheme, .dark)
         .clipShape(RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
     }
@@ -248,8 +244,9 @@ struct StoreRow: View {
                     .font(.caption).foregroundStyle(.tertiary).lineLimit(1)
             }
             Spacer(minLength: 8)
-            Text("Get").font(.subheadline.bold()).padding(.horizontal, 16).padding(.vertical, 6)
-                .glassEffect(.regular.tint(.accentColor.opacity(0.25)), in: Capsule())
+            Text("Get").font(.subheadline.bold()).foregroundStyle(Ember.onAccent)
+                .padding(.horizontal, 16).padding(.vertical, 6)
+                .glassEffect(.regular.tint(Ember.accent), in: Capsule())
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 8)
@@ -274,7 +271,7 @@ struct StoreAppDetail: View {
                         Button { get() } label: {
                             Text("Get").font(.headline).padding(.horizontal, 26).padding(.vertical, 4)
                         }
-                        .buttonStyle(.glassProminent)
+                        .buttonStyle(.emberProminent)
                         .accessibilityIdentifier("store.get")
                     }
                 }
@@ -379,12 +376,12 @@ struct StoreSourcesSheet: View {
                         VStack(alignment: .leading, spacing: 3) {
                             HStack {
                                 Text(s.source.name).font(.headline)
-                                if s.source.builtIn { Image(systemName: "checkmark.seal.fill").foregroundStyle(.blue).font(.caption).accessibilityLabel("verified") }
+                                if s.source.builtIn { Image(systemName: "checkmark.seal.fill").foregroundStyle(Ember.accentText).font(.caption).accessibilityLabel("verified") }
                             }
                             Text(s.source.url).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                             if let e = s.error {
                                 Text(s.fromCache ? "\(e). Showing the copy from \(s.fetchedAt?.formatted(date: .abbreviated, time: .shortened) ?? "earlier")." : "Couldn't load: \(e)")
-                                    .font(.caption).foregroundStyle(.orange)
+                                    .font(.caption).foregroundStyle(Ember.warnText)
                             } else if s.fetchedAt != nil {
                                 Text("\(s.appCount) apps").font(.caption).foregroundStyle(.secondary)
                             }

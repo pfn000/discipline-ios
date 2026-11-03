@@ -32,10 +32,10 @@ struct GalleryItem: Identifiable {
     }
     var statusColor: Color {
         switch status {
-        case .glass: return .green
-        case .none: return .gray
-        case .system: return .blue
-        case .na: return .gray
+        case .glass: return Ember.accentText
+        case .none: return Ember.muted
+        case .system: return Ember.ok
+        case .na: return Ember.muted
         }
     }
 }
@@ -58,12 +58,12 @@ let galleryItems: [GalleryItem] = [
     GalleryItem(id: 15, key: .glassCardTinted, name: "Tinted glass card", file: "Components.swift (GlassCard tinted): Home hero, IPA header, Support", status: .glass, layout: .stack),
     GalleryItem(id: 16, key: .statTile, name: "Stat tile", file: "Visuals.swift (StatTile)", status: .glass, layout: .pair),
     GalleryItem(id: 17, key: .statStrip, name: "Stat strip (3 tiles that merge)", file: "Visuals.swift (StatStrip): Home, Library, GitHub", status: .glass, layout: .stack),
-    GalleryItem(id: 18, key: .statIconDisc, name: "Stat tile icon disc", file: "Visuals.swift (StatTile)", status: .glass, layout: .pair),
-    GalleryItem(id: 19, key: .ringGauge, name: "Ring gauge (signature time left)", file: "Visuals.swift (RingGauge): Home hero", status: .glass, layout: .pair),
+    GalleryItem(id: 18, key: .statIconDisc, name: "Stat tile icon disc", file: "Visuals.swift (StatTile)", status: .none, layout: .pair),
+    GalleryItem(id: 19, key: .ringGauge, name: "Ring gauge (signature time left)", file: "Visuals.swift (RingGauge): Home hero", status: .none, layout: .pair),
     GalleryItem(id: 20, key: .countdown, name: "Big countdown (“2d 4h left on Delta”)", file: "HomeView.swift (expiryHero)", status: .none, layout: .pair),
     GalleryItem(id: 21, key: .expiryChart, name: "Signatures bar chart", file: "Visuals.swift (ExpiryChart): Home, Expiry", status: .none, layout: .stack),
     GalleryItem(id: 22, key: .kitGauge, name: "Kit gauge (circular 2/3)", file: "HomeView.swift (companionsCard)", status: .none, layout: .pair),
-    GalleryItem(id: 23, key: .companionDisc, name: "Companion status disc (✓ / ↓)", file: "HomeView.swift (companionsCard)", status: .glass, layout: .pair),
+    GalleryItem(id: 23, key: .companionDisc, name: "Companion status disc (✓ / ↓)", file: "HomeView.swift (companionsCard)", status: .none, layout: .pair),
     GalleryItem(id: 24, key: .companionRow, name: "Companion row (disc, name, role, Open)", file: "HomeView.swift (companionsCard)", status: .none, layout: .stack),
     GalleryItem(id: 25, key: .vpnHeader, name: "VPN status line (Loopback VPN ● On + interface)", file: "HomeView.swift (vpnCard)", status: .none, layout: .stack),
     GalleryItem(id: 26, key: .statusDot, name: "Status dots (green / orange)", file: "Components.swift (StatusDot)", status: .none, layout: .pair),
@@ -84,7 +84,7 @@ let galleryItems: [GalleryItem] = [
     GalleryItem(id: 41, key: .badgeUpdate, name: "Update badge", file: "GitHubView.swift", status: .glass, layout: .pair),
     GalleryItem(id: 42, key: .badgeFeatured, name: "FEATURED badge (on trending card)", file: "StoreViews.swift (TrendingCard)", status: .none, layout: .pair),
     GalleryItem(id: 43, key: .capabilityBadge, name: "Capability verdict text (✅ / ⚠️ / ❌)", file: "LabView.swift (Capability map)", status: .none, layout: .stack),
-    GalleryItem(id: 44, key: .trendingCard, name: "Trending card (artwork gradient)", file: "StoreViews.swift (TrendingCard)", status: .none, layout: .stack),
+    GalleryItem(id: 44, key: .trendingCard, name: "Trending card (glass over her gradient)", file: "StoreViews.swift (TrendingCard)", status: .glass, layout: .stack),
     GalleryItem(id: 45, key: .storeRow, name: "Store app row", file: "StoreViews.swift (StoreRow)", status: .none, layout: .stack),
     GalleryItem(id: 46, key: .storeIcon, name: "Store app icon (with hairline)", file: "StoreViews.swift (StoreIcon)", status: .none, layout: .pair),
     GalleryItem(id: 47, key: .appIcon, name: "Library app icon", file: "Components.swift (AppIconView)", status: .none, layout: .pair),
@@ -107,7 +107,7 @@ let galleryItems: [GalleryItem] = [
     GalleryItem(id: 64, key: .accountRow, name: "Signed-in account row", file: "OuijaSignInViews.swift (SignInWithOuijaSection)", status: .none, layout: .stack),
     GalleryItem(id: 65, key: .installOuijaBlock, name: "“Install Ouija to pair” block", file: "OuijaSignInViews.swift (SignInWithOuijaSection)", status: .none, layout: .stack),
     GalleryItem(id: 66, key: .toggle, name: "Toggle row (Auto refresh, Check automatically)", file: "ExpiryView, UpdatesView, MoreView (Settings), LabView", status: .system, layout: .stack),
-    GalleryItem(id: 67, key: .budgetGauge, name: "App ID budget gauge (3/10)", file: "ExpiryView.swift", status: .none, layout: .stack),
+    GalleryItem(id: 67, key: .budgetGauge, name: "Glowing gradient progress bar (App IDs 3/10, Home hero)", file: "Theme/EmberTheme.swift (EmberProgressBar): ExpiryView, HomeView", status: .glass, layout: .stack),
     GalleryItem(id: 68, key: .menuPicker, name: "Menu picker (Appearance, Glass tint, Apple account, Send to)", file: "MoreView.swift (Settings), LibraryView.swift, LabView.swift", status: .system, layout: .stack),
     GalleryItem(id: 69, key: .textField, name: "Text field (App name, repo, source URL)", file: "ExpiryView, GitHubView, StoreViews, LibraryView, LabView, MoreView", status: .system, layout: .stack),
     GalleryItem(id: 70, key: .secureField, name: "Secure field (GitHub token)", file: "MoreView.swift (Settings)", status: .system, layout: .stack),
@@ -116,11 +116,11 @@ let galleryItems: [GalleryItem] = [
 ]
 
 enum GalleryColors {
-    static func page(_ s: ColorScheme) -> Color { s == .dark ? Color(white: 0.07) : Color(white: 0.86) }
-    static func stripeA(_ s: ColorScheme) -> Color { s == .dark ? Color(white: 0.13) : Color(white: 0.80) }
-    static func stripeB(_ s: ColorScheme) -> Color { s == .dark ? Color(white: 0.19) : Color(white: 0.74) }
+    static func page(_ s: ColorScheme) -> Color { s == .dark ? Ember.black : Ember.studio }
+    static func stripeA(_ s: ColorScheme) -> Color { s == .dark ? Ember.charcoal.opacity(0.45) : Ember.silver.opacity(0.22) }
+    static func stripeB(_ s: ColorScheme) -> Color { s == .dark ? Ember.charcoal.opacity(0.75) : Ember.silver.opacity(0.38) }
     /// The non-glass surface used for "glass removed" (an opaque system fill, not a blur).
-    static let flat = Color(.secondarySystemGroupedBackground)
+    static let flat = Ember.surface
 }
 
 /// Neutral grey diagonal stripes behind each specimen, the same under A and B, so glass has something to bend.
@@ -151,7 +151,7 @@ struct SystemNote: View {
     let text: String
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: symbol).font(.title2).foregroundStyle(.blue)
+            Image(systemName: symbol).font(.title2).foregroundStyle(Ember.accentText)
             Text(text).font(.subheadline).fixedSize(horizontal: false, vertical: true)
         }
         .padding(16)
@@ -183,7 +183,7 @@ struct FlatStatTile: View {
     let value: String
     let label: String
     let systemImage: String
-    var tint: Color = .blue
+    var tint: Color = Ember.accentText
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Image(systemName: systemImage).font(.headline).foregroundStyle(tint)
@@ -220,9 +220,9 @@ struct FlatRingGauge: View {
 /// ExpiryChart's exact marks with three sample apps (the real chart reads the tracked apps).
 struct GalleryChart: View {
     private struct Row: Identifiable { let id: String; let days: Double; let color: Color; let text: String }
-    private let rows = [Row(id: "Delta", days: 5.1, color: .green, text: "5d 3h"),
-                        Row(id: "Provenance", days: 1.1, color: .orange, text: "1d 2h"),
-                        Row(id: "uYou", days: 0, color: .red, text: "Expired")]
+    private let rows = [Row(id: "Delta", days: 5.1, color: Ember.ok, text: "5d 3h"),
+                        Row(id: "Provenance", days: 1.1, color: Ember.warn, text: "1d 2h"),
+                        Row(id: "uYou", days: 0, color: Ember.bad, text: "Expired")]
     var body: some View {
         Chart(rows) { r in
             BarMark(x: .value("Days left", r.days), y: .value("App", r.id))
@@ -267,9 +267,9 @@ struct GalleryChip: View {
     let glass: Bool
     var body: some View {
         let label = Text(title).font(.subheadline.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
-            .foregroundStyle(selected ? Color.white : Color.primary)
-            .background(selected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.clear), in: Capsule())
-        if glass { label.glassEffect(selected ? .regular.tint(.accentColor) : .regular, in: Capsule()) }
+            .foregroundStyle(selected ? Ember.onAccent : Color.primary)
+            .background(selected ? AnyShapeStyle(Ember.accent) : AnyShapeStyle(Color.clear), in: Capsule())
+        if glass { label.glassEffect(selected ? .regular.tint(Ember.accent) : .regular, in: Capsule()) }
         else { label.background(GalleryColors.flat, in: Capsule()) }
     }
 }
@@ -278,14 +278,13 @@ struct GalleryChip: View {
 struct GalleryTrendingCard: View {
     let glass: Bool
     var body: some View {
-        let tint = Color.teal
         let content = VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
-                GalleryIcon(size: 64, colors: [.orange, .red], symbol: "gamecontroller.fill", hairline: true)
+                GalleryIcon(size: 64, colors: [Ember.flame, Ember.red], symbol: "gamecontroller.fill", hairline: true)
                 Spacer()
                 Text("FEATURED").font(.caption2.weight(.bold)).tracking(0.8)
                     .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(.white.opacity(0.22), in: Capsule())
+                    .background(Ember.black.opacity(0.45), in: Capsule())
             }
             Spacer(minLength: 0)
             Text("Delta").font(.title3.bold()).lineLimit(1)
@@ -295,15 +294,16 @@ struct GalleryTrendingCard: View {
         .foregroundStyle(.white)
         .padding(18)
         .frame(width: 290, height: 220, alignment: .topLeading)
+        let shape = RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous)
         if glass {
-            content.glassEffect(.regular.tint(tint.opacity(0.55)), in: .rect(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
+            content.glassEffect(.regular.tint(Ember.black.opacity(0.18)), in: shape)
+                .background(Ember.heroGradient, in: shape)
+                .environment(\.colorScheme, .dark)
+                .clipShape(shape)
         } else {
             content
-                .background {
-                    LinearGradient(colors: [tint, tint.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                        .overlay(LinearGradient(colors: [.clear, .black.opacity(0.35)], startPoint: .top, endPoint: .bottom))
-                }
-                .clipShape(RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
+                .background(Ember.heroGradient, in: shape)
+                .clipShape(shape)
         }
     }
 }
@@ -330,7 +330,7 @@ extension View {
     func flatButton(prominent: Bool, tint: Color) -> some View {
         self.font(.body.weight(.medium))
             .padding(.horizontal, 16).padding(.vertical, 10)
-            .foregroundStyle(prominent ? Color.white : Color.primary)
+            .foregroundStyle(prominent ? Ember.onAccent : Color.primary)
             .background(prominent ? AnyShapeStyle(tint) : AnyShapeStyle(GalleryColors.flat), in: .capsule)
     }
 }
@@ -403,7 +403,7 @@ struct ElementGalleryView: View {
     }
 
     private func companionDisc(ok: Bool, glass: Bool) -> some View {
-        let c: Color = ok ? .green : .orange
+        let c: Color = ok ? Ember.ok : Ember.warn
         let icon = Image(systemName: ok ? "checkmark" : "arrow.down").font(.subheadline.weight(.bold)).foregroundStyle(c)
             .frame(width: 34, height: 34)
         return Group {
@@ -614,7 +614,7 @@ struct ElementGalleryView: View {
     @ViewBuilder private func e_toast(_ b: Bool, _ t: Color) -> some View {
         if b {
             HStack(spacing: 8) {
-                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                Image(systemName: "checkmark.circle.fill").foregroundStyle(Ember.ok)
                 Text("Status updated").font(.subheadline.weight(.semibold))
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
@@ -662,30 +662,27 @@ struct ElementGalleryView: View {
         if b {
             HStack(spacing: 10) {
                 FlatStatTile(value: "3", label: "Tracked", systemImage: "timer", tint: t)
-                FlatStatTile(value: "5", label: "In Library", systemImage: "shippingbox", tint: .purple)
-                FlatStatTile(value: "1", label: "Updates", systemImage: "arrow.down.app", tint: .green)
+                FlatStatTile(value: "5", label: "In Library", systemImage: "shippingbox", tint: Ember.muted)
+                FlatStatTile(value: "1", label: "Updates", systemImage: "arrow.down.app", tint: Ember.ok)
             }
         } else {
             StatStrip {
                 StatTile(value: "3", label: "Tracked", systemImage: "timer", tint: t, id: "gallery.strip.1")
-                StatTile(value: "5", label: "In Library", systemImage: "shippingbox", tint: .purple, id: "gallery.strip.2")
-                StatTile(value: "1", label: "Updates", systemImage: "arrow.down.app", tint: .green, id: "gallery.strip.3")
+                StatTile(value: "5", label: "In Library", systemImage: "shippingbox", tint: Ember.muted, id: "gallery.strip.2")
+                StatTile(value: "1", label: "Updates", systemImage: "arrow.down.app", tint: Ember.ok, id: "gallery.strip.3")
             }
         }
     }
 
     @ViewBuilder private func e_statIconDisc(_ b: Bool, _ t: Color) -> some View {
         let icon = Image(systemName: "timer").font(.headline).foregroundStyle(t).frame(width: 32, height: 32)
-        if b { icon.background(t.opacity(0.22), in: .circle) }
-        else { icon.glassEffect(.regular.tint(t.opacity(0.22)), in: .circle) }
+        if b { icon.glassEffect(.regular.tint(t.opacity(0.22)), in: .circle) }
+        else { icon.background(t.opacity(0.16), in: .circle) }
     }
 
     @ViewBuilder private func e_ringGauge(_ b: Bool, _ t: Color) -> some View {
-        if b { FlatRingGauge(progress: 0.62, tint: .green) }
-        else {
-            RingGauge(progress: 0.62, tint: .green) {
-                Image(systemName: "timer").font(.title.weight(.semibold)).foregroundStyle(.green)
-            }
+        RingGauge(progress: 0.62, tint: Ember.ok, glass: b) {
+            Image(systemName: "timer").font(.title.weight(.semibold)).foregroundStyle(Ember.accentText)
         }
     }
 
@@ -711,14 +708,14 @@ struct ElementGalleryView: View {
 
     @ViewBuilder private func e_companionDisc(_ b: Bool, _ t: Color) -> some View {
         HStack(spacing: 14) {
-            companionDisc(ok: true, glass: !b)
-            companionDisc(ok: false, glass: !b)
+            companionDisc(ok: true, glass: b)
+            companionDisc(ok: false, glass: b)
         }
     }
 
     @ViewBuilder private func e_companionRow(_ b: Bool, _ t: Color) -> some View {
         let row = HStack(spacing: 12) {
-            companionDisc(ok: true, glass: true)
+            companionDisc(ok: true, glass: false)
             VStack(alignment: .leading, spacing: 2) {
                 Text("SideStore").font(.subheadline.weight(.semibold))
                 Text("Signs and refreshes your apps").font(.caption).foregroundStyle(.secondary)
@@ -755,7 +752,7 @@ struct ElementGalleryView: View {
 
     @ViewBuilder private func e_btnProminent(_ b: Bool, _ t: Color) -> some View {
         if b { Label("Refresh All", systemImage: "arrow.triangle.2.circlepath").flatButton(prominent: true, tint: t) }
-        else { Button {} label: { Label("Refresh All", systemImage: "arrow.triangle.2.circlepath") }.buttonStyle(.glassProminent) }
+        else { Button {} label: { Label("Refresh All", systemImage: "arrow.triangle.2.circlepath") }.buttonStyle(.emberProminent) }
     }
 
     @ViewBuilder private func e_btnGlass(_ b: Bool, _ t: Color) -> some View {
@@ -773,7 +770,7 @@ struct ElementGalleryView: View {
             GlassEffectContainer(spacing: 12) {
                 HStack(spacing: 12) {
                     Button {} label: { Label("Turn on", systemImage: "bolt.horizontal.circle").frame(maxWidth: .infinity) }
-                        .buttonStyle(.glassProminent)
+                        .buttonStyle(.emberProminent)
                     Button {} label: { Label("Turn off", systemImage: "bolt.slash").frame(maxWidth: .infinity) }
                         .buttonStyle(.glass)
                 }
@@ -793,12 +790,12 @@ struct ElementGalleryView: View {
         let label = Label("Sign in with Ouija / NCOM", systemImage: "person.badge.key.fill")
             .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 4)
         if b { label.flatButton(prominent: true, tint: t) }
-        else { Button {} label: { label }.buttonStyle(.glassProminent) }
+        else { Button {} label: { label }.buttonStyle(.emberProminent) }
     }
 
     @ViewBuilder private func e_btnGetLarge(_ b: Bool, _ t: Color) -> some View {
         let label = Text("Get").font(.headline).padding(.horizontal, 26).padding(.vertical, 4)
-        if b { label.flatButton(prominent: true, tint: t) } else { Button {} label: { label }.buttonStyle(.glassProminent) }
+        if b { label.flatButton(prominent: true, tint: t) } else { Button {} label: { label }.buttonStyle(.emberProminent) }
     }
 
     @ViewBuilder private func e_btnListAction(_ b: Bool, _ t: Color) -> some View {
@@ -825,29 +822,29 @@ struct ElementGalleryView: View {
     }
 
     @ViewBuilder private func e_getPill(_ b: Bool, _ t: Color) -> some View {
-        let pill = Text("Get").font(.subheadline.bold()).padding(.horizontal, 16).padding(.vertical, 6)
-        if b { pill.background(Color.accentColor.opacity(0.25), in: .capsule) }
-        else { pill.glassEffect(.regular.tint(.accentColor.opacity(0.25)), in: .capsule) }
+        let pill = Text("Get").font(.subheadline.bold()).foregroundStyle(Ember.onAccent).padding(.horizontal, 16).padding(.vertical, 6)
+        if b { pill.background(Ember.accent, in: .capsule) }
+        else { pill.glassEffect(.regular.tint(Ember.accent), in: .capsule) }
     }
 
     @ViewBuilder private func e_badgePre(_ b: Bool, _ t: Color) -> some View {
-        let tag = Text("PRE").font(.caption2.bold()).padding(.horizontal, 6)
-        if b { tag.background(Color.orange, in: .capsule) } else { tag.glassEffect(.regular.tint(.orange), in: .capsule) }
+        let tag = Text("PRE").font(.caption2.bold()).foregroundStyle(Ember.onAccent).padding(.horizontal, 6)
+        if b { tag.background(Ember.orange, in: .capsule) } else { tag.glassEffect(.regular.tint(Ember.orange), in: .capsule) }
     }
 
     @ViewBuilder private func e_badgeUpdate(_ b: Bool, _ t: Color) -> some View {
-        let tag = Text("Update").font(.caption.bold()).padding(.horizontal, 8).padding(.vertical, 2)
-        if b { tag.background(Color.green, in: .capsule) } else { tag.glassEffect(.regular.tint(.green), in: .capsule) }
+        let tag = Text("Update").font(.caption.bold()).foregroundStyle(Ember.onAccent).padding(.horizontal, 8).padding(.vertical, 2)
+        if b { tag.background(Ember.orange, in: .capsule) } else { tag.glassEffect(.regular.tint(Ember.orange), in: .capsule) }
     }
 
     @ViewBuilder private func e_badgeFeatured(_ b: Bool, _ t: Color) -> some View {
         let tag = Text("FEATURED").font(.caption2.weight(.bold)).tracking(0.8).foregroundStyle(.white)
             .padding(.horizontal, 8).padding(.vertical, 4)
         Group {
-            if b { tag.glassEffect(.regular, in: .capsule) } else { tag.background(.white.opacity(0.22), in: Capsule()) }
+            if b { tag.glassEffect(.regular, in: .capsule) } else { tag.background(Ember.black.opacity(0.45), in: Capsule()) }
         }
         .padding(14)
-        .background(LinearGradient(colors: [.teal, .teal.opacity(0.55)], startPoint: .topLeading, endPoint: .bottomTrailing),
+        .background(Ember.heroGradient,
                     in: .rect(cornerRadius: 16, style: .continuous))
     }
 
@@ -867,7 +864,7 @@ struct ElementGalleryView: View {
 
     @ViewBuilder private func e_storeRow(_ b: Bool, _ t: Color) -> some View {
         let row = HStack(spacing: 14) {
-            GalleryIcon(size: 58, colors: [.orange, .red], symbol: "gamecontroller.fill")
+            GalleryIcon(size: 58, colors: [Ember.flame, Ember.red], symbol: "gamecontroller.fill")
             VStack(alignment: .leading, spacing: 3) {
                 Text("Delta").font(.headline).lineLimit(1)
                 Text("Game emulator").font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
@@ -875,19 +872,19 @@ struct ElementGalleryView: View {
             }
             Spacer(minLength: 8)
             Text("Get").font(.subheadline.bold()).padding(.horizontal, 16).padding(.vertical, 6)
-                .glassEffect(.regular.tint(.accentColor.opacity(0.25)), in: Capsule())
+                .glassEffect(.regular.tint(Ember.accent.opacity(0.25)), in: Capsule())
         }
         if b { row.padding(14).glassEffect(.regular, in: .rect(cornerRadius: DisciplineShape.cornerRadius, style: .continuous)) }
         else { row.padding(.vertical, 8) }
     }
 
     @ViewBuilder private func e_storeIcon(_ b: Bool, _ t: Color) -> some View {
-        let icon = GalleryIcon(size: 60, colors: [.orange, .red], symbol: "gamecontroller.fill", hairline: true)
+        let icon = GalleryIcon(size: 60, colors: [Ember.flame, Ember.red], symbol: "gamecontroller.fill", hairline: true)
         if b { icon.padding(8).glassEffect(.regular, in: .rect(cornerRadius: 22, style: .continuous)) } else { icon }
     }
 
     @ViewBuilder private func e_appIcon(_ b: Bool, _ t: Color) -> some View {
-        let icon = GalleryIcon(size: 56, colors: [.blue, .cyan], symbol: "music.note")
+        let icon = GalleryIcon(size: 56, colors: [Ember.charcoal, Ember.steel], symbol: "music.note")
         if b { icon.padding(8).glassEffect(.regular, in: .rect(cornerRadius: 22, style: .continuous)) } else { icon }
     }
 
@@ -902,7 +899,7 @@ struct ElementGalleryView: View {
     }
 
     @ViewBuilder private func e_screenshotThumb(_ b: Bool, _ t: Color) -> some View {
-        let shot = LinearGradient(colors: [.indigo.opacity(0.7), .teal.opacity(0.7)], startPoint: .top, endPoint: .bottom)
+        let shot = LinearGradient(colors: [Ember.charcoal, Ember.steel], startPoint: .top, endPoint: .bottom)
             .frame(width: 92, height: 170)
             .clipShape(.rect(cornerRadius: 22, style: .continuous))
         if b { shot.padding(8).glassEffect(.regular, in: .rect(cornerRadius: 28, style: .continuous)) } else { shot }
@@ -915,7 +912,7 @@ struct ElementGalleryView: View {
                 Text("https://apps.altstore.io").font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            Image(systemName: "checkmark.seal.fill").foregroundStyle(.blue).font(.caption)
+            Image(systemName: "checkmark.seal.fill").foregroundStyle(Ember.accentText).font(.caption)
         }
         if b { glassRow(row) } else { cellRow(row) }
     }
@@ -972,7 +969,7 @@ struct ElementGalleryView: View {
 
     @ViewBuilder private func e_libraryRow(_ b: Bool, _ t: Color) -> some View {
         let row = HStack(spacing: 12) {
-            GalleryIcon(size: 44, colors: [.blue, .cyan], symbol: "music.note")
+            GalleryIcon(size: 44, colors: [Ember.charcoal, Ember.steel], symbol: "music.note")
             VStack(alignment: .leading) {
                 Text("Eclipse").font(.headline)
                 Text("1.4.2 \u{00B7} Imported from Files").font(.caption).foregroundStyle(.secondary)
@@ -995,7 +992,7 @@ struct ElementGalleryView: View {
                 Text("7-day signature").font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            Text("5d 3h").font(.subheadline.monospacedDigit().bold()).foregroundStyle(.green)
+            Text("5d 3h").font(.subheadline.monospacedDigit().bold()).foregroundStyle(Ember.ok)
             Button("Refreshed") {}.buttonStyle(.glass)
         }
         if b { glassRow(row) } else { cellRow(row) }
@@ -1008,25 +1005,25 @@ struct ElementGalleryView: View {
                 Text("38.2 MB").font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            Button("Get") {}.buttonStyle(.glassProminent)
+            Button("Get") {}.buttonStyle(.emberProminent)
         }
         if b { glassRow(row) } else { cellRow(row) }
     }
 
     @ViewBuilder private func e_savedRepoRow(_ b: Bool, _ t: Color) -> some View {
         let row = HStack {
-            Image(systemName: "shippingbox").foregroundStyle(Color.accentColor)
+            Image(systemName: "shippingbox").foregroundStyle(Ember.accent)
             Text("rileytestut/Delta")
             Spacer()
             Text("Update").font(.caption.bold()).padding(.horizontal, 8).padding(.vertical, 2)
-                .glassEffect(.regular.tint(.green), in: .capsule)
+                .glassEffect(.regular.tint(Ember.orange), in: .capsule)
         }
         if b { glassRow(row) } else { cellRow(row) }
     }
 
     @ViewBuilder private func e_setupStepRow(_ b: Bool, _ t: Color) -> some View {
         let row = HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+            Image(systemName: "checkmark.circle.fill").foregroundStyle(Ember.ok)
             VStack(alignment: .leading, spacing: 4) {
                 Text("Install SideStore").font(.subheadline.weight(.semibold))
                 Text("Signs your apps on this iPhone.").font(.caption).foregroundStyle(.secondary)
@@ -1052,7 +1049,7 @@ struct ElementGalleryView: View {
 
     @ViewBuilder private func e_guardRow(_ b: Bool, _ t: Color) -> some View {
         let row = HStack {
-            GalleryIcon(size: 32, colors: [.blue, .cyan], symbol: "music.note")
+            GalleryIcon(size: 32, colors: [Ember.charcoal, Ember.steel], symbol: "music.note")
             Text("Eclipse")
             Spacer()
             Button("Scan") {}.buttonStyle(.glass)
@@ -1067,7 +1064,7 @@ struct ElementGalleryView: View {
 
     @ViewBuilder private func e_accountRow(_ b: Bool, _ t: Color) -> some View {
         let row = HStack(spacing: 14) {
-            Image(systemName: "person.crop.circle.badge.checkmark").font(.system(size: 30)).foregroundStyle(.green)
+            Image(systemName: "person.crop.circle.badge.checkmark").font(.system(size: 30)).foregroundStyle(Ember.ok)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Saidie").font(.headline)
                 Text("Signed in with Ouija \u{00B7} key 7F3A\u{2026}C21E").font(.footnote).foregroundStyle(.secondary)
@@ -1091,8 +1088,11 @@ struct ElementGalleryView: View {
     }
 
     @ViewBuilder private func e_budgetGauge(_ b: Bool, _ t: Color) -> some View {
-        let row = Gauge(value: 3, in: 0...10) { Text("App IDs this week") } currentValueLabel: { Text("3/10") }
-        if b { glassRow(row) } else { cellRow(row) }
+        let row = VStack(alignment: .leading, spacing: 8) {
+            HStack { Text("App IDs this week"); Spacer(); Text("3/10").font(.subheadline.monospacedDigit().bold()) }
+            EmberProgressBar(progress: 0.3, glass: !b)
+        }
+        cellRow(row)
     }
 
     @ViewBuilder private func e_menuPicker(_ b: Bool, _ t: Color) -> some View {
