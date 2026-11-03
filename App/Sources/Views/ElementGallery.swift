@@ -45,13 +45,13 @@ let galleryItems: [GalleryItem] = [
     GalleryItem(id: 2, key: .navLargeTitle, name: "Navigation bar, large title", file: "HomeView.swift, LibraryView.swift, ExpiryView.swift, MoreView.swift", status: .system, layout: .solo),
     GalleryItem(id: 3, key: .navInline, name: "Navigation bar, inline title + ‹ More back button", file: "MoreView.swift (MoreNavigationBack), StoreViews.swift (StoreAppDetail)", status: .system, layout: .solo),
     GalleryItem(id: 4, key: .toolbarIcons, name: "Toolbar icon buttons (↻ Check status, Sources list)", file: "HomeView.swift, StoreViews.swift, GitHubView.swift", status: .system, layout: .solo),
-    GalleryItem(id: 5, key: .segmented, name: "Segmented picker (Apps | GitHub)", file: "StoreViews.swift (StoreModePicker)", status: .system, layout: .pair),
+    GalleryItem(id: 5, key: .segmented, name: "Segmented picker (Apps | GitHub)", file: "StoreViews.swift (StoreModePicker)", status: .system, layout: .stack),
     GalleryItem(id: 6, key: .searchField, name: "Search field (“Search apps”)", file: "StoreViews.swift (StoreBrowseView .searchable)", status: .system, layout: .solo),
     GalleryItem(id: 7, key: .sheetChrome, name: "Sheet with Cancel / Done bar (Track an app, Sources, From link, Scan)", file: "ExpiryView.swift, StoreViews.swift, LibraryView.swift, OuijaViews.swift", status: .system, layout: .solo),
     GalleryItem(id: 8, key: .confirmDialog, name: "Confirmation dialog (“Delete … from the library?”)", file: "LibraryView.swift (IPADetailView)", status: .system, layout: .solo),
     GalleryItem(id: 9, key: .systemSheets, name: "Share sheet, Files picker, Photos picker", file: "LibraryView.swift, MoreView.swift, LabView.swift, GuardView.swift, OuijaViews.swift", status: .system, layout: .solo),
     GalleryItem(id: 10, key: .swipeAction, name: "Swipe action (Stop tracking / Delete)", file: "ExpiryView.swift, LibraryView.swift", status: .system, layout: .solo),
-    GalleryItem(id: 11, key: .toast, name: "Toast banner", file: "Components.swift (ToastBanner)", status: .glass, layout: .pair),
+    GalleryItem(id: 11, key: .toast, name: "Toast banner", file: "Components.swift (ToastBanner)", status: .glass, layout: .stack),
     GalleryItem(id: 12, key: .backdrop, name: "Tinted mesh backdrop (behind every screen)", file: "Visuals.swift (DisciplineBackdrop)", status: .na, layout: .solo),
     GalleryItem(id: 13, key: .magicRing, name: "Magic Ring overlay (reading an NCOM code)", file: "OuijaViews.swift (MagicRingView)", status: .none, layout: .scaled),
     GalleryItem(id: 14, key: .glassCard, name: "Glass card", file: "Components.swift (GlassCard): Home, IPA detail", status: .glass, layout: .stack),
@@ -68,10 +68,10 @@ let galleryItems: [GalleryItem] = [
     GalleryItem(id: 25, key: .vpnHeader, name: "VPN status line (Loopback VPN ● On + interface)", file: "HomeView.swift (vpnCard)", status: .none, layout: .stack),
     GalleryItem(id: 26, key: .statusDot, name: "Status dots (green / orange)", file: "Components.swift (StatusDot)", status: .none, layout: .pair),
     GalleryItem(id: 27, key: .factsStrip, name: "App facts strip (Version | Released | Size | iOS)", file: "StoreViews.swift (StoreAppDetail.facts)", status: .glass, layout: .stack),
-    GalleryItem(id: 28, key: .btnProminent, name: "Prominent glass button (Refresh All, Turn on, Import .ipa, Check now)", file: "HomeView, LibraryView, GitHubView, UpdatesView, MoreView", status: .glass, layout: .pair),
-    GalleryItem(id: 29, key: .btnGlass, name: "Glass button (Mark done, Turn off, From link)", file: "HomeView, LibraryView, ExpiryView, LabView, MoreView", status: .glass, layout: .pair),
+    GalleryItem(id: 28, key: .btnProminent, name: "Prominent glass button (Refresh All, Turn on, Import .ipa, Check now)", file: "HomeView, LibraryView, GitHubView, UpdatesView, MoreView", status: .glass, layout: .stack),
+    GalleryItem(id: 29, key: .btnGlass, name: "Glass button (Mark done, Turn off, From link)", file: "HomeView, LibraryView, ExpiryView, LabView, MoreView", status: .glass, layout: .stack),
     GalleryItem(id: 30, key: .btnPair, name: "Button pair that merges (GlassEffectContainer)", file: "HomeView.swift (hero, VPN), LibraryView.swift", status: .glass, layout: .stack),
-    GalleryItem(id: 31, key: .btnSmallGlass, name: "Small inline glass buttons (Open, Refreshed, Scan)", file: "HomeView, ExpiryView, GuardView, MoreView (SetupView)", status: .glass, layout: .pair),
+    GalleryItem(id: 31, key: .btnSmallGlass, name: "Small inline glass buttons (Open, Refreshed, Scan)", file: "HomeView, ExpiryView, GuardView, MoreView (SetupView)", status: .glass, layout: .stack),
     GalleryItem(id: 32, key: .btnSignInOuija, name: "Sign in with Ouija / NCOM button", file: "OuijaSignInViews.swift (SignInWithOuijaSection)", status: .glass, layout: .stack),
     GalleryItem(id: 33, key: .btnGetLarge, name: "Store detail Get button", file: "StoreViews.swift (StoreAppDetail)", status: .glass, layout: .pair),
     GalleryItem(id: 34, key: .btnListAction, name: "List text button (+ Add app, Check for updates, Edit sources)", file: "ExpiryView, GitHubView, StoreViews, LabView", status: .none, layout: .pair),
@@ -232,6 +232,7 @@ struct GalleryChart: View {
         }
         .chartXScale(domain: 0...7)
         .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) }
+        .padding(.trailing, 36)
         .frame(height: 3 * 36 + 30)
     }
 }
@@ -394,6 +395,7 @@ struct ElementGalleryView: View {
             } label: { Image(systemName: "chevron.right").font(.caption.weight(.bold)).padding(6) }
             .buttonStyle(.glass)
             .accessibilityIdentifier("gallery.next")
+            .accessibilityValue(isLastPage ? "end" : "more")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -1094,8 +1096,11 @@ struct ElementGalleryView: View {
     }
 
     @ViewBuilder private func e_menuPicker(_ b: Bool, _ t: Color) -> some View {
-        let row = Picker("Appearance", selection: .constant(0)) {
-            Text("System").tag(0); Text("Light").tag(1); Text("Dark").tag(2)
+        let row = HStack {
+            Text("Appearance"); Spacer()
+            Picker("Appearance", selection: .constant(0)) {
+                Text("System").tag(0); Text("Light").tag(1); Text("Dark").tag(2)
+            }.labelsHidden()
         }
         if b { glassRow(row) } else { cellRow(row) }
     }
@@ -1118,7 +1123,7 @@ struct ElementGalleryView: View {
     @ViewBuilder private func e_cameraFrame(_ b: Bool, _ t: Color) -> some View {
         let cam = Rectangle().fill(Color.black)
             .overlay(Image(systemName: "qrcode.viewfinder").font(.system(size: 44)).foregroundStyle(.white.opacity(0.7)))
-            .frame(width: 150, height: 150)
+            .frame(width: 130, height: 130)
             .clipShape(.rect(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
         if b { cam.padding(8).glassEffect(.regular, in: .rect(cornerRadius: DisciplineShape.cornerRadius + 8, style: .continuous)) }
         else { cam }

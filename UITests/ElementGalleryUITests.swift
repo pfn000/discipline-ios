@@ -5,12 +5,12 @@ import XCTest
 final class ElementGalleryUITests: DisciplineUITestCase {
     func testElementGalleryPages() {
         launch(["-elementGallery"])
-        let next = el("gallery.next")
+        let next = app.buttons["gallery.next"]
         XCTAssertTrue(next.waitForExistence(timeout: 30), "the Element Gallery did not open")
         sleep(3)
         for page in 1...40 {
             snap(String(format: "gallery-%02d", page))
-            if el("gallery.done").exists {
+            if (next.value as? String) == "end" {
                 note("gallery-pages", "\(page) pages")
                 return
             }
