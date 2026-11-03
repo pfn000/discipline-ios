@@ -61,7 +61,9 @@ final class EveryActionUITests: DisciplineUITestCase {
         XCTAssertTrue(el("updates.title").waitForExistence(timeout: 5) || el("updates.installed").exists, "Updates page did not open")
         back()
 
-        // Store search with no match says so.
+        // Store search with no match says so. (A fresh launch: on the More page the tab bar sits minimized.)
+        app.terminate()
+        launch()
         tab("Store Apps")
         let field = app.searchFields.firstMatch
         if !field.waitForExistence(timeout: 3) { app.swipeDown(velocity: .slow) }
