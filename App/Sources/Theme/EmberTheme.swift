@@ -76,6 +76,8 @@ struct EmberProminentButtonStyle: ButtonStyle {
         configuration.label
             .font(small ? .subheadline.weight(.semibold) : .body.weight(.semibold))
             .foregroundStyle(Ember.onAccent)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
             .padding(.horizontal, small ? 12 : 16)
             .padding(.vertical, small ? 6 : 10)
             .contentShape(Capsule())

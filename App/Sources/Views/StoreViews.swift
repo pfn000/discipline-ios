@@ -361,13 +361,13 @@ struct StoreAppDetail: View {
 
     private var facts: some View {
         HStack(spacing: 0) {
-            fact("Version", app.version.isEmpty ? "?" : app.version)
+            fact("Version", app.version.isEmpty ? "Not listed" : app.version)
             Divider().frame(height: 34)
-            fact("Released", app.versionDate.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "?")
+            fact("Released", app.versionDate.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "Not listed")
             Divider().frame(height: 34)
-            fact("Size", app.size.map(byteText) ?? "?")
+            fact("Size", app.size.map(byteText) ?? "Not listed")
             Divider().frame(height: 34)
-            fact("iOS", app.minOS ?? "?")
+            fact("iOS", app.minOS ?? "Not listed")
         }
         .padding(.vertical, 12)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DisciplineShape.cornerRadius, style: .continuous))
