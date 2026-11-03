@@ -65,9 +65,23 @@ final class OuijaAuthorizeUITests: DisciplineUITestCase {
         snap("86-ouija-authorize-sheet")
 
         // The Live Activity (Dynamic Island on Pro simulators, banner on the Lock Screen).
+        // What ActivityKit answered when Ouija asked for it, saved beside the screenshots.
+        let la = el("authorize.liveActivity")
+        _ = la.waitForExistence(timeout: 5)
+        sleep(2) // a retry inside Ouija lands within 1.5 s
+        note("87-live-activity-state", "ActivityKit: \(la.exists ? la.label : "(no readout)")")
         XCUIDevice.shared.press(.home)
-        sleep(3)
+        sleep(4)
         snap("87-live-activity-island")
+        hostShot("87s-live-activity-island-simctl")
+        // Expanded view: touch and hold the Island (the system expands a Live Activity on a long press).
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        note("87-springboard-tree", springboard.debugDescription)
+        let w = springboard.frame.width > 0 ? springboard.frame.width : 402
+        springboard.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: w / 2, dy: 24)).press(forDuration: 1.2)
+        sleep(1)
+        snap("87b-live-activity-island-expanded")
+        hostShot("87bs-live-activity-island-expanded-simctl", wait: 3)
         app.activate()
         XCTAssertTrue(el("authorize.handle").waitForExistence(timeout: 10))
 

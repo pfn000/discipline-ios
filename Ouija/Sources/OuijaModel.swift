@@ -237,11 +237,23 @@ final class OuijaModel: ObservableObject {
         let thumb = profileImage.flatMap { $0.squareThumbnail(side: 40).jpegData(compressionQuality: 0.5) }
         let attrs = OuijaSignInAttributes(client: req.client, accountName: displayName, initials: initials,
                                           avatarJPEG: (thumb?.count ?? 0) < 1600 ? thumb : nil, requestID: req.id)
+        let content = ActivityContent(state: OuijaSignInAttributes.ContentState(status: "waiting"), staleDate: Date().addingTimeInterval(300))
         do {
-            _ = try Activity.request(attributes: attrs, content: ActivityContent(state: .init(status: "waiting"), staleDate: Date().addingTimeInterval(300)))
-            liveActivityState = "started"
+            let a = try Activity.request(attributes: attrs, content: content)
+            liveActivityState = "started id=\(a.id) state=\(a.activityState) count=\(Activity<OuijaSignInAttributes>.activities.count) frequentUpdates=\(ActivityAuthorizationInfo().frequentPushesEnabled)"
         } catch {
-            liveActivityState = "Couldn't start: \(error.localizedDescription)"
+            // The request can be refused while the scene is still coming forward; try once more a moment later.
+            liveActivityState = "Couldn't start: \(error) (\(error.localizedDescription)); retrying"
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                guard let self else { return }
+                do {
+                    let a = try Activity.request(attributes: attrs, content: content)
+                    self.liveActivityState = "started on retry id=\(a.id) state=\(a.activityState) count=\(Activity<OuijaSignInAttributes>.activities.count)"
+                } catch {
+                    self.liveActivityState = "Couldn't start (twice): \(error) (\(error.localizedDescription))"
+                }
+            }
         }
         #endif
     }
