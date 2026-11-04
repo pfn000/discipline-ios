@@ -154,7 +154,7 @@ struct StoreBrowseView: View {
         }
         // glass-ok: the chip's capsule is native .glassEffect (applied just below)
         .buttonStyle(.plain)
-        .glassEffect(selected ? .regular.tint(Ember.accent).interactive() : .regular.interactive(), in: Capsule())
+        .emberGlassBehind(selected ? .regular.tint(Ember.accent).interactive() : .regular.interactive(), in: Capsule())
         .accessibilityIdentifier("store.category.\(title)")
     }
 
@@ -291,7 +291,7 @@ struct StoreRow: View {
             Spacer(minLength: 8)
             Text(hasUpdate ? "Update" : "Get").font(.subheadline.bold()).foregroundStyle(Ember.onAccent)
                 .padding(.horizontal, 16).padding(.vertical, 6)
-                .glassEffect(.regular.tint(Ember.accent), in: Capsule())
+                .emberGlassBehind(.regular.tint(Ember.accent), in: Capsule())
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 8)

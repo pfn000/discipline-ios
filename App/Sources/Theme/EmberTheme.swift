@@ -81,7 +81,7 @@ struct EmberProminentButtonStyle: ButtonStyle {
             .padding(.horizontal, small ? 12 : 16)
             .padding(.vertical, small ? 6 : 10)
             .contentShape(Capsule())
-            .glassEffect(.regular.tint(Ember.accent).interactive(), in: .capsule)
+            .emberGlassBehind(.regular.tint(Ember.accent).interactive(), in: .capsule)
             .opacity(isEnabled ? 1 : 0.45)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.snappy(duration: 0.15), value: configuration.isPressed)
@@ -90,6 +90,15 @@ struct EmberProminentButtonStyle: ButtonStyle {
 
 extension ButtonStyle where Self == EmberProminentButtonStyle {
     static var emberProminent: EmberProminentButtonStyle { EmberProminentButtonStyle() }
+}
+
+extension View {
+    /// Official Liquid Glass drawn BEHIND this view. Content placed inside a glass effect gets the system's adaptive
+    /// text colour (on the Nov 3 light-mode run it turned black labels white on orange glass); behind it, the label keeps
+    /// the colour we set, black on orange. The glass itself is the same `glassEffect`.
+    func emberGlassBehind<S: Shape>(_ glass: Glass, in shape: S) -> some View {
+        background { Color.clear.glassEffect(glass, in: shape) }
+    }
 }
 
 /// A glowing progress bar in her gradient, inside an official Liquid Glass capsule.

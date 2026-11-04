@@ -268,7 +268,7 @@ struct GalleryChip: View {
     var body: some View {
         let label = Text(title).font(.subheadline.weight(.semibold)).padding(.horizontal, 14).padding(.vertical, 8)
             .foregroundStyle(selected ? Ember.onAccent : Color.primary)
-        if glass { label.glassEffect(selected ? .regular.tint(Ember.accent).interactive() : .regular.interactive(), in: Capsule()) }
+        if glass { label.emberGlassBehind(selected ? .regular.tint(Ember.accent).interactive() : .regular.interactive(), in: Capsule()) }
         else { label.background(selected ? Ember.accent : GalleryColors.flat, in: Capsule()) }
     }
 }
@@ -823,17 +823,17 @@ struct ElementGalleryView: View {
     @ViewBuilder private func e_getPill(_ b: Bool, _ t: Color) -> some View {
         let pill = Text("Get").font(.subheadline.bold()).foregroundStyle(Ember.onAccent).padding(.horizontal, 16).padding(.vertical, 6)
         if b { pill.background(Ember.accent, in: .capsule) }
-        else { pill.glassEffect(.regular.tint(Ember.accent), in: .capsule) }
+        else { pill.emberGlassBehind(.regular.tint(Ember.accent), in: .capsule) }
     }
 
     @ViewBuilder private func e_badgePre(_ b: Bool, _ t: Color) -> some View {
         let tag = Text("PRE").font(.caption2.bold()).foregroundStyle(Ember.onAccent).padding(.horizontal, 6)
-        if b { tag.background(Ember.orange, in: .capsule) } else { tag.glassEffect(.regular.tint(Ember.orange), in: .capsule) }
+        if b { tag.background(Ember.orange, in: .capsule) } else { tag.emberGlassBehind(.regular.tint(Ember.orange), in: .capsule) }
     }
 
     @ViewBuilder private func e_badgeUpdate(_ b: Bool, _ t: Color) -> some View {
         let tag = Text("Update").font(.caption.bold()).foregroundStyle(Ember.onAccent).padding(.horizontal, 8).padding(.vertical, 2)
-        if b { tag.background(Ember.orange, in: .capsule) } else { tag.glassEffect(.regular.tint(Ember.orange), in: .capsule) }
+        if b { tag.background(Ember.orange, in: .capsule) } else { tag.emberGlassBehind(.regular.tint(Ember.orange), in: .capsule) }
     }
 
     @ViewBuilder private func e_badgeFeatured(_ b: Bool, _ t: Color) -> some View {

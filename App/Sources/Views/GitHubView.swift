@@ -64,7 +64,7 @@ struct GitHubView: View {
                     } header: {
                         HStack {
                             Text(release.title)
-                            if release.prerelease { Text("PRE").font(.caption2.bold()).foregroundStyle(Ember.onAccent).padding(.horizontal, 6).glassEffect(.regular.tint(Ember.orange), in: .capsule) }
+                            if release.prerelease { Text("PRE").font(.caption2.bold()).foregroundStyle(Ember.onAccent).padding(.horizontal, 6).emberGlassBehind(.regular.tint(Ember.orange), in: .capsule) }
                         }
                     }
                 }
@@ -87,7 +87,7 @@ struct GitHubView: View {
                                     Spacer()
                                     if repo.hasUpdate {
                                         Text("Update").font(.caption.bold()).foregroundStyle(Ember.onAccent).padding(.horizontal, 8).padding(.vertical, 2)
-                                            .glassEffect(.regular.tint(Ember.orange), in: .capsule)
+                                            .emberGlassBehind(.regular.tint(Ember.orange), in: .capsule)
                                             .accessibilityIdentifier("github.updateBadge.\(repo.ref.repo)")
                                     } else if let tag = repo.lastSeenTag {
                                         Text(tag).font(.caption).foregroundStyle(.secondary)
