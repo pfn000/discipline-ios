@@ -2,12 +2,12 @@
   {
     "id": 9031,
     "tag_name": "v99.0.0",
-    "name": "Discipline 99.0.0 (test fixture, always newer)",
+    "name": "Discipline 99.0.0",
     "draft": false,
     "prerelease": false,
     "published_at": "2026-10-26T12:00:00Z",
     "html_url": "https://github.com/pfn000/discipline-ios/releases/tag/v99.0.0",
-    "body": "Test fixture release notes: what's new in 99.0.0.\n- Example change one\n- Example change two",
+    "body": "Here's what's new in 99.0.0:\n- The ember look on every screen, in light and dark\n- Orange buttons with black labels",
     "assets": [
       {
         "id": 90311,
