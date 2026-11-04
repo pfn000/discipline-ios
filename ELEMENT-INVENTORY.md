@@ -47,7 +47,7 @@ Status key: glass = official Liquid Glass today · none = no glass today · syst
 | 27 | App facts strip (Version | Released | Size | iOS) | official Liquid Glass now | StoreViews.swift (StoreAppDetail.facts) |
 | 28 | Prominent glass button (Refresh All, Turn on, Import .ipa, Check now) | official Liquid Glass now | HomeView, LibraryView, GitHubView, UpdatesView, MoreView |
 | 29 | Glass button (Mark done, Turn off, From link) | official Liquid Glass now | HomeView, LibraryView, ExpiryView, LabView, MoreView |
-| 30 | Button pair that merges (GlassEffectContainer) | official Liquid Glass now | HomeView.swift (hero, VPN), LibraryView.swift |
+| 30 | Button pair (orange glass + clear glass, side by side; no longer in a GlassEffectContainer, which drew the glass over the orange button's label) | official Liquid Glass now | HomeView.swift (hero, VPN), LibraryView.swift |
 | 31 | Small inline glass buttons (Open, Refreshed, Scan) | official Liquid Glass now | HomeView, ExpiryView, GuardView, MoreView (SetupView) |
 | 32 | Sign in with Ouija / NCOM button | official Liquid Glass now | OuijaSignInViews.swift (SignInWithOuijaSection) |
 | 33 | Store detail Get button | official Liquid Glass now | StoreViews.swift (StoreAppDetail) |

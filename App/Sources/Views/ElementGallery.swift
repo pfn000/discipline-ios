@@ -70,7 +70,7 @@ let galleryItems: [GalleryItem] = [
     GalleryItem(id: 27, key: .factsStrip, name: "App facts strip (Version | Released | Size | iOS)", file: "StoreViews.swift (StoreAppDetail.facts)", status: .glass, layout: .stack),
     GalleryItem(id: 28, key: .btnProminent, name: "Prominent glass button (Refresh All, Turn on, Import .ipa, Check now)", file: "HomeView, LibraryView, GitHubView, UpdatesView, MoreView", status: .glass, layout: .stack),
     GalleryItem(id: 29, key: .btnGlass, name: "Glass button (Mark done, Turn off, From link)", file: "HomeView, LibraryView, ExpiryView, LabView, MoreView", status: .glass, layout: .stack),
-    GalleryItem(id: 30, key: .btnPair, name: "Button pair that merges (GlassEffectContainer)", file: "HomeView.swift (hero, VPN), LibraryView.swift", status: .glass, layout: .stack),
+    GalleryItem(id: 30, key: .btnPair, name: "Button pair (orange glass + clear glass, side by side)", file: "HomeView.swift (hero, VPN), LibraryView.swift", status: .glass, layout: .stack),
     GalleryItem(id: 31, key: .btnSmallGlass, name: "Small inline glass buttons (Open, Refreshed, Scan)", file: "HomeView, ExpiryView, GuardView, MoreView (SetupView)", status: .glass, layout: .stack),
     GalleryItem(id: 32, key: .btnSignInOuija, name: "Sign in with Ouija / NCOM button", file: "OuijaSignInViews.swift (SignInWithOuijaSection)", status: .glass, layout: .stack),
     GalleryItem(id: 33, key: .btnGetLarge, name: "Store detail Get button", file: "StoreViews.swift (StoreAppDetail)", status: .glass, layout: .pair),
@@ -766,7 +766,8 @@ struct ElementGalleryView: View {
                 Label("Turn off", systemImage: "bolt.slash").frame(maxWidth: .infinity).flatButton(prominent: false, tint: t)
             }
         } else {
-            GlassEffectContainer(spacing: 12) {
+            // No GlassEffectContainer here: inside one, the orange glass was drawn over the button labels (Nov 3 simulator run).
+            Group {
                 HStack(spacing: 12) {
                     Button {} label: { Label("Turn on", systemImage: "bolt.horizontal.circle").frame(maxWidth: .infinity) }
                         .buttonStyle(.emberProminent)

@@ -14,7 +14,8 @@ struct GitHubView: View {
                         .focused($focused)
                         .onSubmit { Task { await model.findReleases() } }
                         .accessibilityIdentifier("github.field")
-                    GlassEffectContainer(spacing: 12) {
+                    // No GlassEffectContainer here: inside one, the orange glass was drawn over the button labels (Nov 3 simulator run).
+                    Group {
                         HStack(spacing: 12) {
                             Button { focused = false; Task { await model.findReleases() } } label: {
                                 Label("Find releases", systemImage: "magnifyingglass").frame(maxWidth: .infinity)

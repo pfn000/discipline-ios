@@ -30,7 +30,8 @@ struct LibraryView: View {
                     }
                 }
                 Section {
-                    GlassEffectContainer(spacing: 12) {
+                    // No GlassEffectContainer here: inside one, the orange glass was drawn over the button labels (Nov 3 simulator run).
+                    Group {
                         HStack(spacing: 12) {
                             Button { importing = true } label: { Label("Import .ipa", systemImage: "square.and.arrow.down").frame(maxWidth: .infinity) }
                                 .buttonStyle(.emberProminent)
@@ -111,7 +112,8 @@ struct IPADetailView: View {
      : "LiveContainer runs it inside one app. SideStore signs it as its own app for a year with your paid account.")
                         .font(.caption).foregroundStyle(.secondary)
                     if let remote = item.remoteURL.flatMap(URL.init(string:)) {
-                        GlassEffectContainer(spacing: 12) {
+                        // No GlassEffectContainer here: inside one, the orange glass was drawn over the button labels (Nov 3 simulator run).
+                        Group {
                             VStack(spacing: 10) {
                                 Button { Task { await model.installRemote(remote, with: .liveContainer, appIDCost: item.appIDCost) } } label: {
                                     Label("Install via LiveContainer", systemImage: "square.stack.3d.up").frame(maxWidth: .infinity)

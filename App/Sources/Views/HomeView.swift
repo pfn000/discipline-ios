@@ -75,7 +75,8 @@ struct HomeView: View {
                     .font(.subheadline).foregroundStyle(.secondary)
                     .accessibilityIdentifier("home.noTracked")
             }
-            GlassEffectContainer(spacing: 12) {
+            // No GlassEffectContainer here: inside one, the orange glass was drawn over the button labels (Nov 3 simulator run).
+            Group {
                 HStack(spacing: 12) {
                     Button { Task { await model.refreshAll() } } label: {
                         Label("Refresh All", systemImage: "arrow.triangle.2.circlepath").frame(maxWidth: .infinity)
@@ -146,7 +147,8 @@ struct HomeView: View {
             if case .connected(let iface, let addr) = model.tunnel {
                 Text("\(iface) · \(addr.description)").font(.caption.monospaced()).foregroundStyle(.secondary)
             }
-            GlassEffectContainer(spacing: 12) {
+            // No GlassEffectContainer here: inside one, the orange glass was drawn over the button labels (Nov 3 simulator run).
+            Group {
                 HStack(spacing: 12) {
                     Button { Task { await model.vpnOn() } } label: { Label("Turn on", systemImage: "bolt.horizontal.circle").frame(maxWidth: .infinity) }
                         .buttonStyle(.emberProminent)
