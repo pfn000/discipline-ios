@@ -33,10 +33,12 @@ struct AttentionPage: View {
             Button(action: onAgree) {
                 Text("I agree")
                     .font(.headline)
+                    .foregroundStyle(OuijaStyle.onAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)
             }
             .buttonStyle(.glassProminent)
+            .tint(OuijaStyle.accent)
             .controlSize(.large)
             .accessibilityIdentifier("ouija.iAgree")
         }
@@ -146,10 +148,10 @@ struct ProfileAvatar: View {
             if let img = model.profileImage {
                 Image(uiImage: img).resizable().scaledToFill()
             } else {
-                LinearGradient(colors: [OuijaStyle.accent, OuijaStyle.accent.opacity(0.65)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                LinearGradient(colors: OuijaStyle.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
                 Text(model.initials)
                     .font(.system(size: size * 0.38, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(OuijaStyle.onAccent)
             }
         }
         .frame(width: size, height: size)

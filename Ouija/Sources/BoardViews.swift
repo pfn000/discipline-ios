@@ -218,9 +218,11 @@ struct PairingView: View {
                             if searching { ProgressView() }
                             Text(searching ? "Searching…" : OuijaContent.shared.pairTitle).font(.headline)
                         }
+                        .foregroundStyle(OuijaStyle.onAccent)
                         .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.glassProminent)
+                    .tint(OuijaStyle.accent)
                     .disabled(searching)
                     .accessibilityIdentifier("pair.start")
                     if !result.isEmpty {
