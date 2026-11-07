@@ -81,16 +81,18 @@ struct OuijaBoardMain: View {
         .sheet(isPresented: $showSettings) { OuijaSettingsSheet() }
     }
 
+    // No paired device exists until a real pairing does (Saidie, Nov 1 [5547b731]: no placeholder device).
+    // The header says so honestly instead of naming a device from the content file.
     private var header: some View {
         HStack(spacing: 14) {
-            Image(systemName: OuijaContent.shared.deviceSymbol).font(.system(size: 34))
+            Image(systemName: "dot.radiowaves.left.and.right").font(.system(size: 30))
                 .frame(width: 60, height: 60)
                 .glassEffect(.regular, in: Circle())
                 .accessibilityIdentifier("ouija.deviceModel")
             VStack(alignment: .leading, spacing: 4) {
-                Text(OuijaContent.shared.deviceName).font(.title2.bold()).accessibilityIdentifier("ouija.deviceName")
+                Text("No device paired").font(.title2.bold()).accessibilityIdentifier("ouija.deviceName")
                 NavigationLink { PairingView() } label: {
-                    Label("Not connected · pair", systemImage: "circle.fill")
+                    Label("Pair a device", systemImage: "circle.fill")
                         .font(.caption).foregroundStyle(.secondary)
                         .labelStyle(ConnectionDotStyle())
                 }
@@ -123,7 +125,7 @@ struct OuijaBoardMain: View {
             importing = true
             model.ouijaStatus = "Loading: choose a test app (.ipa)…"
         } else {
-            model.ouijaStatus = "Tile \(tile.id): prototype feature. Pair a \(OuijaContent.shared.deviceName) first (\(OuijaContent.shared.pairTitle)). Not connected."
+            model.ouijaStatus = "Tile \(tile.id): needs a paired device. None is paired yet (\(OuijaContent.shared.pairTitle))."
         }
     }
 
@@ -132,7 +134,7 @@ struct OuijaBoardMain: View {
         switch name {
         case "help": shellOutput = "Local commands: help, apps, device, status. No iOS shell commands."
         case "apps": shellOutput = "\(model.library.count) test apps picked in Ouija; Discipline keeps the IPA Library."
-        case "device": shellOutput = "iOS \(UIDevice.current.systemVersion); \(OuijaContent.shared.deviceName): not paired."
+        case "device": shellOutput = "iOS \(UIDevice.current.systemVersion); no device paired."
         case "status": shellOutput = "Prototype connection: not connected. Session: \(model.settings.ouijaSession.label)."
         default: shellOutput = "Unknown local command. Type help."
         }

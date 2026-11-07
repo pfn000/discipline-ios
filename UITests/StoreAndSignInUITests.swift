@@ -47,13 +47,13 @@ final class StoreUITests: DisciplineUITestCase {
         else { let edit = el("store.editSources"); scrollTo(edit, maxSwipes: 15); tap("store.editSources") }
         XCTAssertTrue(el("source.newURL").waitForExistence(timeout: 5))
         snap("64-store-sources")
-        type("source.newURL", "https://example.invalid/apps.json")
+        type("source.newURL", "https://apps.ncom.invalid/apps.json")
         tap("source.add")
         let msg = el("source.message")
         XCTAssertTrue(msg.waitForExistence(timeout: 60))
         XCTAssertTrue(msg.label.contains("couldn't load"), "broken source: \(msg.label)")
         snap("65-store-broken-source")
-        let row = el("source.example.invalid")
+        let row = el("source.apps.ncom.invalid")
         scrollTo(row)
         if row.exists {
             row.swipeLeft()
